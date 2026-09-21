@@ -1,0 +1,18 @@
+# Windows
+desktop.ini
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Temporary / backup files
+*.tmp
+*.bak
+*.log
+
+# Internal audit / refactoring files
+00_Project/Project_Management/Foundation_Audit_*.md
+00_Project/Project_Management/Foundation_Global_Audit.md
+00_Project/Project_Management/Foundation_Phase1B_Figure_Audit.md
+00_Project/Project_Management/Foundation_Phase2_Refactoring_Log.md
+00_Project/Project_Management/Foundation_Phase2_Figure_Revision_Log.md

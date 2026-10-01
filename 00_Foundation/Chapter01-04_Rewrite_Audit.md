@@ -729,7 +729,7 @@ Chapter 01에서 Data가 어디에 있으며 다음에 어디로 가는지 추�
 | Figures and existing notes | Checked | 43개 Figure의 정확한 경로와 순서, 기존 검증/Debugging/Production 정보의 보존을 확인했다. |
 | Questionable technical content | Recorded | Chapter별 Technical Notes / Remaining Review Items와 Figure 상태에 기록했다. |
 | Exact backups / unchanged Chapter 05 | Checked | 네 Backup의 SHA-256 및 Chapter 05와 기존 Figure 파일의 Hash를 확인했다. |
-| GitHub reviewable working filenames | Prepared | 기존 파일명 네 개, 정확한 Backup 네 개, Audit을 검토용 Branch에 게시할 대상으로 준비했다. 게시 결과는 실제 PR 생성 후 기록한다. |
+| GitHub reviewable working filenames | Checked | 기존 파일명 네 개, 정확한 Backup 네 개, Audit을 `docs/foundation-explanation-rewrite-20261001` Branch에 게시했다. [Draft PR #3](https://github.com/akaoops1-coder/Real-Time-Rendering-Lab/pull/3)에서 Backup과 최신 Rewrite를 바로 비교할 수 있다. |
 
 ## Integrity Verification
 

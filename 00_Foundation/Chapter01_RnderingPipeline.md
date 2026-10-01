@@ -183,7 +183,7 @@ Light에는 다음과 같은 여러 정보가 존재할 수 있다.
 
 예를 들어 Directional Light가 Character의 오른쪽 위에서 비추고 있다면, Surface가 그 Light를 향하고 있는지 반대쪽을 향하고 있는지에 따라 Lighting 결과가 달라진다.
 
-ASF의 뒤쪽 Chapter에서 다뤘던 Lambert Lighting, Phong Specular, Shadow 등의 계산도 이러한 Light와 Surface의 관계와 연결된다.
+ASF의 뒤쪽 Chapter에서 다룰 Lambert Lighting, Phong Specular, Shadow 등의 계산도 이러한 Light와 Surface의 관계와 연결된다.
 
 다만 모든 Rendering 결과가 반드시 Light 계산을 필요로 하는 것은 아니다.
 

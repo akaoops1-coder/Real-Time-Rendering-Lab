@@ -1177,7 +1177,6 @@ Mesh가 가진 UV를 통해 3D Surface와 2D Texture 사이의 대응 관계를 
 
 <img src="Figures/Chapter04/Fig4_05.png" width="90%">
 
-**Figure 4-5 검증 상태: 재촬영 필요.** 기존 이미지의 “Actual Rendering”과 Graph는 현재 설명의 검증 Evidence로 사용하지 않는다. sRGB Decode는 중간값 `0.5`를 더 작은 Linear 값으로 변환하므로, 그림의 `0.50 → 0.73`은 Decode 방향과 맞지 않는다. Roughness를 잘못 sRGB로 읽으면 의도보다 작은 값이 되어 Reflection이 더 날카로워질 수 있다. 자동 sRGB Decode 이후 수동 Decode를 다시 연결하지 않는다. `sRGB Off`는 모든 변환이 없다는 뜻이 아니라 sRGB transfer Decode를 하지 않는다는 뜻이다. 정확한 Sample 값과 동일 조건의 비교 Rendering, 실제 Texture 설정 및 Material Graph는 Unreal에서 다시 캡처해야 한다.
 
 ### What Is Color Space?
 
@@ -1943,7 +1942,7 @@ Normal Map이 실제 Lighting에 사용되는 흐름을 정리하면 다음과 �
 
 앞 Section까지는 Material이 Texture와 여러 Surface Property를 통해 Shader에 Data를 제공하는 구조를 살펴봤다.
 
-하지만 Material 안의 모든 값을 고정된 값으로 작성하면 작은 수정 하나를 위해서도 Material Graph 자체를 다시 열고 수정해야 한다.
+하지만 Material 안의 모든 값을 고정된 값으로 작성하면 작은 수정 하나를 위해서도 Material Graph 자체를 다시 열고 변경해야 한다.
 
 예를 들어 같은 Shader 구조를 사용하는 여러 Asset에서 다음 값만 다르게 사용하고 싶다고 하자.
 
@@ -1953,45 +1952,71 @@ Normal Map이 실제 Lighting에 사용되는 흐름을 정리하면 다음과 �
 - Texture
 - UV Tiling
 
-이때 Material Logic 자체를 매번 복사해서 새로 만드는 것은 비효율적이다.
+이때 Material Logic 전체를 복사하여 새로운 Material을 만드는 것은 비효율적이다.
 
 이 문제를 해결하는 것이 `Material Parameter`와 `Material Instance`다.
 
-`Material Parameter`는 Shader에서 사용할 값을 외부에서 조절할 수 있도록 만든 Input이고, `Material Instance`는 같은 Material 구조를 유지한 채 Parameter 값만 다르게 설정한 Material Variation이라고 볼 수 있다.
+`Material Parameter`는 Material Logic에서 사용할 값 가운데 외부에서 조절할 수 있도록 노출한 Input이다.
+
+`Material Instance`는 Parent Material의 구조를 재사용하면서, 노출된 Parameter 값을 다르게 설정하여 Surface Variation을 만드는 구조다.
+
+즉 핵심은 다음과 같다.
+
+> **Material Logic과 조절 가능한 Data를 분리한다.**
 
 <img src="Figures/Chapter04/Fig4_07.png" width="90%">
 
-**Figure 4-7의 Runtime 범위.** 기존 Graph/Instance 화면은 보존한다. 그림의 “실시간 값 변경”은 지원되는 비정적 Parameter와 적절한 Instance 사용에 한정한다. Static Switch와 Static Component Mask는 컴파일 시 Variant를 선택하는 Static Parameter이므로 일반적인 Runtime 값 변경과 구별한다. Parent Logic 재사용은 모든 Static 설정이 같은 Shader Variant를 유지한다는 뜻이 아니다. 화면의 정확한 Engine 버전과 Runtime 변경 경로가 검증된 자료라는 주장은 하지 않는다.
+Figure 4-7에서는 Material Parameter를 모두 동일한 종류의 값으로 취급하지 않는다.
+
+`Scalar Parameter`, `Vector Parameter`, `Texture Parameter`와 같이 기존 Shader Logic에 값을 공급하는 **Non-Static Parameter**와, Shader의 Compile Time 구성을 선택하는 `Static Switch Parameter`, `Static Component Mask`를 구분한다.
+
+또한 Editor에서 Material Instance의 값을 조절하는 것과, 실제 Runtime에서 값을 변경하는 것도 서로 다른 상황이므로 별도로 구분해서 이해해야 한다.
+
+---
 
 ### Why Use Parameters?
 
-Material Graph 안에 값을 직접 입력하면 해당 값은 Material Logic의 일부가 된다.
+Material Graph 안에 값을 직접 입력하면 해당 값은 Material Logic 내부에 고정된다.
 
 예를 들어 Roughness를 다음처럼 직접 지정했다고 하자.
 
 `Roughness = 0.5`
 
-이 값을 바꾸려면 Material Graph를 열고 값을 수정해야 한다.
+이 값을 변경하려면 Material Graph를 열어 직접 수정해야 한다.
 
-반면 Roughness를 `Scalar Parameter`로 만들면 외부에서 값을 조절할 수 있다.
+반면 Roughness를 `Scalar Parameter`로 만들면 Parent Material의 Logic을 수정하지 않고 외부에서 값을 Override할 수 있다.
 
 개념적으로는 다음과 같다.
 
 `Hardcoded Value`
 
-→ Material Graph 내부에 고정
+→ Material Graph 내부에 값 고정
 
 `Parameter`
 
-→ 외부에서 값 변경 가능
+→ 외부에서 조절 가능한 Input으로 노출
 
-즉 Parameter의 목적은 단순히 값을 저장하는 것이 아니라,
+Parameter의 목적은 단순히 값을 저장하는 것이 아니다.
 
-**Material Logic과 조절 가능한 Data를 분리하는 것**
+**Shader 구조와 조절 가능한 Material Data를 분리하는 것**이 핵심이다.
 
-이다.
+이렇게 하면 동일한 Material Logic을 여러 Asset에서 재사용하면서도 서로 다른 Surface Appearance를 만들 수 있다.
 
-이렇게 하면 Shader 구조는 그대로 유지하면서도 여러 Asset에서 서로 다른 Material 값을 사용할 수 있다.
+---
+
+### Common Parameter Types
+
+Material에서 자주 사용하는 Parameter는 역할에 따라 여러 종류로 나눌 수 있다.
+
+| Parameter Type | Example | Role |
+|---|---|---|
+| Scalar Parameter | Roughness, Metallic, Intensity | 하나의 숫자 값 조절 |
+| Vector Parameter | Base Color Tint, Emissive Color | 여러 Component 또는 Color 값 조절 |
+| Texture Parameter | Base Color, Normal, Mask | 사용할 Texture 교체 |
+| Static Switch Parameter | Detail Normal 사용 여부 | Compile Time 기능 선택 |
+| Static Component Mask | R / G / B / A | Compile Time Channel 선택 |
+
+여기서 중요한 것은 `Static`이 붙은 Parameter는 일반 Scalar나 Vector Parameter와 동작 방식이 다르다는 점이다.
 
 ---
 
@@ -2008,7 +2033,7 @@ Material Graph 안에 값을 직접 입력하면 해당 값은 Material Logic의
 - UV Tiling
 - Mask Threshold
 
-예를 들어 Roughness Parameter를 만든다면,
+예를 들어 같은 Parent Material에서 Roughness 값만 다르게 설정할 수 있다.
 
 `Roughness = 0.2`
 
@@ -2016,9 +2041,7 @@ Material Graph 안에 값을 직접 입력하면 해당 값은 Material Logic의
 
 `Roughness = 0.9`
 
-처럼 같은 Material 구조에서 서로 다른 Surface 특성을 만들 수 있다.
-
-Scalar Parameter는 하나의 값을 사용하기 때문에 `0~1` 범위의 Material Property나 강도 조절에 특히 자주 사용된다.
+이 값들은 Shader 구조를 새로 작성하는 것이 아니라, 기존 Logic에 서로 다른 Data를 공급하는 것이다.
 
 ---
 
@@ -2026,39 +2049,41 @@ Scalar Parameter는 하나의 값을 사용하기 때문에 `0~1` 범위의 Mate
 
 `Vector Parameter`는 여러 Component를 가진 값을 전달한다.
 
-Material에서는 주로 Color 값을 조절하는 데 사용된다.
+Material에서는 주로 Color나 여러 개의 연속적인 값을 전달하는 데 사용한다.
 
-예를 들어 Base Color Tint를 Vector Parameter로 만들 수 있다.
+예를 들어 Base Color Tint를 다음과 같이 구성할 수 있다.
 
 `BaseColorTint = (R, G, B)`
 
-또는 Alpha까지 포함하면,
+Alpha까지 포함하면 다음과 같은 형태가 된다.
 
-`(R, G, B, A)`
+`BaseColorTint = (R, G, B, A)`
 
-형태로 사용할 수 있다.
+이렇게 하면 Texture 자체를 수정하지 않고도 같은 Material에서 여러 Color Variation을 만들 수 있다.
 
-이를 이용하면 Texture 자체를 수정하지 않고도 Material의 Color Variation을 만들 수 있다.
-
-예를 들어 같은 Base Color Texture를 사용하면서,
+예를 들어,
 
 - Red Variation
 - Blue Variation
 - Green Variation
 
-처럼 서로 다른 Material을 만들 수 있다.
+처럼 하나의 Parent Material을 여러 형태로 사용할 수 있다.
 
 ---
 
 ### Texture Parameter
 
-`Texture Parameter`는 Material에서 사용할 Texture 자체를 외부에서 교체할 수 있도록 만든다.
+`Texture Parameter`는 Material에서 사용할 Texture를 외부에서 교체할 수 있도록 만든다.
 
-예를 들어 하나의 Character Material 구조를 여러 Character가 공유한다고 하자.
+예를 들어 여러 Character가 같은 Character Material 구조를 공유한다고 하자.
 
-Shader Logic은 같지만 각 Character가 사용하는 Base Color Texture와 Normal Map은 서로 다를 수 있다.
+Shader Logic은 같지만 다음 Texture는 Character마다 다를 수 있다.
 
-이 경우 Texture를 Parameter로 만들면 Parent Material 구조를 수정하지 않고도 다른 Texture를 지정할 수 있다.
+- Base Color Texture
+- Normal Texture
+- Mask Texture
+
+이 경우 Texture를 Parameter로 만들면 Parent Material을 수정하지 않고 Material Instance에서 각 Character에 맞는 Texture를 지정할 수 있다.
 
 즉,
 
@@ -2066,96 +2091,73 @@ Shader Logic은 같지만 각 Character가 사용하는 Base Color Texture와 No
 
 +
 
-`Different Texture`
+`Different Texture Data`
 
-를 쉽게 구성할 수 있다.
-
-Texture Parameter는 Asset Variation을 만들 때 매우 자주 사용된다.
+를 구성할 수 있다.
 
 ---
 
 ### Static Switch Parameter
 
-`Static Switch Parameter`는 단순히 숫자 값을 바꾸는 Parameter와 성격이 조금 다르다.
+`Static Switch Parameter`는 일반 Scalar Parameter처럼 단순한 숫자 값을 전달하는 Parameter가 아니다.
 
-Shader Logic의 특정 Branch를 사용할지 여부를 선택하는 데 사용된다.
+Shader의 특정 기능을 포함할지 제외할지를 선택하는 데 사용한다.
 
-예를 들어 다음 기능을 선택적으로 사용할 수 있다.
+예를 들어 다음 기능을 선택적으로 구성할 수 있다.
 
 - Detail Normal 사용
-- Emissive 사용
+- Emissive 기능 사용
 - Clear Coat 사용
 - Additional Mask 사용
 
-개념적으로는,
+개념적으로는 다음과 같다.
 
 `On`
 
-→ 해당 Shader Logic 포함
+→ 해당 Shader Logic을 사용하는 Variant
 
 `Off`
 
-→ 해당 Shader Logic 제외
+→ 해당 Shader Logic을 사용하지 않는 Variant
 
-와 같은 구조다.
+이 선택은 일반적인 Runtime Branch와 다르다.
 
-이러한 Parameter는 Shader의 기능 구성을 바꿀 수 있기 때문에 매우 유용하지만, 경우에 따라 Shader Permutation을 증가시킬 수 있다.
+`Static Switch Parameter`는 **Compile Time에 Shader 구성을 선택**하며, Parameter 조합에 따라 서로 다른 Shader Variant가 만들어질 수 있다.
 
-따라서 편리하다는 이유만으로 무분별하게 사용하는 것은 좋지 않다.
-
-Static Switch는 compile-time 구성을 선택하며 일반 Scalar/Vector의 runtime 값 조절과 구분한다. Chapter 09의 9.5 Shader Cost에서 runtime 0과 static 선택의 비용 의미를 연결한다. 전체 permutation 관리 실험은 후속 범위다.
+따라서 Static Switch가 많아지면 Shader Permutation 역시 증가할 수 있다.
 
 ---
 
-### Parameter in the Material Graph
+### Static Component Mask
 
-Material Parameter는 Material Graph 안에서 Node 형태로 사용된다.
+`Static Component Mask` 역시 Compile Time에 특정 Component를 선택하는 Static Parameter다.
 
-예를 들어 Base Color Tint를 조절하고 싶다면,
+예를 들어 하나의 Texture에서 어떤 Channel을 사용할지 선택할 수 있다.
 
-`Texture Sample`
+- R
+- G
+- B
+- A
 
-과
+일반적인 Runtime 값 변경과 달리, Static Component Mask의 선택은 Shader 구성을 결정하는 데 영향을 줄 수 있다.
 
-`Vector Parameter`
-
-를 Multiply한 뒤 Base Color에 연결할 수 있다.
-
-개념적인 흐름은 다음과 같다.
-
-`Base Color Texture + UV → Sampled Linear Color`
-
-+
-
-`BaseColorTint Parameter`
-
-→ `Multiply`
-
-→ `Base Color`
-
-Roughness도 같은 방식으로 Scalar Parameter를 직접 연결하거나 다른 Data와 조합해서 사용할 수 있다.
-
-즉 여기서 사용한 비정적 Scalar/Vector/Texture Parameter는 기존 Shader Logic에 값을 공급하며,
-
-**Shader Logic이 사용할 Data를 외부에서 공급할 수 있도록 만드는 Interface**
-
-라고 볼 수 있다.
+따라서 `Static Switch Parameter`와 `Static Component Mask`는 일반 Scalar, Vector, Texture Parameter와 구분해서 이해해야 한다.
 
 ---
 
 ### Parent Material and Material Instance
 
-`Material Instance`를 이해하려면 먼저 `Parent Material`과의 관계를 보면 쉽다.
+`Material Instance`를 이해하려면 먼저 Parent Material과의 관계를 살펴보는 것이 좋다.
 
-Parent Material에는 실제 Shader 구조가 존재한다.
+Parent Material에는 실제 Material Logic이 존재한다.
 
-예를 들어 Parent Material에는 다음과 같은 내용이 포함될 수 있다.
+예를 들어 다음과 같은 구조를 포함할 수 있다.
 
 - Texture Sampling
 - Parameter
 - Mask Calculation
 - Normal Processing
-- Lighting 관련 Material Logic
+- Material Property 구성
 
 그리고 이 Material을 기반으로 여러 Material Instance를 만들 수 있다.
 
@@ -2171,57 +2173,39 @@ Parent Material에는 실제 Shader 구조가 존재한다.
 
 `MI_Green`
 
-각 Material Instance는 Parent의 Architecture와 노출된 Interface를 재사용한다. 비정적 Parameter는 값을 Override하고, Static Parameter의 다른 조합은 별도 compiled Shader variant를 요구할 수 있다. 모든 Instance가 같은 compiled Shader를 무조건 공유하는 것은 아니다.
+각 Material Instance는 Parent Material의 구조와 노출된 Parameter Interface를 재사용하면서 서로 다른 값을 저장한다.
 
-즉,
+개념적인 관계는 다음과 같다.
 
-**Material Instance는 새로운 Shader를 처음부터 다시 만드는 것이 아니라 기존 Material 구조를 재사용하면서 Data만 다르게 설정하는 방식**이다.
+`Parent Material`
 
----
+→ Shader Logic 정의
 
-### One Material, Many Variations
+`Exposed Parameters`
 
-Material Instance를 사용하면 하나의 Material 구조에서 많은 Variation을 만들 수 있다.
+→ 조절 가능한 Input 정의
 
-예를 들어 하나의 Surface Material을 기반으로,
+`Material Instance`
 
-- Metal
-- Painted Metal
-- Dirty Metal
-- Wood
-- Stone
+→ Parameter Override
 
-같은 Variation을 만들 수 있다.
+`Asset Variation`
 
-물론 모든 재질이 완전히 같은 Shader 구조를 공유할 수 있는 것은 아니다.
+→ 서로 다른 Surface Appearance
 
-하지만 구조가 비슷한 Material이라면 Parameter와 Texture를 바꾸는 것만으로 상당히 많은 Variation을 만들 수 있다.
+Material Instance는 새로운 Material Logic을 처음부터 만드는 것이 아니라,
 
-예를 들어 같은 Parent Material에서 다음 값만 변경할 수 있다.
-
-`Base Color Texture`
-
-`Normal Texture`
-
-`Roughness`
-
-`Metallic`
-
-`Color Tint`
-
-`UV Tiling`
-
-이 방식은 Material Graph 복제를 줄이고 Material 관리 구조를 단순하게 만든다.
+**기존 구조를 재사용하면서 사용할 Data를 다르게 지정하는 방식**이다.
 
 ---
 
-### Real-Time Adjustment
+### Editor Adjustment
 
-Material Instance의 중요한 장점 중 하나는 Parameter를 빠르게 조절할 수 있다는 점이다.
+Material Instance의 주요 장점 중 하나는 Parent Material을 직접 수정하지 않고 Parameter 값을 빠르게 조절할 수 있다는 점이다.
 
-비정적 Parameter는 Material Graph 구조를 매번 수정하지 않고 지원되는 Instance 경로에서 값을 바꾸어 결과를 확인할 수 있다. Static Switch의 variant 변경·컴파일은 이 runtime 조절과 다르다.
+Editor에서는 Material Instance에서 노출된 Parameter를 Override하면서 결과를 바로 확인할 수 있다.
 
-예를 들어 Artist는 다음 값을 조절하면서 Surface 결과를 확인할 수 있다.
+예를 들어 Artist는 다음 값을 조절할 수 있다.
 
 - Roughness
 - Base Color Tint
@@ -2230,64 +2214,148 @@ Material Instance의 중요한 장점 중 하나는 Parameter를 빠르게 조�
 - Emissive Intensity
 - UV Tiling
 
-이 방식은 Look Development 과정에서 특히 효율적이다.
+이 과정은 Look Development에서 특히 유용하다.
 
-Material Logic을 수정하는 작업과 Surface Appearance를 조절하는 작업을 어느 정도 분리할 수 있기 때문이다.
+Material Graph의 구조를 계속 수정하지 않고 Surface Appearance를 반복해서 확인할 수 있기 때문이다.
+
+즉 Editor에서의 Parameter Adjustment는,
+
+> **Material Logic을 유지하면서 Data를 빠르게 조절하고 결과를 확인하는 과정**
+
+이라고 볼 수 있다.
+
+이때 화면에서 값이 즉시 바뀌어 보인다고 해서 모든 Parameter가 Runtime에서도 같은 방식으로 변경되는 것은 아니다.
+
+---
+
+### Runtime Adjustment
+
+게임 실행 중 Material 값을 변경해야 하는 경우도 있다.
+
+예를 들어 다음과 같은 효과를 생각할 수 있다.
+
+- Damage에 따라 Emissive 증가
+- Hit Effect
+- Dissolve Amount 변화
+- Character 상태에 따른 Color 변화
+- Gameplay에 따른 Material 값 변화
+
+이러한 Runtime 변경에는 일반적으로 `Dynamic Material Instance`를 사용한다.
+
+개념적인 흐름은 다음과 같다.
+
+`Game Logic / Blueprint`
+
+→ `Dynamic Material Instance`
+
+→ `Non-Static Parameter 변경`
+
+→ `Material Data 변경`
+
+→ `Rendered Result`
+
+Runtime에서 변경하는 대상은 기존 Shader Logic에 값을 공급하는 **지원되는 Non-Static Parameter**다.
+
+대표적으로 다음과 같은 Parameter를 사용할 수 있다.
+
+- Scalar Parameter
+- Vector Parameter
+- Texture Parameter
+
+반대로 `Static Switch Parameter`와 `Static Component Mask`는 일반적인 Runtime 값 조절을 위한 Parameter가 아니다.
+
+따라서 다음 두 상황을 구분해야 한다.
+
+`Editor Adjustment`
+
+→ Material Instance에서 Parameter Override와 Look Development
+
+`Runtime Adjustment`
+
+→ Dynamic Material Instance 등을 이용한 Non-Static Parameter 변경
+
+---
+
+### Static Parameters and Shader Variants
+
+Static Parameter는 Material의 Data만 변경하는 것이 아니라 Shader의 기능 구성을 선택할 수 있다.
+
+예를 들어 Static Switch가 다음 두 상태를 가진다고 하자.
+
+`On`
+
+→ `Shader Variant A`
+
+`Off`
+
+→ `Shader Variant B`
+
+이처럼 Static Parameter의 서로 다른 조합은 별도의 Shader Variant를 요구할 수 있다.
+
+따라서 다음 표현을 그대로 받아들이면 안 된다.
+
+> Material Instance는 항상 하나의 동일한 Compiled Shader만 공유한다.
+
+Parent Material의 Architecture는 공유하지만,
+
+**Static Parameter의 조합이 달라지면 서로 다른 Compiled Shader Variant가 사용될 수 있다.**
+
+이 때문에 Static Parameter를 과도하게 사용하면 Shader Permutation 수가 증가할 수 있다.
+
+이 문제는 Chapter 09의 Material and Shader Cost에서 다시 연결한다.
+
+---
+
+### One Material, Many Variations
+
+Material Instance를 사용하면 하나의 Material Architecture를 여러 Asset에서 재사용할 수 있다.
+
+예를 들어 같은 Parent Material을 기반으로 다음과 같은 Variation을 만들 수 있다.
+
+- Metal
+- Painted Metal
+- Dirty Metal
+- Wood
+- Stone
+
+각 Instance에서는 필요에 따라 다음 값을 변경할 수 있다.
+
+- Base Color Texture
+- Normal Texture
+- Roughness
+- Metallic
+- Color Tint
+- UV Tiling
+
+물론 모든 Material이 하나의 Parent Material을 공유해야 하는 것은 아니다.
+
+Surface의 Rendering 요구가 크게 다르면 별도의 Material Architecture가 필요할 수 있다.
+
+Material Instance의 목적은 모든 Material을 하나로 만드는 것이 아니라,
+
+**공통된 Logic을 불필요하게 복제하지 않고 재사용하는 것**이다.
 
 ---
 
 ### Material Instance Does Not Mean Completely Free Changes
 
-Material Instance에서 모든 것을 자유롭게 변경할 수 있는 것은 아니다.
+Material Instance에서는 Parent Material이 미리 노출한 Parameter만 변경할 수 있다.
 
-Instance는 Parent Material이 미리 Parameter로 노출한 값만 변경할 수 있다.
+예를 들어 Parent Material에 Roughness Parameter가 없다면 Material Instance에서 Roughness 값을 직접 Override할 수 없다.
 
-예를 들어 Parent Material에 Roughness Parameter가 없다면 Instance에서 Roughness를 직접 조절할 수 없다.
+또한 Parent Material에 존재하지 않는 새로운 Shader Logic을 Instance에서 추가할 수도 없다.
 
-또한 Parent Material에 존재하지 않는 새로운 Shader Logic을 Material Instance에서 추가할 수도 없다.
+따라서 다음과 같이 구분할 수 있다.
 
-즉 Parent Material은,
+`Parent Material`
 
-**어떤 기능을 제공할 것인가**
+→ **어떤 기능과 Interface를 제공할 것인가**
 
-를 정의하고,
+`Material Instance`
 
-Material Instance는,
+→ **그 기능을 어떤 값으로 사용할 것인가**
 
-**그 기능을 어떤 값으로 사용할 것인가**
-
-를 정의한다고 볼 수 있다.
-
----
-
-### Why Material Architecture Matters
-
-Material Parameter와 Material Instance는 단순히 편리한 기능이 아니다.
-
-실제 Production에서는 많은 Asset이 존재하기 때문에 Material 구조를 어떻게 설계하느냐가 작업 효율에 큰 영향을 준다.
-
-예를 들어 모든 Asset이 각각 별도의 Material Graph를 가지고 있다면,
-
-- 수정 사항 반영이 어려워지고
-- Material Logic이 중복되며
-- Debugging이 복잡해지고
-- 유지보수 비용이 증가한다.
-
-반대로 공통된 구조를 Parent Material에 만들고 필요한 값만 Parameter로 노출하면 여러 Asset을 일관된 구조로 관리할 수 있다.
-
-개념적으로는 다음과 같다.
-
-`Shared Shader Logic`
-
-→ `Parent Material`
-
-→ `Material Parameters`
-
-→ `Material Instances`
-
-→ `Asset Variations`
-
-이 구조는 Character, Environment, VFX 등 다양한 Asset Pipeline에서 활용할 수 있다.
+Parent Material의 설계가 중요한 이유가 여기에 있다.
 
 ---
 
@@ -2295,11 +2363,11 @@ Material Parameter와 Material Instance는 단순히 편리한 기능이 아니�
 
 Parameter가 많다고 해서 좋은 Material Architecture가 되는 것은 아니다.
 
-모든 값을 Parameter로 노출하면 Material Instance가 지나치게 복잡해지고, Artist가 어떤 값을 조절해야 하는지 판단하기 어려워질 수 있다.
+모든 값을 외부에 노출하면 Material Instance가 지나치게 복잡해지고, Artist가 어떤 값을 조절해야 하는지 판단하기 어려워질 수 있다.
 
-따라서 Parameter는 실제 Production에서 조절할 필요가 있는 값을 중심으로 설계하는 것이 좋다.
+따라서 실제 Production에서 조절할 필요가 있는 값을 중심으로 Parameter를 설계하는 것이 좋다.
 
-예를 들어 Character Material이라면 다음처럼 Group을 나눌 수 있다.
+예를 들어 Character Material에서는 다음과 같이 Group을 구성할 수 있다.
 
 `Color`
 
@@ -2323,19 +2391,21 @@ Parameter가 많다고 해서 좋은 Material Architecture가 되는 것은 아�
 - UV Scale
 - Detail Scale
 
-이처럼 Parameter의 역할과 범위를 정리해 두면 Material Instance를 훨씬 쉽게 사용할 수 있다.
+이러한 구조는 단순히 UI를 정리하는 목적만 있는 것이 아니다.
+
+**Material Interface를 사용하는 사람이 어떤 Data를 조절해야 하는지 명확하게 전달하는 역할**도 한다.
 
 ---
 
 ### Material Parameter Flow
 
-Material Parameter가 최종 Rendering에 사용되는 흐름을 정리하면 다음과 같다.
+Material Parameter가 최종 Rendering에 반영되는 전체 흐름은 다음과 같다.
 
 `Parent Material`
 
-→ Shader Logic 정의
+→ Material Logic 정의
 
-`Material Parameter`
+`Material Parameters`
 
 → 조절 가능한 Input 정의
 
@@ -2347,15 +2417,17 @@ Material Parameter가 최종 Rendering에 사용되는 흐름을 정리하면 �
 
 → Shader Calculation
 
-`Lighting`
+`Final Appearance`
 
-→ `Final Appearance`
+Runtime에서 동적으로 값을 변경해야 한다면 이 흐름 안에서 Dynamic Material Instance와 Non-Static Parameter가 사용될 수 있다.
 
-즉 Parent Material은 Rendering 구조를 정의하고, Material Instance는 그 구조에 사용할 Data를 결정한다.
+Static Parameter는 별도로 Compile Time Shader Variant 선택에 관여한다.
 
-이 구조를 이용하면 하나의 Material Logic을 여러 Asset에서 재사용하면서도 각각 다른 Surface Appearance를 만들 수 있다.
+즉 Material Architecture의 핵심은,
 
-다음 Section에서는 Chapter 04에서 살펴본 Texture, UV, Color Space, Normal Map, Parameter가 실제 Material Pipeline에서 어떻게 하나의 흐름으로 연결되는지 정리한다.
+> **Parent Material은 Rendering 구조를 정의하고, Material Instance는 그 구조에 사용할 Data와 선택 가능한 구성을 결정한다.**
+
+Material Parameter와 Material Instance를 올바르게 구분하면 하나의 Material Logic을 여러 Asset에서 효율적으로 재사용하면서도, Editor의 Look Development와 Runtime의 Dynamic Control, Compile Time의 Static Configuration을 서로 명확하게 관리할 수 있다.Vz
 
 ---
 

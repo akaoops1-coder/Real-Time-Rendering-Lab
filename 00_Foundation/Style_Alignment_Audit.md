@@ -53,7 +53,7 @@ index의 8.8은 실제 문서 주제인 Region-based Parameter Control로 표시
 | 공통 문서 기준 | ASF-003 v0.3, 1개 편집 |
 | 주요 Section 번호와 순서 | 101개 유지 |
 | Callback 제목 | 31개 → 0개 |
-| Figure 태그와 순서 | 158개 유지 |
+| Figure 태그와 순서 | 157개 유지 |
 | PNG 파일 | 161개 모두 편집 전과 SHA-256 동일 |
 | 기존 Chapter 01–04 원본 backup | 4개 모두 편집 전과 SHA-256 동일 |
 | Code/Formula/Data Flow fence | 편집 전 3410개, 편집 후 3410개; 고유 원문 보존 및 아래 예외 확인 |

@@ -1,4 +1,4 @@
-# Chapter 08 Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 ## 8.2 Base Lighting
 
@@ -250,25 +250,13 @@ Master Material이나 다른 Module에서는 `MF_BaseLighting` 내부의 구체�
 
 ---
 
-### Next: Direction Calculation
-
-이제 `MF_BaseLighting`이라는 Module의 역할과 Interface가 정의되었다.
-
-다음 단계에서는 실제로 다음 질문에 답할 수 있는 계산을 구현한다.
-
-> **표면의 Normal과 Light Direction이 서로 어떤 관계에 있는지를 어떻게 수치로 표현할 것인가?**
-
-이를 위해 두 벡터의 관계를 계산하는 **Dot Product**를 사용한다.
-
-그리고 계산된 결과를 실제 Lighting 값으로 사용할 수 있도록 **Normalize와 Saturate** 등의 처리를 적용한다.
-
-다음 절에서는 이러한 계산을 `MF_BaseLighting` 내부에 실제로 구현한다.
+입출력 경계가 정해졌으므로 이제 [Implementing the Direction Factor](#implementing-the-direction-factor)에서 **표면의 Normal과 Light Direction의 관계를 어떻게 수치로 표현하는가**를 확인한다. Dot Product로 방향 관계를 측정하고 Normalize와 Saturate를 적용하여 계산에 사용할 값을 준비한다.
 
 ---
 
 ### Implementing the Direction Factor
 
-8.2.1에서는 `MF_BaseLighting`이 어떤 데이터를 입력받고 어떤 결과를 반환해야 하는지 정의했다.
+앞의 [Function Interface](#function-interface)에서는 `MF_BaseLighting`이 어떤 데이터를 입력받고 어떤 결과를 반환해야 하는지 정의했다.
 
 이제 Module 내부에 실제 Lighting 계산을 구현한다.
 
@@ -639,9 +627,9 @@ Function은 Direction Factor와 BaseColor를 곱한 결과를 반환한다. 실�
 
 ---
 
-### Base Lighting Contract
+### Implementation Reference
 
-8.2.1부터 8.2.3까지 Base Lighting이 어떤 역할을 담당하는지 정의하고, 실제 Material Function으로 구현했다.
+앞의 Interface 정의와 방향 계산, Scene 연결 설명에서 Base Lighting이 어떤 역할을 담당하는지 정의하고, 실제 Material Function으로 구현했다.
 
 이제 구현된 내용을 하나의 흐름으로 정리해 보자.
 
@@ -721,13 +709,13 @@ Lighting Result = Base Color × Lighting Data
 
 ---
 
-### Light Direction Source
+#### Light Direction Source
 
 기본 경로는 명시적인 World-space Vector 입력이다. Scene Light에 동기화할 때에는 위 Adapter의 Space·부호·지원 경로를 확인한다. `Forward Selected Directional Light` 사용 여부와 관계없이 Function의 수식과 세 Input 계약은 동일하다.
 
 ---
 
-### Implementation Responsibility
+#### Implementation Responsibility
 
 현재 `MF_BaseLighting`이 담당하는 범위는 명확하다.
 
@@ -752,7 +740,7 @@ Lighting Result = Base Color × Lighting Data
 
 ---
 
-### Independent Validation
+### Key Takeaways
 
 ASF에서는 하나의 거대한 Material Graph 안에서 모든 계산을 처리하지 않는다.
 
@@ -779,3 +767,7 @@ Lighting Result는 Shadow 적용에 사용한다. Specular는 N/L/V로 별도 �
 **ASF의 Rendering Architecture에서 실제 조명 데이터를 생성하는 첫 번째 독립적인 Rendering Module이 완성되었다는 의미**를 가진다.
 
 다음 단계에서는 이 Lighting Result에 Shadow를 적용하면서, 기본적인 조명 계산 위에 추가적인 Rendering Module을 어떻게 쌓아가는지 살펴본다.
+
+---
+
+**Next → [8.3 Shadow](<./Chapter08.3_Shadow.md>)**

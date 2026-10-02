@@ -1,4 +1,4 @@
-# Chapter 01. Rendering Pipeline
+# Chapter 01 — Rendering Pipeline
 
 3D Character나 Environment를 제작할 때 우리는 보통 Modeling, Material, Lighting, Camera와 같은 요소를 개별적으로 다룬다.
 
@@ -2129,8 +2129,6 @@ Triangle 내부의 어떤 Screen 위치가 실제로 영향을 받는지는 아�
 
 ---
 
-### Next: Culling and Clipping
-
 Primitive Assembly가 끝나면 GPU는 Rendering할 Triangle들을 알게 된다.
 
 하지만 그중에는 다음과 같은 Triangle도 존재할 수 있다.
@@ -2607,8 +2605,6 @@ Clip Space에 도달한 Geometry는 이후 View Frustum의 유효 범위와 비�
 > **Vertex Processing에서 Clip Space로 Position을 준비하고, 이후 Geometry가 Camera의 유효 영역에 들어오는지 판정하고 Clipping할 수 있다.**
 
 ---
-
-### Next: Rasterization
 
 Culling과 Clipping이 끝나면 이제 남아 있는 Triangle들은 실제로 화면에 영향을 줄 가능성이 있는 Geometry다.
 
@@ -3207,24 +3203,7 @@ Rasterization의 핵심 역할은 Color를 결정하는 것이 아니다.
 
 ---
 
-### Next: Interpolation
-
-Rasterization을 통해 Fragment가 생성되었다.
-
-하지만 Fragment 위치에는 원래 Vertex가 존재하지 않는다.
-
-그럼에도 Fragment Processing에서는 다음과 같은 값이 필요하다.
-
-- UV
-- Normal
-- Vertex Color
-- 기타 Vertex Attribute
-
-따라서 Triangle의 세 Vertex가 가진 Attribute를 Fragment 위치에 맞게 계산해야 한다.
-
-이 과정을 **Interpolation**이라고 한다.
-
-다음 절에서는 Vertex에 저장된 값이 Triangle 내부의 각 Fragment로 어떻게 전달되는지 살펴본다.
+Fragment 위치에는 원래 Vertex가 없어도 Fragment Processing에는 UV, Normal, Vertex Color와 기타 Vertex Attribute가 필요하다. 앞서 확인한 것처럼 Triangle의 세 Vertex가 가진 값을 그 위치에 맞게 계산하는 과정이 **Interpolation**이다. 다음 절에서는 이 Attribute가 Triangle 내부의 각 Fragment로 어떻게 전달되는지 살펴본다.
 
 ---
 
@@ -3901,17 +3880,7 @@ Interpolation은
 
 ---
 
-### Next: Fragment / Pixel Processing
-
-이제 Rasterization을 통해 Fragment 위치가 만들어졌고, Interpolation을 통해 각 Fragment가 사용할 UV, Normal, Vertex Color 등의 Data도 준비되었다.
-
-다음 질문은 자연스럽다.
-
-> **이 Data를 이용해서 실제 Surface 결과는 어떻게 계산하는가?**
-
-이 역할을 담당하는 것이 **Fragment Shader / Pixel Shader**다.
-
-다음 절에서는 각 Fragment에서 Texture, Material, Lighting 등의 계산이 어떻게 수행되는지 **Fragment / Pixel Processing**을 살펴본다.
+Rasterization으로 Fragment 위치를, Interpolation으로 UV, Normal, Vertex Color 등의 입력을 준비했다. 이제 이 Data로 Surface 결과를 어떻게 계산하는지 살펴볼 차례다. 다음 절의 **Fragment / Pixel Processing**에서는 **Fragment Shader / Pixel Shader**가 각 Fragment에서 Texture, Material, Lighting을 계산하는 흐름을 연결한다.
 
 ---
 
@@ -4495,16 +4464,6 @@ Fragment Shader의 핵심 역할은
 
 ---
 
-### Key Takeaways
-
-- **Fragment Shader**는 Rasterization으로 준비된 화면 위치에서 Surface Color와 기타 Rendering Result를 계산하는 Shader Stage다.
-- **Pixel Shader**는 Direct3D에서 이와 같은 역할을 가리키는 용어다.
-- **Texture Sampling**은 UV를 이용해 Texture의 특정 위치에서 값을 읽는 과정이다.
-- **Fragment Input**에는 Interpolation으로 준비된 UV, Normal, Vertex Color 등의 Data가 포함될 수 있다.
-- **Fragment Output**은 계산된 Surface Result다. 아직 최종 Pixel로 확정되지 않았으며 Pass 목적에 따라 Color나 Surface Data를 넘길 수 있다.
-
----
-
 ### Coverage and Surface Evaluation
 
 두 Stage를 다시 비교하면 다음과 같다.
@@ -4517,23 +4476,21 @@ Fragment Shader
 → 그 위치에서 무엇을 계산할 것인가?
 ~~~
 
-이 관계를 명확히 이해하는 것이 중요하다.
+Rasterization이 Coverage를 준비하면 Fragment Shader는 그 위치에서 사용할 Surface Result를 계산한다.
 
 ---
 
-### Next: Depth Test and Surface Visibility
+### Key Takeaways
 
-Fragment Shader를 통해 Surface Result를 계산했다.
+- **Fragment Shader**는 Rasterization으로 준비된 화면 위치에서 Surface Color와 기타 Rendering Result를 계산하는 Shader Stage다.
+- **Pixel Shader**는 Direct3D에서 이와 같은 역할을 가리키는 용어다.
+- **Texture Sampling**은 UV를 이용해 Texture의 특정 위치에서 값을 읽는 과정이다.
+- **Fragment Input**에는 Interpolation으로 준비된 UV, Normal, Vertex Color 등의 Data가 포함될 수 있다.
+- **Fragment Output**은 계산된 Surface Result다. 아직 최종 Pixel로 확정되지 않았으며 Pass 목적에 따라 Color나 Surface Data를 넘길 수 있다.
 
-하지만 하나의 Screen 위치에는 여러 Surface가 겹쳐 있을 수 있다.
+---
 
-그렇다면 다음 질문이 남는다.
-
-> **여러 Fragment 중 실제 Camera에 보이는 Surface는 어떤 것인가?**
-
-이 문제를 해결하기 위해 사용하는 대표적인 Data가 **Depth**다.
-
-다음 절에서는 Depth Buffer와 Depth Test를 이용하여 어떤 Surface가 실제 화면에 남는지 판단하는 **Depth Test and Surface Visibility**를 살펴본다.
+Fragment Shader가 Surface Result를 계산해도 하나의 Screen 위치에 여러 Surface가 겹칠 수 있다. 실제 Camera에 보이는 Fragment를 판단하려면 **Depth**가 필요하다. 다음 절의 **Depth Test and Surface Visibility**에서는 Depth Buffer와 Depth Test가 어떤 Surface를 화면에 남길지 판단하는 관계를 살펴본다.
 
 ---
 
@@ -5075,19 +5032,9 @@ Depth Test의 핵심은 다음과 같다.
 
 ---
 
-### Key Takeaways
+### Camera and Light Visibility Comparison
 
-- **Depth**는 같은 Screen 위치에서 Surface의 앞뒤 관계를 판단하기 위한 값이다.
-- **Depth Buffer / Z-Buffer**는 위치별 Depth를 저장해 이후 Fragment와 비교할 수 있도록 한다.
-- **Depth Test**는 새 Fragment의 Depth를 저장값과 비교한다. 어떤 비교가 통과인지는 Depth 규약과 설정을 따른다.
-- **Depth Write**는 조건을 만족한 Depth를 Buffer에 기록하는 작업이다. Test와 Write는 별도로 설정할 수 있다.
-- **Surface Visibility**는 Camera에서 어떤 Surface가 보이는가에 대한 문제다. Shadow의 Light 기준 Visibility와 구분한다.
-
----
-
-### Camera and Light Visibility Summary
-
-마지막으로 두 Visibility를 다시 구분한다.
+두 Visibility는 같은 Depth 정보를 사용할 수 있어도 기준과 목적이 다르다.
 
 ~~~text
 Depth Test
@@ -5105,19 +5052,17 @@ Shadow Map의 Depth와 현재 Surface Depth 비교
 
 ---
 
-### Next: Framebuffer and Final Image
+### Key Takeaways
 
-Depth Test를 통해 어떤 Fragment가 최종 Surface Result에 기여할 수 있는지 결정되었다.
+- **Depth**는 같은 Screen 위치에서 Surface의 앞뒤 관계를 판단하기 위한 값이다.
+- **Depth Buffer / Z-Buffer**는 위치별 Depth를 저장해 이후 Fragment와 비교할 수 있도록 한다.
+- **Depth Test**는 새 Fragment의 Depth를 저장값과 비교한다. 어떤 비교가 통과인지는 Depth 규약과 설정을 따른다.
+- **Depth Write**는 조건을 만족한 Depth를 Buffer에 기록하는 작업이다. Test와 Write는 별도로 설정할 수 있다.
+- **Surface Visibility**는 Camera에서 어떤 Surface가 보이는가에 대한 문제다. Shadow의 Light 기준 Visibility와 구분한다.
 
-이제 계산된 Color와 Depth 등의 결과를 실제로 저장할 공간이 필요하다.
+---
 
-Rendering 결과가 저장되는 여러 Buffer와 이를 관리하는 구조가 **Framebuffer**와 연결된다.
-
-다음 절에서는
-
-> **계산된 Fragment Result가 어디에 저장되고, 어떻게 Final Image로 이어지는가**
-
-를 살펴본다.
+Depth Test로 기여할 수 있는 Fragment를 판단했으므로, 이제 계산된 Color와 Depth 등의 결과를 저장할 공간이 필요하다. 다음 절에서는 여러 Buffer를 함께 사용하는 **Framebuffer**를 통해 Fragment Result가 어디에 저장되고 Final Image로 어떻게 이어지는지 살펴본다.
 
 ---
 
@@ -5680,16 +5625,6 @@ Framebuffer는 이 흐름에서
 
 ---
 
-### Key Takeaways
-
-- **Framebuffer**는 Rendering 결과를 저장하는 여러 Buffer를 함께 사용하는 집합 또는 연결 구조로 이해한다.
-- **Color Buffer**는 Color Result, **Depth Buffer**는 앞뒤 판단에 사용할 Depth를 저장한다.
-- **Render Target**은 GPU가 결과를 기록하는 개별 Texture나 Surface다. 여러 저장 대상을 묶는 관계와 구분한다.
-- **Double Buffering**은 표시 중인 Frame과 다음 Frame을 그리는 저장 대상을 분리한다. 표시 동기화의 모든 조건을 이 분리만으로 보장하지는 않는다.
-- **Present**는 완성된 Frame을 Display에 전달하는 과정이다. 중간 Color Buffer는 추가 처리 뒤 이 결과로 이어질 수 있다.
-
----
-
 ### Data Flow
 
 ~~~text
@@ -5717,25 +5652,17 @@ Screen
 
 ---
 
-### Next: CPU, GPU and Draw Calls
+### Key Takeaways
 
-지금까지 Chapter 01에서는 주로 GPU 내부에서 하나의 Geometry가 어떻게 처리되어 Final Image로 이어지는지를 살펴보았다.
+- **Framebuffer**는 Rendering 결과를 저장하는 여러 Buffer를 함께 사용하는 집합 또는 연결 구조로 이해한다.
+- **Color Buffer**는 Color Result, **Depth Buffer**는 앞뒤 판단에 사용할 Depth를 저장한다.
+- **Render Target**은 GPU가 결과를 기록하는 개별 Texture나 Surface다. 여러 저장 대상을 묶는 관계와 구분한다.
+- **Double Buffering**은 표시 중인 Frame과 다음 Frame을 그리는 저장 대상을 분리한다. 표시 동기화의 모든 조건을 이 분리만으로 보장하지는 않는다.
+- **Present**는 완성된 Frame을 Display에 전달하는 과정이다. 중간 Color Buffer는 추가 처리 뒤 이 결과로 이어질 수 있다.
 
-하지만 한 가지 중요한 질문이 남아 있다.
+---
 
-> **GPU는 어떤 Mesh를 Rendering해야 하는지 어떻게 알고 있는가?**
-
-GPU가 스스로 Scene을 찾아서 Rendering하는 것은 아니다.
-
-CPU와 Game Engine이 Scene의 Object, Material, Shader, Buffer 등의 정보를 준비하고 GPU에 Rendering 작업을 요청한다.
-
-이때 중요한 개념이 **Draw Call**이다.
-
-다음 절에서는 Rendering Pipeline 전체를 한 단계 바깥에서 바라보며,
-
-**CPU가 Rendering을 준비하고 GPU가 실제 Rendering Pipeline을 실행하는 관계**
-
-를 살펴본다.
+지금까지는 GPU가 Geometry를 처리해 Final Image로 연결하는 흐름을 살펴보았다. 그렇다면 GPU는 어떤 Mesh를 그릴지 어떻게 알까? CPU와 Game Engine은 Scene의 Object, Material, Shader, Buffer 정보를 준비하고 **Draw Call**로 Rendering 작업을 요청한다. 다음 절에서는 CPU의 Rendering 준비와 GPU의 Pipeline 실행이 어떻게 연결되는지 살펴본다.
 
 ---
 
@@ -6497,16 +6424,6 @@ Final Image
 
 ---
 
-### Key Takeaways
-
-- 기본 CPU-driven 흐름에서 **CPU**는 Scene 상태와 Rendering Data / Command를 준비하고, **GPU**는 전달된 작업에 따라 Vertex와 Fragment 등을 계산한다.
-- **Draw Call**은 지정한 Geometry와 State로 Rendering하도록 요청하는 단위다.
-- **Vertex Buffer**는 Vertex Attribute Data를 저장한다.
-- **Index Buffer**는 Indexed Draw에서 어떤 Vertex들이 Primitive를 구성하는지 지정한다. Non-indexed Draw에서는 순차 Vertex와 Topology를 사용한다.
-- **Render State**에는 Depth, Blend, Culling, Render Target처럼 Rendering 방식과 기록 결과에 영향을 주는 설정이 포함된다.
-
----
-
 ### Core Relationship
 
 ~~~text
@@ -6522,13 +6439,7 @@ GPU
 ↓
 실제 Rendering Pipeline 실행
 ~~~
-따라서 다음 문장으로 정리할 수 있다.
-
-> **CPU는 무엇을 그릴지 준비하고, GPU는 전달받은 Data를 바탕으로 실제 Rendering을 수행한다.**
-
 ---
-
-### Next: Complete Rendering Pipeline
 
 이제 Chapter 01에서 필요한 주요 Stage를 모두 살펴보았다.
 
@@ -6544,11 +6455,17 @@ Rendering
 
 라고 시작했지만, 실제로 그 사이에는 매우 많은 단계가 존재했다.
 
-다음 절에서는 지금까지 배운 모든 내용을 하나로 연결한다.
+### Key Takeaways
 
-> **3D Mesh가 CPU와 GPU를 거쳐 최종 Screen Image가 되기까지 어떤 Data Flow를 따라가는가**
+- 기본 CPU-driven 흐름에서 **CPU**는 Scene 상태와 Rendering Data / Command를 준비하고, **GPU**는 전달된 작업에 따라 Vertex와 Fragment 등을 계산한다.
+- **Draw Call**은 지정한 Geometry와 State로 Rendering하도록 요청하는 단위다.
+- **Vertex Buffer**는 Vertex Attribute Data를 저장한다.
+- **Index Buffer**는 Indexed Draw에서 어떤 Vertex들이 Primitive를 구성하는지 지정한다. Non-indexed Draw에서는 순차 Vertex와 Topology를 사용한다.
+- **Render State**에는 Depth, Blend, Culling, Render Target처럼 Rendering 방식과 기록 결과에 영향을 주는 설정이 포함된다.
 
-를 **Complete Rendering Pipeline**으로 다시 정리한다.
+---
+
+다음 절의 **Complete Rendering Pipeline**에서는 3D Mesh가 CPU와 GPU를 거쳐 최종 Screen Image가 되기까지의 Data Flow를 하나로 연결한다.
 
 ---
 
@@ -6621,7 +6538,7 @@ Final Image
 
 ---
 
-### Group 1. CPU / Engine - Rendering Preparation
+### CPU / Engine — Rendering Preparation
 
 Rendering은 GPU에서 시작되지 않는다.
 
@@ -6702,7 +6619,7 @@ Rendering할 Object가 결정되면 필요한 Data를 준비한다.
 
 ---
 
-### Group 2. Draw Call
+### Draw Call
 
 필요한 Data와 State가 준비되면 CPU는 GPU에 실제 Rendering 요청을 보낸다.
 
@@ -6761,7 +6678,7 @@ Graphics Pipeline 실행
 
 ---
 
-### Group 3. GPU - Geometry Processing
+### GPU — Geometry Processing
 
 GPU Rendering의 앞부분은 주로 **Geometry 중심의 처리**다.
 
@@ -6902,7 +6819,7 @@ Culling / Clipping
 
 ---
 
-### Group 4. GPU - Screen / Fragment Processing
+### GPU — Screen / Fragment Processing
 
 이 시점부터 Rendering Pipeline은 Geometry 중심의 처리에서 **Screen과 Fragment 중심의 처리**로 넘어간다.
 
@@ -7076,7 +6993,7 @@ Depth Test
 
 ---
 
-### Group 5. Framebuffer
+### Framebuffer
 
 Depth Test와 Fragment Processing을 통해 결정된 Rendering 결과는 Buffer에 기록된다.
 
@@ -7153,7 +7070,7 @@ Chapter 06의 Forward / Deferred 비교에서 GBuffer와 Lighting 계산의 관�
 
 ---
 
-### Group 6. Present
+### Present
 
 Framebuffer에 Final Image가 준비되면 Display에 전달해야 한다.
 
@@ -7416,7 +7333,43 @@ Transparency
 
 ---
 
-### Chapter 01 Summary
+### Complete Rendering Data Flow
+
+이번 Chapter의 연결 관계를 가장 단순한 형태로 정리하면 다음과 같다.
+
+~~~text
+CPU / Engine
+↓
+Rendering Preparation
+↓
+Draw Call
+↓
+GPU
+
+Vertex Processing
+↓
+Primitive Assembly
+↓
+Culling / Clipping
+↓
+Rasterization
+↓
+Interpolation
+↓
+Fragment / Pixel Processing
+↓
+Depth Test
+↓
+Framebuffer
+↓
+Present
+↓
+Final Image
+~~~
+
+이제 3D Scene의 Geometry가 어떤 과정을 거쳐 Screen Image가 되는지 전체적인 구조를 이해할 수 있다.
+
+### Chapter Summary
 
 Chapter 01에서는 기본적인 Rasterization-based Rendering Pipeline을 따라가며 다음 개념들을 살펴보았다.
 
@@ -7460,53 +7413,4 @@ Chapter 01에서는 기본적인 Rasterization-based Rendering Pipeline을 따�
 
 ---
 
-### Chapter 01 Data Flow
-
-마지막으로 Chapter 01 전체를 가장 단순한 형태로 다시 정리한다.
-
-~~~text
-CPU / Engine
-↓
-Rendering Preparation
-↓
-Draw Call
-↓
-GPU
-
-Vertex Processing
-↓
-Primitive Assembly
-↓
-Culling / Clipping
-↓
-Rasterization
-↓
-Interpolation
-↓
-Fragment / Pixel Processing
-↓
-Depth Test
-↓
-Framebuffer
-↓
-Present
-↓
-Final Image
-~~~
-
-이제 3D Scene의 Geometry가 어떤 과정을 거쳐 Screen Image가 되는지 전체적인 구조를 이해할 수 있다.
-
-다음 Chapter에서는 이 Pipeline 내부에서 반복해서 등장했던
-
-- Local Space
-- World Space
-- View Space
-- Clip Space
-
-와 같은 Coordinate가 정확히 무엇을 의미하는지 살펴본다.
-
-즉, 다음 **Chapter 02 - Coordinate System**에서는
-
-> **3D 공간의 Position과 Direction이 서로 다른 Coordinate Space 사이에서 어떻게 표현되고 변환되는가**
-
-를 자세히 다룬다.
+다음 [Chapter 02 — Coordinate System](Chapter02_CoodinateSystem.md)에서는 Pipeline에서 사용한 Local, World, View, Clip Space의 의미를 확인하고, 3D Position과 Direction이 서로 다른 Space 사이에서 어떻게 표현되고 변환되는지 살펴본다.

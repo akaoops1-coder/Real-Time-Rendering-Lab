@@ -1,18 +1,8 @@
-# Chapter 08 Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 ## 8.5 Rim Light
 
 이 Section은 Power 기반 Prototype을 먼저 만든 뒤 Width/Softness 기반 최종 Interface로 교체한다. 이후 Master Material에서는 Normal, ViewDirection, RimWidth, RimSoftness → Scalar RimMask 계약을 사용하며 RimPower를 필수 Input으로 혼합하지 않는다. N과 V는 같은 Space의 비영 Unit Vector이고 V는 Surface→Camera이다. 외부에서 정규화하거나 Function 경계에서 정규화한 뒤 모든 Dot에 같은 값을 사용한다.
-
-Rim Light는 Character나 Object의 실루엣 주변을 밝게 강조하여 형태를 더 분명하게 보여주는 표현이다.
-
-특히 Anime Style Rendering에서는 Character와 Background를 시각적으로 분리하거나, 머리카락과 의상처럼 실루엣이 중요한 부분을 강조하는 데 효과적으로 사용할 수 있다.
-
-하지만 Rim Light를 단순히 "외곽에 밝은 선을 추가하는 효과"로만 이해하면 중요한 원리를 놓치게 된다.
-
-Shader는 현재 Pixel이 화면의 외곽에 있는지를 직접 알고 있는 것이 아니다.
-
-Camera가 움직이면 Object의 실루엣 위치도 계속 달라지기 때문에, Rim Light는 고정된 위치 정보를 사용하는 대신 **현재 Camera와 Surface의 방향 관계**를 이용하여 실루엣에 가까운 영역을 찾아낸다.
 
 이번 절에서는 이러한 View-dependent한 관계가 어떻게 Rim 영역으로 변환되는지를 단계적으로 살펴본다.
 
@@ -1354,7 +1344,7 @@ Node의 이름을 외우는 것보다,
 
 ---
 
-#### Summary
+#### Rim Falloff Review
 
 Fresnel과 Rim Light는 서로 다른 목적을 가지고 있지만 같은 View-dependent 정보를 활용한다.
 
@@ -1759,7 +1749,7 @@ Master Material에서는
 
 ---
 
-#### Summary
+#### Function Contract Review
 
 이번 단계에서는 지금까지 직접 구성했던 Rim Mask 계산을 `MF_RimLight`라는 독립적인 Material Function으로 정리했다.
 
@@ -3038,7 +3028,7 @@ Character 적용 및 Validation
 
 ---
 
-#### Summary
+#### Integration Review
 
 이번 단계에서는 독립적으로 구현했던 Lighting Module들을 `M_ASF_Master` 안에서 하나의 Shader Composition으로 연결했다.
 
@@ -3090,21 +3080,9 @@ Base + Specular + Rim
 
 ---
 
-### Summary
+### Implementation Reference
 
-이번 절에서는 Anime Shader에서 사용되는 기본적인 Rim Light를 구현하면서,
-
-**Object의 외곽을 직접 찾는 것이 아니라 Surface와 Camera의 방향 관계를 이용하여 실루엣에 가까운 영역을 찾아내는 과정**
-
-을 살펴보았다.
-
-Rim Light의 출발점은 `Surface Normal N`과 `View Direction V`의 관계다.
-
-Camera를 정면으로 바라보는 Surface에서는 두 방향이 거의 일치하고,
-
-실루엣에 가까워질수록 두 방향은 직각에 가까워진다.
-
-따라서 Dot Product를 사용하면 다음과 같은 값을 얻을 수 있다.
+Rim 구현을 다시 찾을 때 사용할 방향 관계와 Mask의 기준이다. Surface를 정면으로 볼 때와 실루엣에 가까울 때의 N·V 차이, 그리고 그 값을 반전하는 기본 흐름을 함께 읽는다.
 
 ~~~text
 Center
@@ -3118,13 +3096,9 @@ Silhouette
 N · V ≈ 0
 ~~~
 
-하지만 Rim Light에서는 정면보다 실루엣이 밝아야 하므로 이 값을 반전한다.
-
 ~~~text
 1 - N · V
 ~~~
-
-그 결과 다음과 같은 기본 Rim Mask를 얻을 수 있다.
 
 ~~~text
 Center
@@ -3133,8 +3107,6 @@ Center
 Silhouette
 → 1
 ~~~
-
-즉 Rim Light의 가장 기본적인 흐름은 다음처럼 정리할 수 있다.
 
 ~~~text
 Surface Normal
@@ -3152,9 +3124,7 @@ Rim Mask
 
 #### From View-dependent Mask to Rim
 
-기본 `1 - N · V` 결과는 실루엣 영역을 찾을 수 있지만, 넓고 부드러운 Gradient 형태로 나타난다.
-
-초기 구현에서는 `Power`를 이용하여 중간값을 줄이고 Rim 영역을 실루엣 주변으로 압축했다.
+Power Prototype은 0–1 중간값을 줄여 Mask를 실루엣에 집중시킨다. RimPower 하나로는 Width를 직관적으로 제어하기 어려워 최종 Interface에서는 Width/Softness를 사용한다. 아래 Flow는 초기 Prototype의 참고이며 최종 필수 Input 계약과 구분한다.
 
 ~~~text
 1 - N · V
@@ -3164,25 +3134,15 @@ Power
 Narrower Rim
 ~~~
 
-`Power`는 입력값을 지정한 지수만큼 거듭제곱하기 때문에 `0~1` 사이의 중간값을 빠르게 감소시킨다.
-
-이를 통해 Rim이 실루엣 주변에 더욱 집중되는 것을 확인했다.
-
-하지만 `RimPower` 하나만으로 Shape를 조절하면 사용자 관점에서 실제 Width를 직관적으로 제어하기 어렵다는 한계도 있었다.
-
 ---
 
 #### Fresnel and Rim
 
-Rim Mask를 직접 구현하는 과정에서 이 계산이 Fresnel과 매우 유사한 View-dependent 구조를 가진다는 것을 확인했다.
-
-Schlick Approximation은 실제 Fresnel Reflection을 간단하게 근사하기 위해 다음 형태를 사용한다.
+아래 Schlick 관계와 Rim Mask는 View angle에 따른 Grazing 증가를 공유하지만 목적이 다르다. Fresnel Reflection을 근사하는 계산과 Stylized Mask를 구분하여 읽는다.
 
 ~~~text
 F = F0 + (1 - F0)(1 - N · V)^5
 ~~~
-
-이를 말로 풀면 다음과 같다.
 
 ~~~text
 최종 Fresnel 반사율
@@ -3200,15 +3160,9 @@ F = F0 + (1 - F0)(1 - N · V)^5
 View Angle에 따른 증가 비율
 ~~~
 
-Schlick Approximation과 Rim Mask는 모두
-
 ~~~text
 1 - N · V
 ~~~
-
-를 이용하여 Grazing Angle에서 값이 증가하는 성질을 활용한다.
-
-하지만 두 계산의 목적은 다르다.
 
 ~~~text
 Schlick Fresnel
@@ -3218,23 +3172,15 @@ Rim Light
 → 실루엣 강조를 위한 Stylized Mask
 ~~~
 
-따라서 Rim Light를 Fresnel과 완전히 같은 효과로 이해하기보다는,
-
-**Fresnel에서도 사용되는 View-angle 기반 정보를 Stylized Rendering을 위한 Mask로 활용한 표현**
-
-이라고 이해하는 것이 더 정확하다.
-
 ---
 
 #### MF_RimLight
 
-Rim 계산이 검증된 이후에는 해당 Logic을 독립적인 Material Function으로 분리했다.
+최종 MF_RimLight는 Normal, ViewDirection, RimWidth, RimSoftness를 받아 RimMask를 반환한다. 최종 Color와 Intensity는 Master에서 적용하여 영역 계산과 표현을 분리한다.
 
 ~~~text
 MF_RimLight
 ~~~
-
-최종 `MF_RimLight`는 다음 Data를 입력받는다.
 
 ~~~text
 Normal
@@ -3243,21 +3189,9 @@ RimWidth
 RimSoftness
 ~~~
 
-그리고 최종 Output으로
-
 ~~~text
 RimMask
 ~~~
-
-를 반환한다.
-
-즉 `MF_RimLight`의 책임은 Rim의 최종 Color를 만드는 것이 아니라,
-
-**현재 Camera를 기준으로 Rim이 적용될 영역을 계산하는 것**
-
-이다.
-
-최종 Color와 Intensity는 Master Material에서 별도로 적용한다.
 
 ~~~text
 MF_RimLight
@@ -3271,15 +3205,11 @@ RimMask
 Rim Contribution
 ~~~
 
-이렇게 Mask 생성과 최종 Color Composition을 분리함으로써 Module의 역할을 명확하게 유지할 수 있다.
-
 ---
 
 #### RimWidth and RimSoftness
 
-실제 테스트 과정에서는 `RimIntensity`를 증가시켰을 때 Rim이 시각적으로 더 넓어 보이는 문제를 확인했다.
-
-이는 Rim Mask가 완전한 `0 / 1` Binary Mask가 아니라 Soft Gradient를 포함하고 있기 때문이다.
+RimIntensity로 Soft Gradient가 더 넓게 보이는 문제를 줄이기 위해 Shape를 Width와 Softness로 분리했다. 아래는 기본 Rim 값, Width를 Threshold로 바꾸는 관계, SmoothStep 경계와 사용자 Control의 대응이다.
 
 ~~~text
 RimIntensity 증가
@@ -3291,8 +3221,6 @@ Transition 영역의 낮은 값도 밝아짐
 Rim이 더 넓어진 것처럼 보임
 ~~~
 
-이를 개선하기 위해 Rim Shape를 다음 두 Parameter로 분리했다.
-
 ~~~text
 RimWidth
 → Rim 영역의 크기
@@ -3301,23 +3229,17 @@ RimSoftness
 → Rim Edge의 Transition 범위
 ~~~
 
-기본 Rim 값은 다음과 같다.
-
 ~~~text
 BaseRim
 =
 1 - Saturate(N · V)
 ~~~
 
-그리고 내부에서는 `RimWidth`를 Threshold 위치로 변환한다.
-
 ~~~text
 Threshold
 =
 1 - RimWidth
 ~~~
-
-이 값을 기반으로 `SmoothStep`의 Min과 Max를 구성한다.
 
 ~~~text
 Min
@@ -3329,8 +3251,6 @@ Max
 Min + RimSoftness
 ~~~
 
-이를 통해 사용자는 `RimPower`의 역방향 관계를 이해하지 않아도,
-
 ~~~text
 RimWidth 증가
 → Rim이 넓어짐
@@ -3339,17 +3259,11 @@ RimSoftness 증가
 → Rim Edge가 부드러워짐
 ~~~
 
-이라는 보다 직관적인 방식으로 Rim Shape를 제어할 수 있게 되었다.
-
 ---
 
 #### Width and Intensity Coupling
 
-이번 테스트에서 확인한 중요한 한계도 있다.
-
-`RimWidth`와 `RimSoftness`를 분리하더라도,
-
-Soft Gradient가 존재하는 이상 `RimIntensity`와 화면에서 느껴지는 Rim Width를 완전히 독립시키는 것은 불가능하다.
+Soft Gradient가 남아 있으면 표시상의 Width와 Intensity가 완전히 독립하지 않는다. Step은 Mask Support를 고정하는 선택지지만 Post Process와 Sampling 영향이 남고 Edge가 단단해질 수 있다. ASF 기본 Rim은 자연스러운 Soft Edge를 유지하면서 체감 결합을 줄이는 선택이다. 이는 사용자가 Parameter 역할을 예측할 수 있도록 하는 설계 조건이다.
 
 ~~~text
 Soft Gradient
@@ -3361,31 +3275,11 @@ Intensity 증가
 Transition 영역의 가시성 증가
 ~~~
 
-때문이다.
-
-Step은 Mask의 Support를 고정하는 선택지이다. 표시상의 폭은 Post Process와 Sampling 영향이 남으므로 완전한 지각적 독립을 보장하지 않는다.
-
-하지만 그 경우 Rim Edge가 지나치게 단단하고 인위적으로 보일 수 있다.
-
-따라서 ASF의 기본 Rim Light에서는
-
-**완전한 독립 제어보다는 자연스러운 Soft Edge를 유지하면서 Width와 Intensity의 체감 결합을 최대한 줄이는 방향**
-
-을 선택했다.
-
-이러한 과정은 Stylized Shader의 Parameter 설계가 단순히 기능을 추가하는 것이 아니라,
-
-**사용자가 각 Parameter의 역할을 예측할 수 있도록 만드는 과정**
-
-이라는 점을 보여준다.
-
 ---
 
 #### Master Material Integration
 
-최종적으로 Rim Light는 기존 ASF Rendering Module과 함께 `M_ASF_Master`에 통합했다.
-
-현재 실제 통합된 기본 구조는 다음과 같다.
+Rim Contribution은 기존 Module과 Master에서 합성한다. Material은 Unlit으로 직접 계산한 Color를 출력하고 Editor Viewport는 Lit으로 Scene Light/Cast Shadow 환경을 관찰한다. 아래는 통합 구조와 각 Intensity를 단계적으로 켜는 검증 순서이며 실제 Renderer Visibility 공급의 별도 경계는 앞 통합 설명을 따른다.
 
 ~~~text
 MF_BaseLighting
@@ -3420,14 +3314,6 @@ Final ASF Color
 Emissive Color
 ~~~
 
-Material의 Shading Model은 `Unlit`을 사용한다.
-
-이는 Unreal의 기본 Lighting을 다시 적용하지 않고,
-
-ASF에서 직접 계산한 Lighting 결과를 최종 Color로 사용하기 위해서다.
-
-반면 Editor Viewport는 `Lit` Mode를 유지하여 Scene Light와 Cast Shadow 등의 Rendering 환경을 확인한다.
-
 ~~~text
 Material
 → Unlit
@@ -3435,8 +3321,6 @@ Material
 Viewport
 → Lit
 ~~~
-
-또한 각 Module의 Intensity를 단계적으로 활성화하면서
 
 ~~~text
 Base Lighting
@@ -3456,17 +3340,11 @@ Specular
 Rim
 ~~~
 
-순서로 결과를 검증했다.
-
-이를 통해 각 Module이 독립적인 Contribution으로 최종 Shader에 합성되는 것을 확인했다.
-
 ---
 
 #### Current Rim Scope
 
-이번 절에서 구현한 Rim Light는 ASF의 **기본 Rim Model**이다.
-
-핵심 목적은 다음 원리를 이해하고 독립적인 Module로 구성하는 데 있다.
+현재 범위는 N·V 기반 기본 Rim Module이다. 아래의 더 다양한 Rim 제어는 LightDirection이나 추가 Mask Data를 결합하는 확장 선택지이며 이번 절에서 완료한 기능이 아니다. 실제 Character Shader의 고급 표현은 이후 Advanced Stylized Lighting에서 다룬다.
 
 ~~~text
 View Direction
@@ -3481,10 +3359,6 @@ Stylization
 ↓
 Rim Contribution
 ~~~
-
-실제 Anime Rendering에서는 이보다 더 다양한 Rim 제어가 사용될 수 있다.
-
-예를 들어,
 
 ~~~text
 Directional Rim
@@ -3501,14 +3375,6 @@ Texture Mask 기반 Rim
 
 Animation 또는 Scene 조건에 따른 Rim 제어
 ~~~
-
-등이 필요할 수 있다.
-
-이러한 기능들은 기본 `N · V` 기반 Rim에 Light Direction이나 추가 Mask Data를 결합하는 확장 단계에 해당한다.
-
-Chapter 8에서는 먼저 Rim Light의 핵심 원리와 기본 Module Architecture를 이해하는 데 집중하고,
-
-실제 Character Shader에서 필요한 고급 Rim 표현은 이후 Advanced Stylized Lighting 단계에서 별도로 확장한다.
 
 ---
 
@@ -3546,20 +3412,12 @@ M_ASF_Master
 Final ASF Color
 ~~~
 
-이번 절을 통해 Rim Light를 단순히
+### Key Takeaways
 
-**Object 외곽을 밝게 만드는 효과**
+Rim은 화면 외곽의 고정 위치가 아니라 Surface와 Camera의 방향 관계에서 얻는 View-dependent Mask다. 초기 Power Prototype에서 최종 Width/Softness Interface로 옮기고, Mask 계산과 Color/Intensity 합성을 분리했다. Soft Edge의 표시 폭은 Intensity·Post Process·Sampling 조건까지 함께 보아야 한다.
 
-로 사용하는 것이 아니라,
-
-**Surface와 Camera 사이의 방향 관계를 View-dependent Data로 변환하고, 그 Data를 Stylization Parameter를 통해 제어하는 Rendering Module**
-
-로 이해할 수 있게 되었다.
-
-또한 `MF_RimLight`를 통해 Rim 계산과 최종 Composition을 분리함으로써,
-
-ASF의 Module Architecture 안에서 다른 Rendering 기능과 독립적으로 확장할 수 있는 기반을 마련했다.
+다음 MatCap에서는 같은 Surface Direction을 수식 기반 Mask 대신 Texture의 Appearance Lookup에 사용한다.
 
 ---
 
-**Next → 8.6 MatCap**
+**Next → [8.6 MatCap](<./Chapter08.6_MatCap.md>)**

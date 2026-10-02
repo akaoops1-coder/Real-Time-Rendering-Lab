@@ -1,4 +1,4 @@
-# Chapter 02. Coordinate System
+# Chapter 02 — Coordinate System
 
 Chapter 01에서는 Geometry Data가 Rendering Pipeline을 거쳐 2D Image가 되는 흐름을 살펴보았다. 이번 Chapter에서는 그 과정에서 사용하는 Coordinate Space와 변환을 자세히 다룬다.
 
@@ -682,8 +682,6 @@ Coordinate를 읽을 때는 **“어떤 Space의 Position 또는 Direction인가
 
 ---
 
-### Next: Position, Direction and Vector
-
 다음 절에서는 같은 XYZ 형태로 표현되는 Position, Direction, Vector의 차이와 Transform에서 이들을 구분하는 이유를 살펴본다.
 
 ---
@@ -1230,7 +1228,7 @@ Data의 종류와 Space는 별도로 확인해야 한다. 예를 들어 World No
 
 ---
 
-### Position, Direction and Vector Summary
+### Position, Direction and Vector Comparison
 
 세 개념을 정리하면 다음과 같다.
 
@@ -1264,8 +1262,6 @@ Reflection Vector
 모두 XYZ 형태로 보일 수 있지만 역할은 서로 다르다.
 
 ---
-
-### Key Concept
 
 Coordinate Data를 사용할 때는 **의미(Position / Direction / Vector), Space, 적용할 Transform**을 함께 확인한다. 같은 XYZ 형식이라도 Translation의 적용 여부는 다르다.
 
@@ -1836,7 +1832,7 @@ Object를 World에서 이동하거나 회전하더라도 Effect가 Object 자신
 
 ---
 
-### Local Space / Object Space Summary
+### Local Data and Object Transform
 
 Local Space의 핵심을 정리하면 다음과 같다.
 
@@ -2501,7 +2497,7 @@ View Space
 
 ---
 
-### Local Space and World Space Summary
+### Local Space and World Space Comparison
 
 Local Space와 World Space를 비교하면 다음과 같다.
 
@@ -3045,7 +3041,7 @@ DCC의 Camera View는 최종 화면처럼 보이지만, **View Space 자체는 C
 
 ---
 
-### View Space / Camera Space Summary
+### World Space and View Space Comparison
 
 World Space와 View Space를 비교하면 다음과 같다.
 
@@ -3763,7 +3759,7 @@ Projection은 Camera 기준 3D Position을 화면 좌표로 연결하는 과정�
 
 ---
 
-### Projection Summary
+### Projection Relationships
 
 Projection의 핵심을 정리하면 다음과 같다.
 
@@ -4444,7 +4440,7 @@ Figure 2-7에서는 왼쪽부터 **Clip의 Homogeneous 조건 → Divide → NDC
 
 ---
 
-### Clip Space Summary
+### Clip Space Data Flow
 
 Clip Space의 역할을 정리하면 다음과 같다.
 
@@ -5143,21 +5139,9 @@ Perspective Projection을 실제 Coordinate 변화로 반영하는 데 사용된
 
 ---
 
-### A Useful Mental Model
+### Homogeneous Coordinate and W Data Flow
 
-**w를 모든 단계에서 같은 의미를 갖는 Flag로 해석하면 안 된다.** Position / Direction 입력의 `w = 1 / 0`과 Projection 이후 Perspective Divide에 사용하는 `w_clip`을 구분한다.
-
----
-
-### What You Need to Understand at This Point
-
-아래 표에서 입력의 표현과 Projection 이후의 역할을 구분하면 된다. 다음 절에서는 Clip Coordinate를 w로 나눈 결과를 수치 예제로 확인한다.
-
----
-
-### Homogeneous Coordinate and W Summary
-
-Homogeneous Coordinate의 핵심을 정리하면 다음과 같다.
+**w를 모든 단계에서 같은 의미를 갖는 Flag로 해석하면 안 된다.** 아래 표에서 Position / Direction 입력의 `w = 1 / 0`과 Projection 이후 Perspective Divide에 사용하는 `w_clip`의 역할을 구분한다.
 
 | Data / Stage | Representation | w의 주요 역할 |
 |---|---|---|
@@ -5201,13 +5185,7 @@ NDC
 (x/w, y/w, z/w)
 ~~~
 
-가장 중요한 것은 다음과 같다.
-
-> **Homogeneous Coordinate는 3D Coordinate에 w를 추가해서 Position과 Direction을 Matrix에서 다르게 처리하고, Perspective Projection까지 하나의 Matrix 기반 Transform 체계로 연결할 수 있도록 만든다.**
-
-그리고 반드시 구분해야 한다.
-
-> **Position 입력에서 사용하는 w = 1과 Direction 입력에서 사용하는 w = 0은 Data의 종류를 구분하기 위한 표현이며, Projection 이후 Clip Space의 w는 Perspective Divide에 사용되는 값이다.**
+Homogeneous Coordinate는 3D Coordinate에 w를 추가해 Position과 Direction을 Matrix에서 다르게 처리하고, Perspective Projection까지 하나의 Matrix 기반 Transform 체계로 연결한다. Position 입력의 w = 1과 Direction 입력의 w = 0은 Data 종류를 구분하는 표현이고, Projection 이후 Clip Space의 w는 Perspective Divide에 사용하는 값이다.
 
 다음 절에서는 지금까지 여러 번 등장했던
 
@@ -5217,9 +5195,7 @@ y / w
 z / w
 ~~~
 
-가 실제로 무엇을 의미하는지 살펴본다.
-
-즉, **Perspective Divide가 왜 필요한지**, 그리고 그 결과가 어떻게 **NDC**로 이어지는지를 자세히 다룬다.
+가 실제로 무엇을 의미하는지 수치 예제로 확인한다. **Perspective Divide가 왜 필요한지**, 그 결과가 어떻게 **NDC**로 이어지는지를 다음 절에서 살펴본다.
 
 ---
 
@@ -6543,7 +6519,7 @@ Screen Space
 
 ---
 
-### Perspective Divide and NDC Summary
+### Perspective Divide and NDC Data Flow
 
 Perspective Divide의 핵심을 정리하면 다음과 같다.
 
@@ -7289,13 +7265,9 @@ Screen Space
 
 ---
 
-### A Useful Mental Model
+### NDC and Screen Space Comparison
 
 NDC가 해상도와 무관한 상대적 위치라면, Screen Space는 그 위치를 **현재 Viewport의 크기와 시작 위치**에 맞춘 좌표다.
-
----
-
-### NDC and Screen Space Comparison
 
 | Coordinate Space | 기준 | 대표적인 Coordinate | Resolution |
 |---|---|---|---|
@@ -7326,19 +7298,9 @@ NDC 값은 같지만 Screen Space 값은 Output Resolution에 따라 달라진�
 
 ---
 
-### Viewport Transform and Screen Space Summary
+### Viewport Transform Data Flow
 
-Viewport Transform의 핵심을 정리하면 다음과 같다.
-
-> **Perspective Divide 이후 만들어진 NDC는 실제 Resolution과 독립적인 정규화 Coordinate다.**
-
-그리고
-
-> **Viewport Transform은 이 NDC Coordinate를 현재 Viewport의 Width, Height, Position에 맞게 Scale하고 Offset한다.**
-
-그 결과
-
-> **실제 화면 영역과 연결되는 Screen Space Coordinate가 만들어진다.**
+Perspective Divide 이후의 NDC는 실제 Resolution과 독립적인 정규화 Coordinate다. Viewport Transform은 이 값을 현재 Viewport의 Width, Height, Position에 맞게 Scale하고 Offset해 실제 화면 영역과 연결되는 Screen Space Coordinate를 만든다.
 
 전체 흐름은 다음과 같다.
 
@@ -7377,10 +7339,6 @@ UI 내부 Viewport
 ~~~
 
 처럼 Screen의 일부 영역만 사용할 수도 있다.
-
-가장 중요한 개념은 다음과 같다.
-
-> **NDC는 "화면 안에서 상대적으로 어디에 있는가"를 나타내고, Viewport Transform은 그것을 "현재 Viewport에서 실제로 어디에 있는가"로 변환한다.**
 
 이로써
 
@@ -8083,15 +8041,9 @@ World / View / Clip Position
 
 ---
 
-### A Useful Mental Model
+### Matrix Transform Relationships
 
-Matrix는 Coordinate에 적용할 Transform 규칙이다. Scale / Rotation / Translation을 표현하거나, Model / View / Projection처럼 다음 Space로 변환하는 데 사용한다.
-
----
-
-### Matrix Transform Basics Summary
-
-Matrix Transform의 핵심을 정리하면 다음과 같다.
+Matrix는 Coordinate에 적용할 Transform 규칙이다. Scale / Rotation / Translation을 표현하거나, Model / View / Projection처럼 다음 Space로 변환하는 데 사용한다. 아래 표와 흐름은 이 역할을 연결한다.
 
 | Concept | Meaning |
 |---|---|
@@ -8138,13 +8090,7 @@ Projection Matrix
 Clip Position
 ~~~
 
-가장 중요한 개념은 다음과 같다.
-
-> **Matrix는 단순히 숫자가 배열된 표가 아니라 Coordinate를 Transform하기 위한 규칙을 담은 계산 구조다.**
-
-그리고
-
-> **3D Rendering에서는 4x4 Matrix와 Homogeneous Coordinate를 사용해 Scale, Rotation, Translation뿐 아니라 Coordinate Space Conversion까지 하나의 일관된 방식으로 처리한다.**
+3D Rendering에서는 4x4 Matrix와 Homogeneous Coordinate를 사용해 Scale, Rotation, Translation뿐 아니라 Coordinate Space Conversion까지 하나의 일관된 계산 구조로 처리한다.
 
 다음 절에서는 지금까지 개별적으로 살펴본 **Model Matrix, View Matrix, Projection Matrix**가 실제 Rendering Pipeline에서 어떻게 연결되는지 더 구체적으로 살펴본다.
 
@@ -9115,15 +9061,9 @@ Screen Space
 
 ---
 
-### A Useful Mental Model
+### Model / View / Projection Data Flow
 
-세 Matrix는 각각 **Object의 World 배치(Model), Camera 기준 표현(View), Clipping을 위한 투영(Projection)**을 담당한다. 실제 적용 순서와 곱셈 표기는 위에서 정한 Matrix convention을 따른다.
-
----
-
-### Model / View / Projection Matrix Summary
-
-세 Matrix의 핵심을 정리하면 다음과 같다.
+세 Matrix는 각각 **Object의 World 배치(Model), Camera 기준 표현(View), Clipping을 위한 투영(Projection)**을 담당한다. 아래 표와 흐름에서 입력·출력 Space를 확인하고, 실제 적용 순서와 곱셈 표기는 위에서 정한 Matrix convention을 따른다.
 
 | Matrix | Input Space | Output Space | Main Role |
 |---|---|---|---|
@@ -9161,15 +9101,7 @@ Projection Matrix
 Clip Position
 ~~~
 
-가장 중요한 개념은 다음과 같다.
-
-> **Model Matrix는 Object를 World에 배치한다.**
-
-> **View Matrix는 World를 Camera 기준으로 다시 표현한다.**
-
-> **Projection Matrix는 Camera 기준 3D Position을 Clip Space로 변환한다.**
-
-그리고 이 세 Transform은 필요에 따라 결합해서 사용할 수 있으며, 이를 흔히 **MVP - Model View Projection** 구조와 연결해서 이해한다.
+이 세 Transform은 필요에 따라 결합해서 사용할 수 있으며, 이를 흔히 **MVP - Model View Projection** 구조와 연결해서 이해한다.
 
 하지만 Matrix 표기 순서를 외우는 것보다 먼저 기억해야 할 것은
 
@@ -9864,21 +9796,9 @@ Direction에도 Scale이 작용하며 Non-uniform Scale은 방향 자체를 바�
 
 ---
 
-### A Useful Mental Model
+### Position and Direction Transform Comparison
 
-Position은 “어디에 있는가”, Direction은 “어느 방향인가”에 답한다. 따라서 Object의 순수한 Translation은 Position을 바꾸지만 Direction은 바꾸지 않는다.
-
----
-
-### Normal Mental Model
-
-Normal은 Surface의 방향을 나타낸다. Translation에는 변하지 않고 Rotation에는 함께 회전하지만, Non-uniform Scale에서는 Surface와의 수직 관계를 보존하는 별도 변환을 확인해야 한다.
-
----
-
-### Position Transform vs Direction Transform Summary
-
-Position과 Direction의 Transform 차이를 정리하면 다음과 같다.
+Position은 “어디에 있는가”, Direction은 “어느 방향인가”에 답한다. 순수한 Translation이 Position만 바꾸는 차이를 다음 표에서 확인한다. Normal은 Translation에는 변하지 않고 Rotation에는 함께 회전하지만, Non-uniform Scale에서는 Surface와의 수직 관계를 보존하는 별도 변환이 필요하다.
 
 | Data | Homogeneous Coordinate | Translation | Rotation | Scale |
 |---|---|---|---|---|
@@ -9886,15 +9806,7 @@ Position과 Direction의 Transform 차이를 정리하면 다음과 같다.
 | Direction | `(x, y, z, 0)` | X | O | O |
 | Normal | Direction Data | X | O | 특별한 주의 필요 |
 
-가장 중요한 차이는 다음과 같다.
-
-> **Position은 공간 안의 위치이므로 Translation의 영향을 받는다.**
-
-반면,
-
-> **Direction은 위치가 아니라 방향이므로 Translation의 영향을 받지 않는다.**
-
-이 차이를 4x4 Matrix 안에서 표현할 수 있게 해주는 것이 Homogeneous Coordinate의 `w`다.
+Position과 Direction의 Translation 차이를 4x4 Matrix 안에서 표현할 수 있게 해주는 것이 Homogeneous Coordinate의 `w`다.
 
 ~~~text id="a3kcbh"
 Position
@@ -10788,7 +10700,7 @@ Normal Map은 이 작은 Axis를 기준으로
 
 ---
 
-### Tangent Space Summary
+### Tangent Space Data Flow
 
 Tangent Space의 핵심을 정리하면 다음과 같다.
 
@@ -10837,25 +10749,7 @@ World / View Space Normal
 Lighting Calculation
 ~~~
 
-가장 중요한 개념은 다음과 같다.
-
-> **Tangent Space는 Object 전체가 아니라 Surface의 각 지점에 붙어 있는 작은 Coordinate System이다.**
-
-그리고
-
-> **Tangent, Bitangent, Normal이 Tangent Space의 Basis를 구성한다.**
-
-Normal Map은
-
-> **이 Tangent Space 기준으로 Surface의 미세한 방향 변화를 저장한다.**
-
-따라서 Object가 이동하거나 회전하더라도 Surface Detail을 일관되게 표현할 수 있다.
-
-또한 Lighting 계산에서는
-
-> **Normal과 Light Direction 같은 Vector들을 반드시 같은 Coordinate Space에 맞춰야 한다.**
-
-이 때문에 TBN Transform을 이용해 Tangent Space Normal을 World Space나 View Space로 변환할 수 있다.
+Tangent Space는 Surface의 각 지점에 붙어 있는 Coordinate System이고 Tangent, Bitangent, Normal이 그 Basis를 구성한다. Normal Map은 이 기준으로 미세한 방향 변화를 저장하므로 Object가 이동하거나 회전해도 Surface Detail을 일관되게 표현할 수 있다. Lighting에서는 Normal과 Light Direction을 같은 Space에 맞춰야 하며, TBN Transform으로 Tangent Space Normal을 World나 View Space로 변환할 수 있다.
 
 다음 절에서는 이러한 Coordinate Space Conversion이 Unreal Engine 안에서 실제로 어떻게 다뤄지는지 **Coordinate Space Conversion in Unreal**을 통해 살펴본다.
 
@@ -11939,15 +11833,9 @@ Rim Light
 
 ---
 
-### A Useful Mental Model
+### Unreal Coordinate Space Relationships
 
-Vector에 `World Space Direction` 또는 `Tangent Space Direction`이라는 Label이 붙어 있다고 생각하면 된다. **같은 숫자라도 Label이 다르면 바로 비교하지 않는다.**
-
----
-
-### Coordinate Space Conversion in Unreal Summary
-
-Unreal에서 Coordinate Space를 사용할 때 핵심은 다음과 같다.
+Vector에 `World Space Direction` 또는 `Tangent Space Direction`이라는 Label이 붙어 있다고 생각하면 된다. **같은 숫자라도 Label이 다르면 바로 비교하지 않는다.** 아래 Node의 의미도 Data Type과 Space를 함께 확인하는 출발점이다.
 
 | Data / Concept | Typical Meaning |
 |---|---|
@@ -11959,15 +11847,7 @@ Unreal에서 Coordinate Space를 사용할 때 핵심은 다음과 같다.
 | Screen Position | Screen / Viewport 기준 Position |
 | Tangent Space Normal | Normal Map에서 읽은 Surface-relative Normal |
 
-가장 중요한 규칙은 다음과 같다.
-
-> **숫자를 보기 전에 Data가 어느 Coordinate Space에 있는지 확인한다.**
-
-그리고
-
-> **서로 비교하거나 연산하는 Position과 Direction은 필요한 경우 같은 Coordinate Space로 변환한다.**
-
-특히 Lighting에서는
+Position과 Direction을 비교하거나 연산할 때는 숫자와 함께 현재 Space를 확인하고, 필요한 경우 계산에 사용할 같은 Space로 변환한다. Lighting에서는 특히
 
 ~~~text id="lt66ca"
 Normal
@@ -12122,7 +12002,7 @@ Unreal Material이나 Shader의 입력을 연결할 때 다음을 확인한다.
 3. **Transform:** Translation을 포함해야 하는가? Normal의 별도 변환이 필요한가?
 4. **Node 계약:** `Absolute World Position`, `VertexNormalWS`, `PixelNormalWS`, `Camera Vector`, `Screen Position`의 실제 Output 의미와 사용 조건을 확인했는가? 자세한 차이는 2.15를 따른다.
 
-### Key Takeaways
+### Chapter Summary
 
 - 여러 Space는 같은 Data를 서로 다른 계산 목적에 맞는 기준으로 표현한다.
 - Position은 Translation을 포함하고, Direction은 제외한다. Normal에는 Surface 관계를 보존하는 변환도 필요하다.
@@ -12130,5 +12010,7 @@ Unreal Material이나 Shader의 입력을 연결할 때 다음을 확인한다.
 - Clip Coordinate는 Clipping 뒤 w로 나누어 NDC가 되고, Viewport 크기와 위치로 Screen Space에 연결된다.
 - Normal Map은 Decode된 Direction의 Space까지 확인하고 TBN으로 Lighting 입력과 기준을 맞춘다.
 
-숫자만이 아니라 **Data의 의미와 기준 Space를 함께 확인하는 것**이 이 Chapter의 핵심이다. 다음 Chapter에서는 이 Position과 Direction을 실제 Lighting 계산에 사용하는 **Lighting Mathematics**를 살펴본다.
+숫자만이 아니라 **Data의 의미와 기준 Space를 함께 확인하는 것**이 이 Chapter의 핵심이다.
+
+다음 [Chapter 03 — Lighting Mathematics](Chapter03_LightingMathematics.md)에서는 이 Position과 Direction을 실제 Lighting 계산에 사용하는 과정을 살펴본다.
 

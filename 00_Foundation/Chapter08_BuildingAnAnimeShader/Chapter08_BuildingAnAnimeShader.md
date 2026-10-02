@@ -1,10 +1,10 @@
-# Chapter 8. Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 > *"Theory becomes implementation."*
 
 ---
 
-### Overview
+## Overview
 
 지금까지의 장에서는 실시간 렌더링과 NPR(Non-Photorealistic Rendering)의 핵심 개념을 학습하였다.
 
@@ -16,7 +16,7 @@ Chapter 8부터는 이러한 이론을 실제 프로젝트에 적용하여 **Ani
 
 ---
 
-### Learning Objectives
+## Learning Objectives
 
 이 장을 완료하면 다음 내용을 이해할 수 있다.
 
@@ -30,7 +30,7 @@ Chapter 8부터는 이러한 이론을 실제 프로젝트에 적용하여 **Ani
 
 ---
 
-### Why a Framework?
+## Why a Framework?
 
 애니메이션 셰이더를 구현하는 가장 단순한 방법은 하나의 Material 안에서 모든 기능을 작성하는 것이다.
 
@@ -44,7 +44,7 @@ ASF는 이러한 문제를 해결하기 위해 **Material Function 기반의 모
 
 ---
 
-### Development Workflow
+## Development Workflow
 
 Chapter 8부터는 하나의 Unreal Engine 프로젝트를 기반으로 모든 실습을 진행한다.
 
@@ -70,29 +70,29 @@ Final Showcase
 
 ---
 
-### Chapter Structure
+## Chapter Structure
 
 Chapter 8은 다음과 같은 순서로 진행된다.
 
 | Section | Description |
 |---------|-------------|
-| 8.0 | Preparing the ASF Project |
-| 8.1 | Architecture Overview |
-| 8.2 | Base Lighting |
-| 8.3 | Shadow System |
-| 8.4 | Specular |
-| 8.5 | Rim Light |
-| 8.6 | MatCap |
-| 8.7 | Emission |
-| 8.8 | Material Layer |
-| 8.9 | Debug View |
-| 8.10 | Final Framework |
+| 8.0 | [Preparing the ASF Project](<./Chapter08.0_PreparingTheASFProject.md>) |
+| 8.1 | [Architecture Overview](<./Chapter08.1_ArchitectureOverview copy.md>) |
+| 8.2 | [Base Lighting](<./Chapter08.2_BaseLighting.md>) |
+| 8.3 | [Shadow](<./Chapter08.3_Shadow.md>) |
+| 8.4 | [Phong Specular — From Reflection to Specular Highlight](<./Chapter08.4_Specular.md>) |
+| 8.5 | [Rim Light](<./Chapter08.5_RimLight.md>) |
+| 8.6 | [MatCap](<./Chapter08.6_MatCap.md>) |
+| 8.7 | [Emission](<./Chapter08.7_Emission.md>) |
+| 8.8 | [Region-based Parameter Control](<./Chapter08.8_MaterialLayer.md>) |
+| 8.9 | [Debug View](<./Chapter08.9_DebugView.md>) |
+| 8.10 | [Final Framework](<./Chapter08.10_FinalFramwork.md>) |
 
 각 절은 이전 절에서 구현한 기능을 기반으로 점진적으로 Framework를 확장하는 방식으로 구성되어 있다.
 
 ---
 
-### Development Rules
+## Development Rules
 
 Chapter 8에서는 다음 원칙을 따른다.
 
@@ -104,7 +104,7 @@ Chapter 8에서는 다음 원칙을 따른다.
 
 ---
 
-### Expected Result
+## Expected Result
 
 Chapter 8을 완료하면 다음과 같은 결과를 얻을 수 있다.
 
@@ -125,7 +125,7 @@ Chapter 8을 완료하면 다음과 같은 결과를 얻을 수 있다.
 
 ---
 
-### Summary
+## Chapter Overview
 
 Chapter 8은 ASF 프로젝트의 핵심 구현부이다.
 
@@ -135,8 +135,6 @@ Chapter 8은 ASF 프로젝트의 핵심 구현부이다.
 
 ---
 
-### Next
-
 다음 절에서는 ASF를 구현하기 위한 개발 환경을 준비하고, Unreal Engine 프로젝트를 생성한다.
 
-**Next → 8.0 Preparing the ASF Project**
+**Next → [8.0 Preparing the ASF Project](<./Chapter08.0_PreparingTheASFProject.md>)**

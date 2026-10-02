@@ -1,4 +1,4 @@
-# Chapter 08 Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 ## 8.8 Region-based Parameter Control
 
@@ -182,11 +182,11 @@ Hair
 
 ---
 
-### Material Separation and Region Control
+#### Material Separation and Region Control
 
 두 방식은 다음과 같이 구분할 수 있다.
 
-#### Material Separation
+##### Material Separation
 
 ~~~text
 Skin
@@ -209,7 +209,7 @@ Metal
 
 ---
 
-#### Region Control
+##### Region Control
 
 하나의 Material 안에서
 
@@ -287,7 +287,7 @@ Shader Function
 
 ---
 
-### Scope of the Region Example
+#### Scope of the Region Example
 
 `Material Layer`라는 표현을 보면
 
@@ -329,7 +329,7 @@ Region에 따라 다른 Parameter
 
 ---
 
-### Comparison with Emission Mask
+#### Comparison with Emission Mask
 
 8.7에서는 이미 Mask를 사용했다.
 
@@ -403,11 +403,11 @@ Mask = 0.5
 
 ---
 
-### Multiply and Lerp Responsibilities
+#### Multiply and Lerp Responsibilities
 
 두 방식은 모두 Mask를 사용할 수 있지만 목적이 다르다.
 
-#### Multiply
+##### Multiply
 
 ~~~text
 Effect
@@ -429,7 +429,7 @@ Mask
 
 ---
 
-#### Lerp
+##### Lerp
 
 ~~~text
 Lerp(A, B, Mask)
@@ -463,7 +463,7 @@ Lerp
 
 ---
 
-### Lerp and Parameter Semantics
+#### Lerp and Parameter Semantics
 
 Mask는 0–1 범위이며 두 Parameter를 Lerp하는 것과 두 완성 Shading 결과를 Lerp하는 것은 일반적으로 다르다. 특히 Shininess처럼 비선형 연산에 들어가는 Parameter는 결과 Blend와 동치가 아니다. 이 예제의 Intensity는 Mask 밖의 선형 Multiply에 사용한다.
 
@@ -529,7 +529,7 @@ White Region
 
 ---
 
-### Sampled Region Scalar
+#### Sampled Region Scalar
 
 앞서 Emission Mask에서 확인했듯이,
 
@@ -563,7 +563,7 @@ Pixel B
 
 ---
 
-### Validation Scope
+#### Validation Scope
 
 이번 8.8에서는 여러 Material Parameter를 동시에 다루지 않는다.
 
@@ -604,7 +604,7 @@ Multiply with MF_Specular.SpecularMask outside the Function
 
 ---
 
-### Key Takeaways
+#### Key Takeaways
 
 Material Region Control은 서로 다른 재질을 무조건 하나의 Material로 합치는 기술이 아니다.
 
@@ -652,7 +652,7 @@ Existing ASF Module
 
 ---
 
-**Next → 8.8.2 Mask와 Lerp를 이용한 Parameter 선택**
+이어서 [Parameter Selection with Mask and Lerp](#parameter-selection-with-mask-and-lerp)에서 다음 단계를 살펴본다.
 
 ---
 
@@ -1034,7 +1034,7 @@ Region Mask에 의해 달라지는 Intensity 차이를 쉽게 관찰하기 위�
 
 ---
 
-### Texture Region Result
+#### Texture Region Result
 
 Texture Mask를 적용한 테스트 결과는 다음 Figure에서 확인할 수 있다.
 
@@ -1082,7 +1082,7 @@ Surface Region별로 다른 SpecularIntensity를 적용할 수 있다.
 
 ---
 
-### Region Control Responsibility
+#### Region Control Responsibility
 
 이번 구현에서 중요한 것은 Specular 자체를 여러 개 만든 것이 아니라는 점이다.
 
@@ -1114,7 +1114,7 @@ Existing Shader Function
 
 ---
 
-#### Material Boundary
+##### Material Boundary
 
 이번 테스트 결과를
 
@@ -1154,7 +1154,7 @@ Metal
 
 ---
 
-### Implementation Result
+#### Implementation Result
 
 이번 테스트에서는 `SpecularIntensity`를 Region Mask로 제어했다.
 
@@ -1222,11 +1222,11 @@ Surface 위치별 Parameter Variation
 
 ---
 
-**Next → 8.8.4 ASF 적용과 정리**
+이어서 [ASF Application and Material Boundaries](#asf-application-and-material-boundaries)에서 다음 단계를 살펴본다.
 
 ---
 
-### ASF Application and Summary
+### ASF Application and Material Boundaries
 
 앞 절에서는 `Region Mask`를 이용하여 하나의 Material 내부에서 `SpecularIntensity`를 Surface 위치별로 다르게 적용하는 구조를 구현했다.
 
@@ -1246,7 +1246,7 @@ Surface 위치별로 다른 Parameter를 전달한다.
 
 ---
 
-### Region Control in the Data Flow
+#### Region Control in the Data Flow
 
 이번 테스트에서는 두 개의 SpecularIntensity 값을 준비했다.
 
@@ -1303,7 +1303,7 @@ Existing ASF Module
 
 ---
 
-### Reusing the Function
+#### Reusing the Function
 
 Region별로 결과가 다르게 보인다고 해서
 
@@ -1373,7 +1373,7 @@ Region Parameter
 
 ---
 
-### Limits of Region Control
+#### Limits of Region Control
 
 Region Control을 이해했다고 해서
 
@@ -1413,7 +1413,7 @@ Character
 
 ---
 
-### Region Control Use Cases
+#### Region Control Use Cases
 
 Region Control은
 
@@ -1459,11 +1459,11 @@ Region Control은
 
 ---
 
-### Choosing the Material Boundary
+#### Choosing the Material Boundary
 
 실무에서는 다음 기준으로 생각하면 이해하기 쉽다.
 
-#### Separate Materials
+##### Separate Materials
 
 ~~~text
 Shader 모델 자체가 다름
@@ -1488,7 +1488,7 @@ Metal
 
 ---
 
-#### Shared Material with Region Parameters
+##### Shared Material with Region Parameters
 
 ~~~text
 같은 Material 안에서
@@ -1513,11 +1513,11 @@ MatCapBlend
 
 ---
 
-### Multiply Mask and Lerp Mask
+#### Multiply Mask and Lerp Mask
 
 8.7과 8.8을 통해 Mask를 사용하는 두 가지 기본 방법을 확인했다.
 
-#### Multiply
+##### Multiply
 
 Effect 자체의 강도를 직접 조절한다.
 
@@ -1551,7 +1551,7 @@ Mask = 1
 
 ---
 
-#### Lerp
+##### Lerp
 
 두 개의 서로 다른 값을 선택하거나 혼합한다.
 
@@ -1602,7 +1602,7 @@ Lerp + Mask
 
 ---
 
-### Region Texture Data
+#### Region Texture Data
 
 이번 테스트에서는 Region Mask를 Texture로 만들었다.
 
@@ -1637,7 +1637,7 @@ Gray Region
 
 ---
 
-### Other Parameter Applications
+#### Other Parameter Applications
 
 이번 테스트는 `SpecularIntensity` 하나만 사용했다.
 
@@ -1683,7 +1683,7 @@ Region별 Parameter
 
 ---
 
-### Separate Validation Example
+#### Separate Validation Example
 
 이번 8.8에서는 Region Control 구조를 ASF Master Material에 추가하지 않았다.
 
@@ -1731,7 +1731,7 @@ RegionMask
 
 ---
 
-### Character Integration Decisions
+#### Character Integration Decisions
 
 실제 Character 제작 단계에서는 먼저 Material 구조를 결정한다.
 
@@ -1769,7 +1769,7 @@ Region Mask
 
 ---
 
-### Region Data Flow
+#### Region Data Flow
 
 이번 8.8에서는 다음 흐름을 확인했다.
 
@@ -1820,7 +1820,7 @@ Surface 위치별로 서로 다른 Parameter를 적용할 수 있다는 것을 �
 
 ---
 
-### Section Takeaways
+### Key Takeaways
 
 이번 절의 핵심은 Material을 복잡하게 Layering하는 것이 아니다.
 
@@ -1868,11 +1868,9 @@ Effect를 끄거나 강도를 조절
 
 ---
 
-### Section Completion
+#### Framework Connection
 
-이번 8.8에서는 복잡한 Material Layer System으로 확장하지 않고,
-
-Region-based Parameter Control의 핵심 원리만 짧게 확인했다.
+이 별도 예제는 복잡한 Material Layers System이나 기본 Master 통합으로 확장하지 않고 Region-based Parameter Control을 확인하는 범위이다.
 
 ~~~text
 Material 분리
@@ -1888,10 +1886,8 @@ vs
 Parameter Selection
 ~~~
 
-의 차이를 구분하고,
+이 차이는 기존 Shader Module을 유지하면서 Region별 Variation을 추가할 때의 판단 기준이다. Texture Mask로 SpecularIntensity를 선택한 테스트를 기반으로, 필요할 때 실제 Character Material에 적용한다. 다음 Debug View에서는 이미 계산한 내부 Data를 관찰하여 문제 위치를 좁힌다.
 
-Texture Mask를 이용하여 하나의 Material 내부에서 Region별로 다른 `SpecularIntensity`를 적용하는 테스트까지 완료했다.
+---
 
-이를 통해 ASF에서 필요한 경우 기존 Shader Module을 유지하면서도,
-
-Surface Region별 Material Variation을 추가할 수 있는 기본 구조를 확보했다.
+**Next → [8.9 Debug View](<./Chapter08.9_DebugView.md>)**

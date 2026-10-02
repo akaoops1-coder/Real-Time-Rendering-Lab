@@ -1,4 +1,4 @@
-# Chapter 08 Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 ## 8.3 Shadow
 
@@ -312,7 +312,7 @@ Unreal Engine, Unity, Blender와 같은 서로 다른 Rendering System에서도 
 
 ---
 
-#### Concept Summary
+#### Direction and Visibility Relationship
 
 8.2에서 다룬 `N · L`은 **표면이 빛을 향하고 있는가**를 판단한다.
 
@@ -353,45 +353,6 @@ Direct Lighting Contribution
 
 ---
 
-#### Next Question
-
-이제 Shadow의 본질을 다음과 같이 정리할 수 있다.
-
-~~~text
-Shadow
-= 빛의 경로가 차단된 결과
-
-Rendering 관점
-= Light Visibility 문제
-~~~
-
-그렇다면 다음 질문이 남는다.
-
-> **렌더러는 광원과 표면 사이의 빛의 경로가 다른 물체에 의해 차단되었는지를 어떻게 판단할 수 있을까?**
-
-가장 직관적인 방법은 표면에서 광원을 향해 경로를 직접 확인하는 것이다.
-
-~~~text
-Surface
-   ●
-    \
-     \
-      \
-       ● Light
-
-경로 중간에 물체가 존재하는가?
-~~~
-
-이러한 접근은 **Shadow Ray와 Visibility Test**라는 개념으로 이어진다.
-
-하지만 실제 실시간 렌더링에서는 매 픽셀마다 이러한 경로를 직접 계산하는 것이 비용 문제가 될 수 있다.
-
-따라서 다음 절에서는 먼저 **Visibility와 Occlusion을 보다 정확하게 정의하고**, 렌더링에서 이 문제를 어떻게 다루는지 살펴본다.
-
-> **다음 절: 8.3.2 Visibility와 Occlusion**
-
----
-
 #### Key Takeaways
 
 - Shadow는 단순히 어두운 영역을 만드는 효과가 아니다.
@@ -429,9 +390,46 @@ Shadow
 
 ---
 
+이제 Shadow의 본질을 다음과 같이 정리할 수 있다.
+
+~~~text
+Shadow
+= 빛의 경로가 차단된 결과
+
+Rendering 관점
+= Light Visibility 문제
+~~~
+
+그렇다면 다음 질문이 남는다.
+
+> **렌더러는 광원과 표면 사이의 빛의 경로가 다른 물체에 의해 차단되었는지를 어떻게 판단할 수 있을까?**
+
+가장 직관적인 방법은 표면에서 광원을 향해 경로를 직접 확인하는 것이다.
+
+~~~text
+Surface
+   ●
+    \
+     \
+      \
+       ● Light
+
+경로 중간에 물체가 존재하는가?
+~~~
+
+이러한 접근은 **Shadow Ray와 Visibility Test**라는 개념으로 이어진다.
+
+하지만 실제 실시간 렌더링에서는 매 픽셀마다 이러한 경로를 직접 계산하는 것이 비용 문제가 될 수 있다.
+
+따라서 다음 절에서는 먼저 **Visibility와 Occlusion을 보다 정확하게 정의하고**, 렌더링에서 이 문제를 어떻게 다루는지 살펴본다.
+
+이어서 [Visibility and Occlusion](#visibility-and-occlusion)에서 다음 질문을 살펴본다.
+
+---
+
 ### Visibility and Occlusion
 
-8.3.1에서는 Shadow를 단순히 어두운 영역으로 보는 것이 아니라, **빛이 표면에 도달할 수 있는가를 판단하는 Visibility 문제**로 정의했다.
+[What Is Shadow?](#what-is-shadow)에서는 Shadow를 단순히 어두운 영역으로 보는 것이 아니라, **빛이 표면에 도달할 수 있는가를 판단하는 Visibility 문제**로 정의했다.
 
 이제 한 단계 더 들어가 보자.
 
@@ -657,7 +655,7 @@ Visible  Occluded
 
 #### Direction and Visibility
 
-8.3.1에서 살펴본 것처럼 `N · L`과 Visibility는 서로 다른 정보를 제공한다.
+[What Is Shadow?](#what-is-shadow)에서 살펴본 것처럼 `N · L`과 Visibility는 서로 다른 정보를 제공한다.
 
 `N · L`은 **표면과 광원의 방향 관계**를 판단한다.
 
@@ -797,7 +795,7 @@ Soft Shadow와 부분적인 Visibility는 이후 Shadow의 실제 계산 방법�
 
 #### Shadow Definition
 
-이제 8.3.1에서 정의했던 Shadow를 더 정확하게 표현할 수 있다.
+이제 [What Is Shadow?](#what-is-shadow)에서 정의했던 Shadow를 더 정확하게 표현할 수 있다.
 
 ~~~text
 Light
@@ -827,7 +825,36 @@ Shadow
 
 ---
 
-#### Next Question
+#### Key Takeaways
+
+- **Visibility**는 한 지점에서 다른 대상까지의 경로가 열려 있는지를 판단하는 개념이다.
+- **Occlusion**은 그 경로가 다른 물체에 의해 차단된 상태를 의미한다.
+- Shadow에서 중요한 것은 **Light Visibility**다.
+- `N · L`은 표면과 광원의 방향 관계를 판단하고, Visibility는 빛의 도달 가능 여부를 판단한다.
+- 가장 단순한 Visibility는 `1 = Visible`, `0 = Occluded`로 생각할 수 있다.
+- 광원의 일부만 가려지는 경우에는 0과 1 사이의 Visibility가 나타날 수 있다.
+- Shadow 계산의 핵심은 결국 **Surface와 Light 사이에 Occluder가 존재하는지 확인하는 것**이다.
+- 이 판단을 실제로 수행하는 방법으로 이어지는 개념이 **Shadow Ray**다.
+
+**Core Relationship**
+
+~~~text
+Surface Point
+      ↓
+Light까지의 경로 확인
+      ↓
+Occluder 존재 여부
+      ↓
+Visibility Test
+      ↓
+Visibility
+      ↓
+Direct Lighting
+      ↓
+Shadow
+~~~
+
+---
 
 여기까지 정리하면 Shadow의 원리는 상당히 단순해진다.
 
@@ -868,44 +895,13 @@ Surface
 
 이것이 다음 단계에서 살펴볼 **Shadow Ray**의 기본적인 아이디어다.
 
-> **다음 절: 8.3.3 Shadow Ray와 Visibility Test**
-
----
-
-#### Key Takeaways
-
-- **Visibility**는 한 지점에서 다른 대상까지의 경로가 열려 있는지를 판단하는 개념이다.
-- **Occlusion**은 그 경로가 다른 물체에 의해 차단된 상태를 의미한다.
-- Shadow에서 중요한 것은 **Light Visibility**다.
-- `N · L`은 표면과 광원의 방향 관계를 판단하고, Visibility는 빛의 도달 가능 여부를 판단한다.
-- 가장 단순한 Visibility는 `1 = Visible`, `0 = Occluded`로 생각할 수 있다.
-- 광원의 일부만 가려지는 경우에는 0과 1 사이의 Visibility가 나타날 수 있다.
-- Shadow 계산의 핵심은 결국 **Surface와 Light 사이에 Occluder가 존재하는지 확인하는 것**이다.
-- 이 판단을 실제로 수행하는 방법으로 이어지는 개념이 **Shadow Ray**다.
-
-**Core Relationship**
-
-~~~text
-Surface Point
-      ↓
-Light까지의 경로 확인
-      ↓
-Occluder 존재 여부
-      ↓
-Visibility Test
-      ↓
-Visibility
-      ↓
-Direct Lighting
-      ↓
-Shadow
-~~~
+이어서 [Shadow Ray and Visibility Test](#shadow-ray-and-visibility-test)에서 다음 질문을 살펴본다.
 
 ---
 
 ### Shadow Ray and Visibility Test
 
-8.3.2에서는 Shadow를 판단하기 위해 **Light와 Surface 사이의 경로가 다른 물체에 의해 가려졌는지**를 확인해야 한다는 것을 살펴봤다.
+[Visibility and Occlusion](#visibility-and-occlusion)에서는 Shadow를 판단하기 위해 **Light와 Surface 사이의 경로가 다른 물체에 의해 가려졌는지**를 확인해야 한다는 것을 살펴봤다.
 
 그렇다면 렌더러는 실제로 이 경로를 어떻게 확인할까?
 
@@ -1012,7 +1008,7 @@ Shadow Ray의 목적은 다음 질문에 답하는 것이다.
 
 > **"이 Surface Point에서 Light가 보이는가?"**
 
-이 질문은 8.3.2에서 살펴본 **Visibility Test**와 동일하다.
+이 질문은 [Visibility and Occlusion](#visibility-and-occlusion)에서 살펴본 **Visibility Test**와 동일하다.
 
 **Open Path**
 
@@ -1187,7 +1183,7 @@ Direct Lighting에 반영
 Shadow 결정
 ~~~
 
-이 흐름을 보면 8.3.1과 8.3.2에서 배운 개념이 그대로 실제 계산으로 연결되는 것을 알 수 있다.
+이 흐름을 보면 [What Is Shadow?](#what-is-shadow)과 [Visibility and Occlusion](#visibility-and-occlusion)에서 배운 개념이 그대로 실제 계산으로 연결되는 것을 알 수 있다.
 
 ---
 
@@ -1490,7 +1486,7 @@ Shadow
 
 라는 구조가 가능해진다.
 
-즉, 우리가 8.3.3에서 배우는 Shadow Ray는 과거의 특정 기술에만 해당하는 것이 아니다.
+즉, 우리가 [Shadow Ray and Visibility Test](#shadow-ray-and-visibility-test)에서 배우는 Shadow Ray는 과거의 특정 기술에만 해당하는 것이 아니다.
 
 **현대의 실시간 Ray Traced Shadow에서도 동일한 기본 원리가 사용된다.**
 
@@ -1594,13 +1590,13 @@ Direct Lighting
 Shadow
 ~~~
 
-> **다음 절: 8.3.4 Shadow Map — Light Visibility를 Depth 정보로 효율적으로 판단하는 방법**
+이어서 [Shadow Map](#shadow-map)에서 다음 질문을 살펴본다. Light Visibility를 Depth 정보로 효율적으로 판단하는 방법을 확인한다.
 
 ---
 
 ### Shadow Map
 
-8.3.3에서는 Surface Point에서 Light를 향해 **Shadow Ray**를 발사하고, 그 경로에 다른 Geometry가 존재하는지를 검사하여 Light의 Visibility를 판단하는 방법을 살펴보았다.
+[Shadow Ray and Visibility Test](#shadow-ray-and-visibility-test)에서는 Surface Point에서 Light를 향해 **Shadow Ray**를 발사하고, 그 경로에 다른 Geometry가 존재하는지를 검사하여 Light의 Visibility를 판단하는 방법을 살펴보았다.
 
 이 방법은 원리 자체는 직관적이지만, 화면의 많은 Surface Point에 대해 Geometry와의 Intersection Test를 반복해야 한다.
 
@@ -2019,7 +2015,7 @@ Visibility 판단
 
 #### Two Methods for Visibility
 
-여기서 8.3.3의 Shadow Ray와 연결해 보자.
+여기서 [Shadow Ray and Visibility Test](#shadow-ray-and-visibility-test)의 Shadow Ray와 연결해 보자.
 
 두 방법 모두 결국 같은 질문에 답한다.
 
@@ -2287,7 +2283,7 @@ Shadow가 발생하는 근본적인 원인인 **Light Visibility를 Depth Compar
 
 #### Key Perspective
 
-8.3.3에서 배운 Shadow Ray와 비교하면 Shadow Map의 의미가 더욱 명확해진다.
+[Shadow Ray and Visibility Test](#shadow-ray-and-visibility-test)에서 배운 Shadow Ray와 비교하면 Shadow Map의 의미가 더욱 명확해진다.
 
 ~~~text
                  Light Visibility
@@ -2370,9 +2366,7 @@ Filtering / Bias / Shadow Quality
 
 ---
 
-#### Next
-
-**8.3.5 Shadow Quality & Filtering**
+이어서 [Shadow Map Quality & Filtering](#shadow-map-quality--filtering)에서 다음 질문을 살펴본다.
 
 다음 절에서는 Shadow Map의 해상도, Depth Precision, Shadow Acne, Peter Panning, Shadow Aliasing 등의 문제가 왜 발생하는지 살펴보고, Bias와 Filtering이 이러한 문제를 어떻게 개선하는지 알아본다.
 
@@ -2380,7 +2374,7 @@ Filtering / Bias / Shadow Quality
 
 ### Shadow Map Quality & Filtering
 
-8.3.4에서는 Shadow Map이 **Light의 시점에서 Depth를 기록하고, Surface의 Depth와 비교하여 Light Visibility를 판단하는 방법**이라는 것을 살펴보았다.
+[Shadow Map](#shadow-map)에서는 Shadow Map이 **Light의 시점에서 Depth를 기록하고, Surface의 Depth와 비교하여 Light Visibility를 판단하는 방법**이라는 것을 살펴보았다.
 
 Shadow Map은 효율적으로 실시간 그림자를 계산할 수 있다는 장점이 있지만, 하나의 중요한 조건을 가진다.
 
@@ -3705,9 +3699,7 @@ Bias / Filtering
 
 ---
 
-#### Next
-
-**8.3.6 Visibility에서 Lighting으로**
+이어서 [From Visibility to Lighting](#from-visibility-to-lighting)에서 다음 질문을 살펴본다.
 
 앞의 절들에서는 Light가 Surface에 도달할 수 있는지를 판단하는 **Visibility**를 중심으로 Shadow의 원리를 살펴보았다.
 
@@ -4244,9 +4236,7 @@ Shadow를 이해한다는 것은 단순히 그림자를 만드는 방법을 배�
 
 ---
 
-#### Next
-
-**8.3.7 Unreal 구현 및 검증**
+이어서 [Shadow Map Observation](#shadow-map-observation)에서 다음 질문을 살펴본다.
 
 다음 절에서는 지금까지 정리한 Shadow와 Visibility의 원리를 실제 Unreal Engine에서 확인한다.
 
@@ -4725,7 +4715,7 @@ Visibility 판단
 
 #### Foundation and Advanced Boundary
 
-이번 장에서는 Shadow Map의 내부 구조와 기본적인 동작 원리를 이해하는 것을 우선한다.
+이번 절에서는 Shadow Map의 내부 구조와 기본적인 동작 원리를 이해하는 것을 우선한다.
 
 Resolution/Acne/Bias/Filtering의 기본 관계는 앞의 Shadow Map Quality & Filtering에서 이미 설명했다. 아래 항목의 Engine별 세부 튜닝과 Production 성능 비교는 Advanced 범위이다.
 
@@ -5195,9 +5185,9 @@ Surface에서 라이트 방향으로 Ray를 추적하여 Visibility를 직접 �
 
 ---
 
-#### Shadow Section Summary
+### Key Takeaways
 
-이번 장에서는 실시간 그림자를 구현하는 대표적인 방법인 Shadow Map의 원리를 살펴보았다.
+이번 절에서는 실시간 그림자를 구현하는 대표적인 방법인 Shadow Map의 원리를 살펴보았다.
 
 가장 중요한 흐름은 다음과 같다.
 
@@ -5232,7 +5222,7 @@ Shadow Map은 효율적인 실시간 그림자를 제공하지만, 제한된 해
 
 이러한 문제를 해결하기 위해 Filtering, Bias, Shadow Map 해상도 조절 등 다양한 기법이 사용되며, 현대의 실시간 렌더링에서는 Shadow Map과 Ray Tracing을 상황에 따라 조합하여 사용한다.
 
-**Key Takeaways**
+**Core Principle**
 
 > **Shadow Map은 그림자를 저장하는 기술이 아니라, 그림자를 판단하기 위한 Depth 정보를 저장하는 기술이다.**
 
@@ -5250,3 +5240,7 @@ MF_Shadow라는 독립 Module로 분리한다.
 
 MF_Shadow는 Shadow Map을 생성하는 Function이 아니라,
 LightingResult × Visibility를 통해 Shadowed Lighting을 만드는 Visibility Application Module이다.
+
+---
+
+**Next → [8.4 Phong Specular — From Reflection to Specular Highlight](<./Chapter08.4_Specular.md>)**

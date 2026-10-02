@@ -1,4 +1,4 @@
-# Chapter 08 Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 ## 8.1 Architecture Overview
 
@@ -381,7 +381,7 @@ Base Lighting에서는 표면이 현재 조명으로부터 얼마나 많은 직�
 따라서 다음 절에서는 ASF의 첫 번째 실제 Rendering Module인 `MF_BaseLighting`을 구현하면서, 이러한 데이터가 실제 Shader 계산으로 어떻게 연결되는지 살펴본다.
 
 
-### Summary
+### Key Takeaways
 
 8.1에서는 ASF Shader의 전체 Architecture를 정의했다.
 
@@ -417,3 +417,7 @@ Master Material은 각각의 Module을 조합하고 최종 결과를 출력한�
 이 구조를 기반으로 이후의 모든 Rendering Module을 추가할 수 있다.
 
 다음 절에서는 이 Architecture의 첫 번째 실제 구현으로 `MF_BaseLighting`을 만든다.
+
+---
+
+**Next → [8.2 Base Lighting](<./Chapter08.2_BaseLighting.md>)**

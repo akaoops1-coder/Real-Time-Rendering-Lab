@@ -1,32 +1,12 @@
-# Chapter 08 Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 ## 8.0 Preparing the ASF Project
 
 ### Overview
 
-#### Purpose
+Chapter 01부터 07까지 Radiometry, Reflection, BRDF, Modern Real-Time Rendering, NPR을 학습했다. Chapter 08에서는 이 이론을 실제 프로젝트에 옮겨 재사용 가능한 Anime Shader Framework(ASF)를 구축한다.
 
-지금까지는 Rendering의 원리를 이해하는 데 집중하였다.
-
-Chapter 1부터 Chapter 7까지 Radiometry, Reflection, BRDF, Modern Real-Time Rendering, 그리고 Non-Photorealistic Rendering(NPR)을 단계적으로 학습하며 Anime Shader를 구현하기 위한 이론적 기반을 마련하였다.
-
-Chapter 8부터는 지금까지 학습한 Rendering Theory를 바탕으로 **Anime Shader Framework (ASF)** 를 직접 구현한다.
-
-이번 Chapter의 목표는 단순한 Toon Shader를 만드는 것이 아니라, 실제 프로젝트에서 재사용할 수 있는 **Shader Framework**를 구축하는 것이다.
-
----
-
-#### Overview
-
-지금까지의 Chapter가 **"왜(Why)"** 와 **"어떻게 동작하는가(How it Works)"** 를 이해하는 과정이었다면,
-
-이번 Chapter부터는 **"직접 구현하는 방법(Implementation)"** 에 집중한다.
-
-ASF는 하나의 Unreal Engine 프로젝트를 기반으로 단계적으로 개발된다.
-
-새로운 프로젝트를 반복해서 생성하지 않고, 하나의 프로젝트를 지속적으로 확장하면서 Framework를 완성해 나간다.
-
-이러한 방식은 실제 프로젝트에서 Shader를 개발하는 과정과 유사하며, 구현한 기능을 이후 Chapter에서도 그대로 재사용할 수 있도록 한다.
+8.0은 그 구현에 필요한 개발 환경과 운영 규칙을 준비하는 절이다. 하나의 Unreal Engine 프로젝트를 지속적으로 확장하여 이후 실습에서도 구현한 기능을 재사용한다.
 
 ---
 
@@ -46,33 +26,6 @@ Chapter 09에서는 구축한 Framework를 바탕으로 Debug/Profiling/Optimiza
 
 ---
 
-#### Development Environment
-
-이 Documentation의 목표 환경은 아래와 같다. 실제 실행이 검증된 Support Matrix를 뜻하지 않으며, 설치된 Engine 버전과 각 Node의 지원 경로를 별도로 확인한다.
-
-| Item | Value |
-|------|-------|
-| Engine | Unreal Engine 5.8 |
-| Project Name | ASF_Demo |
-| Rendering Pipeline | Deferred Rendering |
-| Graphics API | DirectX 12 |
-| Version Control | Git |
-| Material Workflow | Material Editor |
-
-가능한 한 동일한 개발 환경에서 실습을 진행하는 것을 권장한다.
-
-다만 본 Chapter에서 설명하는 Rendering Concept와 Data Flow는 특정 Engine에 종속되지 않으며, 다른 Rendering Engine에서도 동일한 원리로 적용할 수 있다.
-
----
-
-#### Summary
-
-Chapter 8은 Anime Shader Framework를 구현하는 첫 번째 단계이다.
-
-지금까지 학습한 Rendering Theory를 실제 프로젝트에 적용하여 하나의 Framework를 구축하고, 이후 Chapter에서는 이를 기반으로 Character Rendering과 Optimization을 단계적으로 진행한다.
-
----
-
 ### Development Environment
 
 #### Purpose
@@ -85,7 +38,7 @@ Anime Shader Framework(ASF)는 하나의 Unreal Engine 프로젝트를 기반으
 
 ---
 
-#### Overview
+#### Project Workflow
 
 ASF는 하나의 프로젝트를 지속적으로 확장하는 방식으로 개발된다.
 
@@ -103,7 +56,7 @@ Figure 8-2는 ASF 프로젝트의 전체 개발 환경과 Asset 구성 방식을
 
 ---
 
-#### Development Environment
+#### Target Environment Specification
 
 이 Documentation의 목표 환경은 아래와 같다. 실제 실행이 검증된 Support Matrix를 뜻하지 않으며, 설치된 Engine 버전과 각 Node의 지원 경로를 별도로 확인한다.
 
@@ -118,7 +71,7 @@ Figure 8-2는 ASF 프로젝트의 전체 개발 환경과 Asset 구성 방식을
 
 가능한 한 동일한 개발 환경에서 실습을 진행하는 것을 권장한다.
 
-Rendering Concept는 Engine에 독립적이지만, 구현 예제는 Unreal Engine 5.8을 기준으로 설명한다.
+Rendering Concept와 Data Flow는 Engine에 독립적이지만, 구현 예제는 Unreal Engine 5.8을 기준으로 설명한다.
 
 ---
 
@@ -195,7 +148,7 @@ Content/
 
 ---
 
-#### Summary
+#### Environment Review
 
 Anime Shader Framework는 하나의 Unreal Engine 프로젝트를 기반으로 구축된다.
 
@@ -345,7 +298,7 @@ ASF는 Deferred Rendering 환경을 기준으로 구현하며, Anime Shader는 S
 
 ---
 
-#### Summary
+#### Project Creation Review
 
 Anime Shader Framework의 기본 프로젝트를 생성하였다.
 
@@ -452,7 +405,7 @@ ASF는 이러한 기본 Rendering 환경을 기준으로 모든 Material과 Shad
 
 ---
 
-#### Summary
+#### Settings Review
 
 ASF의 목표 환경은 이 Section에서 지정한 Engine/Rendering 설정이며, 실제 검증한 값은 실행 환경에서 기록한다.
 
@@ -549,7 +502,7 @@ ASF 프로젝트는 Chapter가 진행될수록 새로운 기능이 추가된다.
 
 ---
 
-#### Summary
+#### Organization Review
 
 ASF는 하나의 프로젝트를 지속적으로 확장하는 Framework이다.
 
@@ -659,7 +612,7 @@ ASF는 다음 원칙에 따라 Asset을 관리한다.
 
 ---
 
-#### Summary
+#### Content Structure Review
 
 ASF는 Production-Oriented 프로젝트 구조를 기준으로 Content Browser를 구성한다.
 
@@ -783,7 +736,7 @@ Figure 8-6의 예시와 같이 이름만 보더라도 Asset의 종류와 역할�
 
 ---
 
-#### Summary
+#### Naming Review
 
 ASF는 ASF-001의 Role-first Naming과 Unreal 계열 Type Prefix를 일관되게 사용한다.
 
@@ -914,7 +867,7 @@ Commit은 가능한 작은 단위로 수행하며, 하나의 Commit에는 하나
 
 ---
 
-#### Summary
+#### Version Control Review
 
 ASF는 Git을 기반으로 프로젝트의 변경 이력을 관리한다.
 
@@ -924,7 +877,7 @@ Version Control은 안정적인 개발 환경을 유지하기 위한 핵심 도�
 
 ---
 
-### Ready to Build ASF
+### Final Preparation Checks
 
 #### Purpose
 
@@ -967,14 +920,6 @@ Figure 8-8은 ASF 구현을 시작하기 전에 확인해야 하는 준비 항�
 
 ---
 
-#### What Comes Next?
-
-다음 Chapter부터는 실제 Shader Framework를 구현한다.
-
-지금까지 준비한 프로젝트 구조와 Naming Convention은 이후 모든 Chapter에서 동일하게 유지된다.
-
-앞으로 생성되는 Material, Material Function, Texture, Sample Asset은 모두 Chapter 8에서 정의한 규칙을 따른다.
-
 > 💡 **Production Tip**
 >
 > 프로젝트 초기에 개발 환경과 구조를 충분히 준비하면 이후 구현 과정에서는 기능 개발에만 집중할 수 있다.
@@ -1007,23 +952,13 @@ Chapter 8 이후에는 다음 원칙을 유지한다.
 
 ---
 
-#### Summary
+### Key Takeaways
 
-Chapter 8에서는 ASF 구현을 위한 개발 환경을 구축하였다.
-
-프로젝트 생성부터 Rendering 환경 검증, Content Browser 구조, Asset Naming Convention, Version Control까지 Framework 개발에 필요한 기반을 모두 준비하였다.
-
-이제부터는 준비된 환경을 기반으로 실제 Anime Shader Framework를 구현한다.
-
----
-
-### Chapter Summary
-
-Chapter 8에서는 ASF 구현을 시작하기 위한 개발 환경을 구축하였다.
+8.0에서는 ASF 구현을 시작하기 위한 개발 환경을 준비했다.
 
 프로젝트 생성부터 Rendering 환경 검증, Content Browser 구조, Asset Naming Convention, Version Control까지 Framework 개발에 필요한 기반을 모두 준비하였다.
 
-앞으로의 모든 구현은 본 Chapter에서 정의한 개발 환경과 프로젝트 구조를 기준으로 진행한다.
+이후 실습은 이 절에서 준비한 개발 환경과 프로젝트 구조를 기준으로 진행한다.
 
 ---
 
@@ -1031,21 +966,21 @@ Chapter 8에서는 ASF 구현을 시작하기 위한 개발 환경을 구축하�
 
 | Section | Description |
 |---------|-------------|
-| 8.0.1 | ASF 프로젝트의 개발 목표와 전체 Workflow를 이해하였다. |
-| 8.0.2 | Unreal Engine 개발 환경과 필요한 도구를 준비하였다. |
-| 8.0.3 | ASF Unreal Project를 생성하였다. |
-| 8.0.4 | ASF에서 사용하는 Rendering 환경을 검증하였다. |
-| 8.0.5 | 프로젝트 구성 원칙(Project Organization)을 이해하였다. |
-| 8.0.6 | ASF Content Browser 구조를 구성하였다. |
-| 8.0.7 | Asset Naming Convention을 정의하였다. |
-| 8.0.8 | Version Control 관리 원칙을 정의하였다. |
-| 8.0.9 | ASF 구현을 시작하기 위한 준비를 완료하였다. |
+| [Overview](#overview) | ASF 프로젝트의 개발 목표와 전체 Workflow를 이해하였다. |
+| [Development Environment](#development-environment) | Unreal Engine 개발 환경과 필요한 도구를 준비하였다. |
+| [Creating the Project](#creating-the-project) | ASF Unreal Project를 생성하였다. |
+| [Project Settings Verification](#project-settings-verification) | ASF에서 사용하는 Rendering 환경을 검증하였다. |
+| [Project Organization](#project-organization) | 프로젝트 구성 원칙(Project Organization)을 이해하였다. |
+| [Content Browser Structure](#content-browser-structure) | ASF Content Browser 구조를 구성하였다. |
+| [Asset Naming Convention](#asset-naming-convention) | Asset Naming Convention을 정의하였다. |
+| [Version Control](#version-control) | Version Control 관리 원칙을 정의하였다. |
+| [Final Preparation Checks](#final-preparation-checks) | ASF 구현을 시작하기 위한 준비를 완료하였다. |
 
 ---
 
-#### Key Takeaways
+#### Working Principles
 
-Chapter 8에서 반드시 기억해야 할 핵심 원칙은 다음과 같다.
+프로젝트 준비 이후에도 유지할 핵심 원칙은 다음과 같다.
 
 - Development Environment는 프로젝트 시작 시 한 번만 구성한다.
 - Rendering 환경은 Unreal Engine 기본 설정을 기준으로 검증한다.
@@ -1056,18 +991,8 @@ Chapter 8에서 반드시 기억해야 할 핵심 원칙은 다음과 같다.
 
 ---
 
-#### Ready for the Next Chapter
-
-이제 ASF 구현을 시작하기 위한 모든 준비가 완료되었다.
-
-다음 Chapter부터는 실제 Material과 Shader를 구현하며, 지금까지 정의한 프로젝트 구조와 개발 규칙을 그대로 사용한다.
-
-Chapter 8에서 준비한 환경은 이후 모든 실습과 예제의 공통 기반이 된다.
+준비 확인을 마쳤다면 다음 8.1에서 Architecture를 살펴보고, 8.2부터 기본 Rendering Module을 구현한다. 여기서 준비한 프로젝트 환경과 Asset 규칙은 이후 실습의 공통 기반으로 사용한다.
 
 ---
 
-### Next Chapter
-
-다음 Section 8.1에서 Architecture를 확인하고 8.2부터 기본 Rendering Module의 구현을 시작한다.
-
-지금까지 준비한 프로젝트 환경을 기반으로 Material과 Shader를 단계적으로 구현하며, 각 기능이 Rendering Pipeline에서 어떤 역할을 하는지 함께 살펴본다.
+**Next → [8.1 Architecture Overview](<./Chapter08.1_ArchitectureOverview copy.md>)**

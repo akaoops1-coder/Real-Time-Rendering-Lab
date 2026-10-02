@@ -1895,11 +1895,11 @@ Chapter 04: Surface Property와 그 Data의 준비
     → Shading / Final Appearance
 ```
 
-다음 Chapter 05는 준비한 입력으로 Surface가 Light를 어떻게 반사하는지 설명한다. 여기서는 Reflection/BRDF 모델의 수식을 미리 반복하지 않고, 그 모델에 필요한 입력이 준비되는 지점을 연결한다.
+이 흐름은 Reflection/BRDF 모델에 필요한 입력이 어디에서 준비되는지 보여준다.
 
 ---
 
-### Material Data Flow Summary
+### Complete Material Data Flow
 
 전체 흐름을 정리하면 다음과 같다.
 
@@ -1927,10 +1927,12 @@ Texture는 UV를 만드는 이전 Stage가 아니라 Sampling의 별도 Resource
 
 Material Architecture를 이해한다는 것은 특정 Texture Format이나 Node를 외우는 것이 아니다. Data가 어디에서 시작하고, 어떻게 해석되며, 어떤 입력으로 Shader에 도달하는지 추적할 수 있다는 뜻이다.
 
-### Key Takeaways
+### Chapter Summary
 
 - Material Input은 Texture 자체가 아니라 현재 Surface에서 사용할 Property 값이다.
 - Texture, Parameter, Mesh 기준과 Scene Lighting Data는 서로 다른 Source에서 준비된다.
 - Color와 Numeric Data, Normal Direction은 각자의 의미에 맞게 해석한다.
 - 최종 Shading은 Material Property와 같은 Space에 준비한 Lighting Data가 합류한 결과다.
 - 이 흐름을 추적하는 능력이 Production Material, Character Material과 Anime Shader의 복잡한 Graph를 이해하는 기반이 된다.
+
+다음 [Chapter 05 — Reflection and BRDF](Chapter05_Reflection_BRDF.md)에서는 이렇게 준비한 입력으로 Surface가 Light를 어떻게 반사하는지 살펴본다.

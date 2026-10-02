@@ -1,4 +1,4 @@
-# Chapter 06 Modern Real-time Rendering
+# Chapter 06 — Modern Real-time Rendering
 
 ## 6.1 From BRDF to the Rendering Pipeline
 
@@ -20,7 +20,7 @@ BRDF는 Material의 반사 특성을 정의하는 매우 중요한 모델이다.
 
 이러한 전체 과정을 **Rendering Pipeline**이라고 한다.
 
-이번 절에서는 Rendering Pipeline의 전체 구조를 살펴보고, 이후 Chapter에서 배우게 될 내용들을 미리 이해해보자.
+이번 절에서는 Rendering Pipeline의 전체 구조를 살펴보고, 이후 절에서 배우게 될 내용들을 미리 이해해보자.
 
 ---
 
@@ -107,19 +107,7 @@ Chapter 04의 Base Color/Roughness/Metallic은 Chapter 05의 BRDF를 선택·평
 
 Rendering Pipeline 전체를 이해하면 각 기술이 왜 필요한지, 그리고 서로 어떻게 연결되는지를 자연스럽게 이해할 수 있다.
 
----
-
-### Callback
-
-지금 우리는 Rendering Pipeline의 전체 구조를 살펴보았다.
-
-그렇다면 Rendering Pipeline에서 가장 먼저 계산해야 하는 것은 무엇일까?
-
-바로 **Light**이다.
-
-Surface에 입사하는 빛이 없으면 반사 성분은 0이다. Surface 자체의 Emission은 별도로 남을 수 있다.
-
-다음 절에서는 Lighting 기여의 첫 학습 주제인 **Direct Lighting**을 살펴보며, 광원이 Surface에 어떤 영향을 주는지부터 알아보자.
+BRDF와 Lighting 기여를 연결하려면 Surface에 어떤 빛이 입사하는지부터 살펴볼 필요가 있다. Surface에 입사하는 빛이 없으면 반사 성분은 0이다. Surface 자체의 Emission은 별도로 남을 수 있다.
 
 ---
 
@@ -129,7 +117,8 @@ Surface에 입사하는 빛이 없으면 반사 성분은 0이다. Surface 자�
 - BRDF는 Material의 Surface Response를 정의하며 Hardware Stage 자체가 아니다.
 - BRDF만으로는 최종 이미지를 생성할 수 없다.
 - Modern Rendering은 여러 Rendering Technique가 연결된 Pipeline으로 구성된다.
-- 다음 절에서는 Direct Lighting을 통해 빛이 Surface에 미치는 영향을 살펴본다.
+
+다음 6.2에서는 Lighting 기여의 첫 학습 주제인 **Direct Lighting**을 살펴보며, 광원이 Surface에 어떤 영향을 주는지 알아본다.
 
 ---
 
@@ -137,7 +126,7 @@ Surface에 입사하는 빛이 없으면 반사 성분은 0이다. Surface 자�
 
 ### Starting with Direct Lighting
 
-Rendering Pipeline에서 Material보다 먼저 필요한 것은 **Light**이다.
+Light와 Material Response의 관계를 이해하려면 Surface에 입사하는 **Light** 기여부터 구분해야 한다.
 
 Surface에 도달하는 빛이 없으면 BRDF의 반사 기여는 0이지만 Emission은 별개이다.
 
@@ -155,17 +144,9 @@ BRDF는 **"빛이 도달한 이후 어떻게 반사되는가?"**를 정의하는
 
 Direct Lighting은 **광원(Light Source)에서 Surface까지 직접 도달하는 빛**을 의미한다.
 
-태양,
+태양, 전구, 손전등, 게임 속 Point Light와 Directional Light는 모두 Direct Lighting을 생성하는 광원이다.
 
-전구,
-
-손전등,
-
-게임 속 Point Light와 Directional Light는 모두 Direct Lighting을 생성하는 광원이다.
-
-Surface는 먼저 이러한 빛을 받고,
-
-그 이후 BRDF를 이용하여 얼마나 반사할지를 계산한다.
+Surface는 먼저 이러한 빛을 받고, 그 이후 BRDF를 이용하여 얼마나 반사할지를 계산한다.
 
 즉,
 
@@ -186,15 +167,13 @@ Direct Lighting은 광원과 Surface 사이의 직접적인 관계만 계산한�
 
 등을 이용하여 현재 Surface에 도달하는 빛을 계산한다.
 
-반대로,
+반대로, 다른 Surface에서 한 번 이상 반사되어 들어오는 기여는 Indirect Lighting이다. 환경 이미지로 표현했다는 이유만으로 항상 Indirect가 되는 것은 아니다. Environment Map에는 직접 보이는 하늘·광원과 반사된 환경이 함께 들어갈 수 있다.
 
-다른 Surface에서 한 번 이상 반사되어 들어오는 기여는 Indirect Lighting이다. 환경 이미지로 표현했다는 이유만으로 항상 Indirect가 되는 것은 아니다. Environment Map에는 직접 보이는 하늘·광원과 반사된 환경이 함께 들어갈 수 있다.
-
-이러한 빛은 이후 Chapter에서 배우게 될 Indirect Lighting과 Image Based Lighting에서 다루게 된다.
+이러한 빛은 이후 6.3과 6.4에서 배우게 될 Indirect Lighting과 Image Based Lighting에서 다루게 된다.
 
 ---
 
-### Figure 6-3
+**Figure 6-3. Direct Lighting**
 
 > Direct Lighting의 개념도
 
@@ -208,33 +187,13 @@ Direct Lighting은 광원과 Surface 사이의 직접적인 관계만 계산한�
 
 ### Role in Rendering
 
-현대 Rendering Pipeline에서 대부분의 조명 계산은 Direct Lighting부터 시작된다.
+이 Chapter에서는 Direct Lighting의 기여부터 조명 계산의 관계를 설명한다.
 
-이 단계에서 계산된 빛을 기반으로 BRDF가 Surface의 반사 특성을 적용하고,
+이 단계에서 계산된 빛을 기반으로 BRDF가 Surface의 반사 특성을 적용하고, Indirect/Environment 기여도 해당 Material Response와 결합한다. 합쳐진 HDR 결과가 이후 출력 변환으로 이어진다.
 
-Indirect/Environment 기여도 해당 Material Response와 결합한다. 합쳐진 HDR 결과가 이후 출력 변환으로 이어진다.
+즉, Direct Lighting은 광원과 Surface의 직접적인 기여를 이해하기 위한 출발점이다.
 
-즉,
-
-Direct Lighting은 Rendering Pipeline 전체의 출발점이라고 할 수 있다.
-
----
-
-### Callback
-
-지금까지는 광원에서 Surface까지 직접 도달하는 빛만 살펴보았다.
-
-하지만 현실에서는 빛이 한 번만 이동하지 않는다.
-
-벽에서 반사되고,
-
-천장에서 다시 반사되며,
-
-주변 환경에서도 계속 Surface로 들어온다.
-
-이처럼 다른 Surface에서 한 번 이상 반사되어 도달하는 빛을 **Indirect Lighting**이라고 한다.
-
-다음 절에서는 Direct Lighting과 Indirect Lighting의 차이를 살펴보자.
+Direct Lighting은 광원에서 Surface까지 직접 도달하는 빛이다. 현실에서는 빛이 벽에서 반사되고 천장에서 다시 반사되며 주변 환경에서도 계속 Surface로 들어온다. 다른 Surface에서 한 번 이상 반사되어 도달하는 빛은 **Indirect Lighting**으로 구분한다.
 
 ---
 
@@ -244,7 +203,8 @@ Direct Lighting은 Rendering Pipeline 전체의 출발점이라고 할 수 있�
 - BRDF는 Direct Lighting이 Surface에 도달한 이후 반사량을 계산한다.
 - Direct Lighting은 광원과 Surface의 직접적인 관계만 계산한다.
 - 다른 Surface에서 반사되어 들어오는 빛은 Indirect Lighting에 포함된다.
-- 다음 절에서는 여러 번 반사되는 빛인 Indirect Lighting을 살펴본다.
+
+다음 6.3에서는 Direct Lighting과 **Indirect Lighting**의 경로와 기여를 비교한다.
 
 ---
 
@@ -256,11 +216,7 @@ Direct Lighting은 광원에서 Surface까지 직접 도달하는 빛만 계산�
 
 하지만 현실의 빛은 한 번만 이동하지 않는다.
 
-광원에서 나온 빛은 Surface에 도달한 후 반사되고,
-
-그 반사된 빛이 다시 다른 Surface를 비추며,
-
-이 과정은 여러 번 반복된다.
+광원에서 나온 빛은 Surface에 도달한 후 반사되고, 그 반사된 빛이 다시 다른 Surface를 비추며, 이 과정은 여러 번 반복된다.
 
 만약 Direct Lighting만 계산한다면 그림자는 지나치게 어둡고, 주변 물체의 색이 서로 영향을 주지 않아 현실감이 크게 떨어진다.
 
@@ -272,17 +228,11 @@ Direct Lighting은 광원에서 Surface까지 직접 도달하는 빛만 계산�
 
 Indirect Lighting은 **다른 Surface에서 한 번 이상 반사되어 도달하는 빛**을 의미한다.
 
-예를 들어,
-
-햇빛이 흰 벽에 닿으면,
-
-벽은 일부 빛을 다시 주변 공간으로 반사한다.
+예를 들어, 햇빛이 흰 벽에 닿으면, 벽은 일부 빛을 다시 주변 공간으로 반사한다.
 
 그 결과 원래 직접 빛이 닿지 않던 바닥이나 천장도 은은하게 밝아진다.
 
-즉,
-
-광원이 직접 비추지 않는 영역도 다른 물체를 통해 전달된 빛의 영향을 받는다.
+즉, 광원이 직접 비추지 않는 영역도 다른 물체를 통해 전달된 빛의 영향을 받는다.
 
 이러한 빛을 모두 Indirect Lighting이라고 한다.
 
@@ -312,17 +262,7 @@ Indirect Lighting은 Scene 전체의 분위기를 결정하는 중요한 요소�
 
 이번 Chapter에서는 계산 방법보다는 **빛이 여러 번 반사된다는 개념**을 이해하는 데 집중한다.
 
----
-
-### Callback
-
-지금까지는 Surface에서 반사된 빛이 다른 Surface에 도달하는 경우를 살펴보았다.
-
-하지만 빛은 물체뿐만 아니라 하늘과 주변 환경에서도 들어온다.
-
-맑은 하늘 아래에서 그늘이 완전히 검지 않은 이유도 주변 환경에서 들어오는 빛이 존재하기 때문이다.
-
-다음 절에서는 이러한 **환경(Environment)**을 광원으로 사용하는 **Image Based Lighting (IBL)**을 살펴보자.
+Surface에서 반사된 빛이 다른 Surface에 도달하는 경우뿐 아니라 하늘과 주변 환경에서 들어오는 빛도 고려해야 한다. 맑은 하늘 아래에서 그늘이 완전히 검지 않은 이유도 주변 환경에서 들어오는 빛이 존재하기 때문이다.
 
 ---
 
@@ -332,7 +272,8 @@ Indirect Lighting은 Scene 전체의 분위기를 결정하는 중요한 요소�
 - 현실의 빛은 여러 번 반사되며 Scene 전체에 영향을 준다.
 - Color Bleeding과 부드러운 간접 조명은 Indirect Lighting의 대표적인 효과이다.
 - 현대 Rendering Engine은 다양한 방법으로 Indirect Lighting을 근사한다.
-- 다음 절에서는 환경을 광원으로 사용하는 Image Based Lighting을 살펴본다.
+
+다음 6.4에서는 이러한 **Environment**를 광원으로 사용하는 **Image Based Lighting (IBL)**을 살펴본다.
 
 ---
 
@@ -344,11 +285,7 @@ Indirect Lighting은 Scene 전체의 분위기를 결정하는 중요한 요소�
 
 하지만 현실에서는 빛이 반드시 Point Light나 Directional Light와 같은 광원에서만 오는 것은 아니다.
 
-맑은 하늘 아래에서 그늘이 완전히 검게 보이지 않는 이유도,
-
-실내에서 창문을 통해 들어오는 은은한 빛도,
-
-주변 환경 전체가 하나의 광원처럼 작용하기 때문이다.
+맑은 하늘 아래에서 그늘이 완전히 검게 보이지 않는 이유도, 실내에서 창문을 통해 들어오는 은은한 빛도, 주변 환경 전체가 하나의 광원처럼 작용하기 때문이다.
 
 이처럼 주변 환경을 광원으로 사용하는 기법이 **Image Based Lighting (IBL)**이다.
 
@@ -366,9 +303,7 @@ HDR(High Dynamic Range)은 넓은 밝기 범위를 표현하는 특성이다. �
 
 따라서 매우 밝은 태양과 어두운 그림자까지 하나의 환경 맵에 함께 저장할 수 있으며, IBL은 이 정보를 이용하여 더욱 현실감 있는 조명을 계산한다.
 
-즉,
-
-Surface는 특정 광원뿐만 아니라 주변 환경 전체로부터 조명을 받게 된다.
+즉, Surface는 특정 광원뿐만 아니라 주변 환경 전체로부터 조명을 받게 된다.
 
 <p align="center">
     <img src="Figures/Chapter06/Fig6_05.png" width="80%">
@@ -406,17 +341,7 @@ IBL을 사용하면 수많은 광원을 직접 배치하지 않아도 현실감 
 
 현재 대부분의 Real-Time Rendering Engine은 HDR Environment Map과 IBL을 Rendering Pipeline의 기본 요소로 사용한다.
 
----
-
-### Callback
-
-지금까지는 환경이 Surface를 비추는 역할을 살펴보았다.
-
-하지만 Surface는 주변 환경으로부터 빛을 받는 것뿐만 아니라,
-
-환경 자체를 반사하기도 한다.
-
-다음 절에서는 IBL의 두 번째 요소인 **Specular IBL**과 밀접하게 연결되는 **Reflection**을 살펴보며, Surface가 주변 환경을 어떻게 반사하는지 알아보자.
+환경은 Surface를 비추는 역할과 Surface에 반사되어 보이는 역할을 함께 갖는다. 앞에서 구분한 Diffuse IBL과 Specular IBL은 이 관계를 읽는 기준이다.
 
 ---
 
@@ -426,7 +351,8 @@ IBL을 사용하면 수많은 광원을 직접 배치하지 않아도 현실감 
 - HDR Environment Map을 이용하여 모든 방향에서 들어오는 빛을 계산한다.
 - IBL은 Diffuse IBL과 Specular IBL을 통해 주변 조명과 환경 반사를 표현한다.
 - 현대 Rendering Engine은 Direct Lighting과 IBL을 함께 사용하여 현실감 있는 조명을 구현한다.
-- 다음 절에서는 Reflection과 Specular IBL의 관계를 살펴본다.
+
+다음 6.5에서는 **Specular IBL**과 연결되는 **Reflection**을 통해 Surface가 주변 환경을 어떻게 반영하는지 살펴본다.
 
 ---
 
@@ -448,9 +374,7 @@ IBL을 사용하면 수많은 광원을 직접 배치하지 않아도 현실감 
 
 여기서 다루는 Reflection은 **환경의 Specular Reflection**에 초점을 맞춘다. Chapter 05의 넓은 의미의 Reflection에는 Diffuse와 Direct Light의 Specular도 포함된다.
 
-거울처럼 매끄러운 Surface는 주변 환경을 선명하게 반사하고,
-
-거친 Surface는 반사가 여러 방향으로 퍼져 흐릿하게 보인다.
+거울처럼 매끄러운 Surface는 주변 환경을 선명하게 반사하고, 거친 Surface는 반사가 여러 방향으로 퍼져 흐릿하게 보인다.
 
 즉, Reflection의 형태는 Material의 종류와 Surface의 Roughness에 따라 달라진다.
 
@@ -469,9 +393,7 @@ IBL은 크게 두 가지 방식으로 환경 정보를 사용한다.
 - **Diffuse IBL** : Environment Radiance에 대한 Diffuse 응답을 근사한다.
 - **Specular IBL** : Surface에 주변 환경이 반사되는 Reflection을 계산한다.
 
-즉,
-
-Specular IBL은 환경 Reflection을 구현하는 한 방법이다. Screen-space 또는 Ray 기반의 Reflection 등 다른 방법도 있으며, 사용할 데이터와 비용·누락 조건이 다르다.
+즉, Specular IBL은 환경 Reflection을 구현하는 한 방법이다. Screen-space 또는 Ray 기반의 Reflection 등 다른 방법도 있으며, 사용할 데이터와 비용·누락 조건이 다르다.
 
 ---
 
@@ -479,25 +401,11 @@ Specular IBL은 환경 Reflection을 구현하는 한 방법이다. Screen-space
 
 Reflection은 Material의 재질감을 표현하는 핵심 요소이다.
 
-금속,
-
-유리,
-
-물,
-
-광택이 있는 플라스틱과 같은 Material은 Reflection이 없으면 현실감이 크게 떨어진다.
+금속, 유리, 물, 광택이 있는 플라스틱과 같은 Material은 Reflection이 없으면 현실감이 크게 떨어진다.
 
 현대 Rendering Engine은 HDR Environment Map과 Specular IBL을 이용하여 자연스럽고 현실감 있는 Reflection을 구현한다.
 
----
-
-### Callback
-
-Reflection은 주변 환경의 색상뿐 아니라 밝기 정보도 함께 사용하여 계산된다.
-
-이러한 환경 정보는 넓은 밝기 범위를 지원하는 저장 형식으로 보관할 수 있다. HDR은 그 Dynamic Range의 특성을 뜻한다.
-
-다음 절에서는 HDR이 무엇이며, Rendering Engine이 높은 밝기 정보를 어떻게 저장하고 활용하는지 살펴보자.
+Reflection은 주변 환경의 색상뿐 아니라 밝기 정보도 함께 사용하여 계산된다. 이러한 환경 정보는 넓은 밝기 범위를 지원하는 저장 형식으로 보관할 수 있다. HDR은 그 Dynamic Range의 특성을 뜻한다.
 
 ---
 
@@ -508,6 +416,8 @@ Reflection은 주변 환경의 색상뿐 아니라 밝기 정보도 함께 사�
 - Reflection의 형태는 Material과 Roughness에 따라 달라진다.
 - Specular IBL은 HDR Environment Map을 이용하여 Reflection을 계산한다.
 - Reflection은 현실감 있는 Material을 표현하는 핵심 요소이다.
+
+다음 6.6에서는 **HDR**의 의미와 Rendering Engine이 높은 밝기 정보를 저장하고 활용하는 방식을 살펴본다.
 
 ---
 
@@ -532,11 +442,7 @@ HDR Environment Map은 HDR 형식으로 저장된 환경 이미지이며, IBL에
 - **HDR Environment Map**은 HDR 형식으로 저장된 환경 이미지이다.
 - **HDR Rendering**은 Rendering 과정 전체를 HDR 범위에서 계산하는 기술이다.
 
-즉,
-
-HDR Environment Map은 **Rendering에 사용되는 입력 데이터**이고,
-
-HDR Rendering은 **그 데이터를 포함하여 모든 Lighting과 Shading을 계산하는 과정**이다.
+즉, HDR Environment Map은 **Rendering에 사용되는 입력 데이터**이고, HDR Rendering은 **그 데이터를 포함하여 모든 Lighting과 Shading을 계산하는 과정**이다.
 
 <p align="center">
     <img src="Figures/Chapter06/Fig6_07.png" width="80%">
@@ -560,41 +466,9 @@ HDR Rendering은 이러한 문제를 해결하기 위해 높은 밝기 범위를
 
 HDR Rendering을 사용하면 매우 밝은 영역과 매우 어두운 영역을 동시에 유지하면서 Rendering을 수행할 수 있다.
 
-이를 통해 Reflection,
+이를 통해 Reflection, Image Based Lighting, Bloom, Exposure와 같은 Rendering 효과도 더욱 자연스럽게 동작한다.
 
-Image Based Lighting,
-
-Bloom,
-
-Exposure와 같은 Rendering 효과도 더욱 자연스럽게 동작한다.
-
-즉,
-
-현대 Rendering Engine은 먼저 HDR 공간에서 모든 Lighting을 계산한 후,
-
-최종 단계에서 화면이 표현할 수 있는 밝기 범위로 변환하여 출력한다.
-
----
-
-### Callback
-
-하지만 Scene에서 계산한 Radiance 범위는 출력 Display의 표현 범위와 같지 않다.
-
-따라서 Rendering 결과를 화면이 표현할 수 있는 범위로 변환하는 과정이 필요하다.
-
-이 과정을 **Tone Mapping**이라고 한다.
-
-다음 절에서는 Tone Mapping이 어떤 원리로 HDR 이미지를 화면에 표현하는지 살펴보자.
-
----
-
-### Key Takeaways
-
-- HDR Environment Map은 HDR 형식으로 저장된 환경 이미지이며 IBL의 입력 데이터이다.
-- HDR Rendering은 Rendering 전체를 높은 밝기 범위에서 계산하는 기술이다.
-- HDR Environment Map은 입력(Input)이고, HDR Rendering은 계산(Process)이다.
-- HDR Rendering은 현실의 넓은 밝기 범위를 유지한 채 Lighting과 Shading을 수행한다.
-- 계산된 결과는 Tone Mapping을 통해 화면에 표현된다.
+즉, 현대 Rendering Engine은 먼저 HDR 공간에서 모든 Lighting을 계산한 후, 최종 단계에서 화면이 표현할 수 있는 밝기 범위로 변환하여 출력한다.
 
 ---
 
@@ -606,6 +480,19 @@ Auto Exposure는 화면 밝기 분포에 반응하므로 Material Intensity 변�
 
 예를 들어 Scene 값 1과 4를 HDR Buffer에서 구분할 수 있어도 SDR 화면에서는 둘 다 밝게 압축될 수 있다. 화면 Screenshot의 흰색만으로 Shader 출력이 1인지 4인지 판단하지 않는다. Buffer 값과 표시 결과를 구분하는 것이 기본 Debugging이다.
 
+Scene에서 계산한 Radiance 범위는 출력 Display의 표현 범위와 같지 않다. 따라서 Rendering 결과를 화면이 표현할 수 있는 범위로 변환하는 과정이 필요하며, 이 역할을 **Tone Mapping**이 맡는다.
+
+---
+
+### Key Takeaways
+
+- HDR Environment Map은 HDR 형식으로 저장된 환경 이미지이며 IBL의 입력 데이터이다.
+- HDR Rendering은 Rendering 전체를 높은 밝기 범위에서 계산하는 기술이다.
+- HDR Environment Map은 입력(Input)이고, HDR Rendering은 계산(Process)이다.
+- HDR Rendering은 현실의 넓은 밝기 범위를 유지한 채 Lighting과 Shading을 수행한다.
+- 계산된 결과는 Tone Mapping을 통해 화면에 표현된다.
+
+다음 6.7에서는 **Tone Mapping**이 HDR Rendering 결과를 화면에 표현하는 방식을 살펴본다.
 
 ---
 
@@ -617,9 +504,7 @@ Auto Exposure는 화면 밝기 분포에 반응하므로 Material Intensity 변�
 
 하지만 Scene에서 계산한 Radiance 범위는 출력 Display의 표현 범위와 같지 않다.
 
-즉,
-
-HDR Rendering 결과를 화면에 출력하려면 밝기 범위를 모니터가 표현할 수 있는 범위로 변환해야 한다.
+즉, HDR Rendering 결과를 화면에 출력하려면 밝기 범위를 모니터가 표현할 수 있는 범위로 변환해야 한다.
 
 이 과정을 **Tone Mapping**이라고 한다.
 
@@ -639,13 +524,9 @@ SDR(Standard Dynamic Range)은 일반적인 모니터와 이미지가 표현할 
 
 Tone Mapping은 **HDR Rendering 결과를 화면에 표현 가능한 밝기 범위로 변환하는 과정**이다.
 
-Rendering Engine은 HDR 공간에서 매우 높은 밝기 값을 계산하지만,
+Rendering Engine은 HDR 공간에서 매우 높은 밝기 값을 계산하지만, 최종 출력 장치는 이러한 값을 그대로 표시할 수 없다.
 
-최종 출력 장치는 이러한 값을 그대로 표시할 수 없다.
-
-따라서 매우 밝은 영역은 적절히 압축하고,
-
-어두운 영역은 가능한 한 세부 정보를 유지하면서 화면에 출력한다.
+따라서 매우 밝은 영역은 적절히 압축하고, 어두운 영역은 가능한 한 세부 정보를 유지하면서 화면에 출력한다.
 
 <p align="center">
     <img src="Figures/Chapter06/Fig6_08.png" width="80%">
@@ -657,17 +538,11 @@ Rendering Engine은 HDR 공간에서 매우 높은 밝기 값을 계산하지만
 
 Tone Mapping이 없다면 HDR Rendering의 결과는 정상적으로 화면에 표시될 수 없다.
 
-밝은 영역은 모두 흰색으로 포화되고,
-
-어두운 영역은 검게 뭉개질 수 있다.
+밝은 영역은 모두 흰색으로 포화되고, 어두운 영역은 검게 뭉개질 수 있다.
 
 Tone Mapping은 넓은 밝기 범위를 압축하면서도 사람이 자연스럽게 느끼는 명암을 유지하도록 도와준다.
 
-즉,
-
-HDR Rendering이 계산을 위한 기술이라면,
-
-Tone Mapping은 그 결과를 사람이 볼 수 있도록 변환하는 기술이다.
+즉, HDR Rendering이 계산을 위한 기술이라면, Tone Mapping은 그 결과를 사람이 볼 수 있도록 변환하는 기술이다.
 
 ---
 
@@ -678,21 +553,9 @@ HDR Rendering과 Tone Mapping은 서로 다른 역할을 수행한다.
 - **HDR Rendering** : 높은 밝기 범위를 유지하며 Rendering을 계산한다.
 - **Tone Mapping** : 계산된 HDR 결과를 화면에 표현 가능한 범위로 변환한다.
 
-즉,
+즉, HDR Rendering은 **계산(Process)** 이고, Tone Mapping은 **출력(Output Transformation)** 이다.
 
-HDR Rendering은 **계산(Process)** 이고,
-
-Tone Mapping은 **출력(Output Transformation)** 이다.
-
----
-
-### Callback
-
-Tone Mapping을 통해 밝기는 화면에 표현할 수 있게 되었다.
-
-하지만 화면에 출력되는 이미지는 밝기뿐 아니라 색상도 올바르게 표현되어야 한다.
-
-다음 절에서는 Rendering Pipeline에서 **Color Space**가 어떤 역할을 하는지 살펴보자.
+Tone Mapping으로 밝기 범위를 연결한 뒤에도 색상을 어떤 기준으로 입력하고 계산하며 출력하는지 구분해야 한다. 올바른 이미지를 얻으려면 밝기와 함께 Color 처리의 일관성도 필요하다.
 
 ---
 
@@ -702,7 +565,8 @@ Tone Mapping을 통해 밝기는 화면에 표현할 수 있게 되었다.
 - HDR Rendering은 계산이고, Tone Mapping은 출력 변환이다.
 - Tone Mapping은 밝은 영역과 어두운 영역의 세부 정보를 최대한 유지하도록 밝기를 압축한다.
 - Tone Mapping을 통해 HDR Rendering 결과를 화면에 출력할 수 있다.
-- 다음 절에서는 Color Space를 살펴본다.
+
+다음 6.8에서는 입력부터 출력까지 **Color Space**가 맡는 역할을 연결한다.
 
 ---
 
@@ -710,13 +574,7 @@ Tone Mapping을 통해 밝기는 화면에 표현할 수 있게 되었다.
 
 ### Color Management
 
-앞 절에서는 Tone Mapping을 통해 HDR Rendering 결과를 SDR 범위로 변환하는 과정을 살펴보았다.
-
-이제 화면에 출력할 수 있는 밝기는 준비되었다.
-
-하지만 이미지를 올바르게 표현하려면 밝기뿐 아니라 **색상(Color)** 도 정확하게 처리되어야 한다.
-
-이 역할을 담당하는 것이 **Color Space**이다.
+앞 절에서는 Tone Mapping을 통해 HDR Rendering 결과를 SDR 범위로 연결하는 과정을 살펴보았다. 이 출력 연결을 이해하려면 밝기뿐 아니라 **색상(Color)**을 어떤 기준으로 다루는지도 알아야 한다. 이번 절에서는 **Color Space**를 Texture Input부터 Linear Working Space와 Display Output까지 연결한다.
 
 ---
 
@@ -741,9 +599,7 @@ Rendering Pipeline에서는 하나의 Color Space만 사용하는 것이 아니�
 - **Linear Color Space** : Lighting과 Shading을 계산하는 공간
 - **sRGB** : 흔히 쓰이는 SDR Color Encoding/Color Space의 예. 모든 출력이 sRGB인 것은 아니다
 
-Rendering Engine은 Linear Color Space에서 Lighting과 Shading을 계산한 후,
-
-출력 목표에 맞는 Tone Mapping과 Color Transform/Encoding을 거쳐 표시한다. SDR sRGB 출력은 그중 하나의 예이다.
+Rendering Engine은 Linear Color Space에서 Lighting과 Shading을 계산한 후, 출력 목표에 맞는 Tone Mapping과 Color Transform/Encoding을 거쳐 표시한다. SDR sRGB 출력은 그중 하나의 예이다.
 
 ---
 
@@ -798,9 +654,7 @@ sRGB로 Encoding한 **Base Color Texture**는 Sample 시 Linear 값으로 Decode
 - Tone Mapping은 HDR 결과를 SDR 범위로 변환한다.
 - Color Transform과 Encoding은 실제 Display Output에 맞춘다.
 
-즉,
-
-Color 관리는 Input Decode, Linear Working Space, Output Transform 전체에 걸쳐 적용된다. 마지막 Encoding만을 뜻하지 않는다.
+즉, Color 관리는 Input Decode, Linear Working Space, Output Transform 전체에 걸쳐 적용된다. 마지막 Encoding만을 뜻하지 않는다.
 
 ---
 
@@ -828,14 +682,6 @@ Texture의 이름보다 **무엇을 저장하는 Texture인지**를 먼저 판�
 
 ---
 
-### Callback
-
-이번 Chapter에서는 Rendering Engine이 하나의 이미지를 생성하는 전체 과정을 살펴보았다.
-
-다음 절에서는 지금까지 학습한 Rendering Pipeline을 다시 한 번 정리하며 Chapter 6을 마무리하자.
-
----
-
 ### Key Takeaways
 
 - Color Space는 색상을 저장하고 표현하는 기준이다.
@@ -845,29 +691,23 @@ Texture의 이름보다 **무엇을 저장하는 Texture인지**를 먼저 판�
 - Blender, Unreal Engine, Unity는 표현 방식만 다를 뿐 동일한 원리를 사용한다.
 - Color 관리는 Texture Input부터 Working Space와 Display Output까지 연결된다.
 
+다음 6.9에서는 지금까지 학습한 Lighting 기여, HDR 계산 범위와 출력 변환의 관계를 종합한다.
+
 ---
 
 ## 6.9 Chapter Summary
 
 이번 Chapter에서는 Rendering Engine이 하나의 이미지를 생성하는 전체 과정을 Rendering Pipeline의 관점에서 살펴보았다.
 
-앞선 Chapter에서 Reflection, HDR, Lighting과 같은 개별 개념을 학습했다면,
-
-이번 Chapter에서는 이러한 개념들이 Rendering Pipeline 안에서 어떻게 연결되는지를 이해하는 데 초점을 맞추었다.
+앞선 장과 이번 장의 각 절에서 Reflection, HDR, Lighting과 같은 개별 개념을 학습했다면, 이번 Chapter에서는 이러한 개념들이 Rendering Pipeline 안에서 어떻게 연결되는지를 이해하는 데 초점을 맞추었다.
 
 Direct Light, Indirect Light, Environment는 입사 기여를 제공하며 BRDF는 각각에 대한 Surface Response를 정한다. 이 기여와 Emission이 결합되어 HDR Scene Color를 만든다. IBL의 Specular는 Reflection 기여이므로 같은 기여를 다시 더하지 않는다.
 
 이 모든 과정은 HDR 환경에서 높은 밝기 범위를 유지한 상태로 수행된다.
 
-Rendering 결과는 Exposure와 목표 Display에 맞는 Tone Mapping을 거쳐,
+Rendering 결과는 Exposure와 목표 Display에 맞는 Tone Mapping을 거쳐, 마지막으로 Color Space를 변환하여 화면에서 올바르게 표현되는 최종 이미지를 출력한다.
 
-마지막으로 Color Space를 변환하여 화면에서 올바르게 표현되는 최종 이미지를 출력한다.
-
-즉,
-
-Rendering Pipeline은 단순히 화면을 그리는 과정이 아니라,
-
-**빛을 계산하고(Material Shading), 반사를 표현하며(Reflection), 밝기를 조정하고(Tone Mapping), 최종 색상을 화면에 전달(Color Space)하는 일련의 과정**이다.
+즉, Rendering Pipeline은 단순히 화면을 그리는 과정이 아니라, **빛을 계산하고(Material Shading), 반사를 표현하며(Reflection), 밝기를 조정하고(Tone Mapping), 최종 색상을 화면에 전달(Color Space)하는 일련의 과정**이다.
 
 <p align="center">
     <img src="Figures/Chapter06/Fig6_10.png" width="90%">
@@ -892,9 +732,9 @@ IBL Specular is a Reflection contribution, not an extra duplicate stage
 
 ---
 
-### Chapter Takeaways
+### Key Takeaways
 
-- Reflection은 주변 환경을 Material에 반영하는 과정이다.
+- 이번 장의 Environment Reflection은 주변 환경을 Material에 반영하는 과정이다.
 - IBL은 Environment Map을 이용하여 조명과 반사를 계산한다.
 - HDR Rendering은 넓은 밝기 범위에서 Rendering을 수행한다.
 - Tone Mapping은 HDR 결과를 화면에 출력 가능한 밝기 범위로 변환한다.
@@ -903,14 +743,12 @@ IBL Specular is a Reflection contribution, not an extra duplicate stage
 
 ---
 
-### Next: Stylized Rendering
-
 지금까지 Foundation에서는 Rendering의 핵심 원리를 단계적으로 학습했다.
 
 다음 Chapter부터는 이러한 기초 지식을 바탕으로 **Non-Photorealistic Rendering(NPR)** 을 살펴본다.
 
-NPR은 현실을 그대로 재현하는 대신,
-
-어떤 정보를 단순화하고 강조하여 원하는 스타일을 표현하는 Rendering 기법이다.
+NPR은 현실을 그대로 재현하는 대신, 어떤 정보를 단순화하고 강조하여 원하는 스타일을 표현하는 Rendering 기법이다.
 
 지금까지 학습한 Reflection, BRDF, HDR, Tone Mapping, Color Space 역시 NPR Shader를 구현하는 중요한 기반이 된다.
+
+[Next: Chapter 07 — Stylized Rendering](<Chapter07_Stylized Rendering.md>)

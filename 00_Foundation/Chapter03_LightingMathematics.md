@@ -1229,15 +1229,13 @@ Dot Product는 그렇게 준비된 두 방향의 관계를 하나의 Scalar 값�
 
 이번 Chapter의 목표는 이 연산들을 따로 외우는 것이 아니라, **어떤 입력을 왜 준비하고, 어떤 조건에서 서로 비교해야 하는지** 이해하는 것이다.
 
-### Key Takeaways
+Chapter 03은 방향 관계를, Chapter 04는 Surface의 Material Data를 준비한다. Chapter 05에서는 이 두 입력이 실제 반사 응답에 어떻게 연결되는지 살펴본다. Chapter 08에서는 구현한 Module의 입력과 결과를 검증하는 과정으로 이어간다.
+
+### Chapter Summary
 
 - Surface Position은 상대 방향을 만드는 기준점이고, Normal은 Shading 방향의 기준이다.
 - L과 V는 Light Type과 Camera Projection에 맞는 입력에서 준비한다.
 - Space, 방향 규약, Unit Length는 각각 확인해야 하는 조건이다.
 - 기본 검증에서는 화면 인상과 실제 입력값을 함께 확인한다.
 
-다음 Chapter 04에서는 이렇게 준비한 Surface에 Texture Sample과 Material Parameter가 어떻게 합류하는지 살펴본다.
-
-Chapter 03은 방향 관계를, Chapter 04는 Surface의 Material Data를 준비한다. Chapter 05에서는 이 두 입력이 실제 반사 응답에 어떻게 연결되는지 살펴본다.
-
-Chapter 08에서는 구현한 Module의 입력과 결과를 검증하는 과정으로 이어간다.
+다음 [Chapter 04 — Material Architecture](Chapter04_MaterialArchitecture.md)에서는 이렇게 준비한 Surface에 Texture Sample과 Material Parameter가 어떻게 합류하는지 살펴본다.

@@ -1,54 +1,8 @@
-# Chapter 08 Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 ## 8.10 Final Framework
 
-### Canonical Interface and Composition
-
-아래 계약은 Chapter 08의 기본 교육용 Framework를 연결하는 기준이다. 각 Function은 논리적 Module의 구현 단위이며 Renderer Stage가 아니다. 모든 방향은 명시한 Space의 비영 Unit Vector를 사용한다.
-
-| Function | Inputs | Outputs / Composition |
-|---|---|---|
-| MF_BaseLighting | World N, Surface→Light L, Linear BaseColor | D=saturate(N·L) Scalar; B=BaseColor·D Vector3 |
-| MF_Shadow | B, manual Vis Scalar 0–1 | B·Vis Vector3; Renderer Visibility 공급은 별도 |
-| MF_Specular | N, L, Surface→Camera V, Shininess>0 | saturate(R·V)^Shininess Scalar Artistic Mask; Color/Intensity 외부 적용 |
-| MF_RimLight | N, V, RimWidth, RimSoftness | Scalar RimMask; 0<Softness≤Width≤1, Width=0 Off 별도 정책 |
-| MF_MatCap | World Normal, Texture Object | View-normal Lookup의 Linear RGB; Intensity 외부 적용 |
-| MF_Emission | Linear EmissionColor, Intensity, 현재 UV Sample의 Mask Scalar | Color·Intensity·Mask Vector3; Texture Sample은 함수 밖 |
-| MF_DebugView | DebugMode, F, D, SpecularMask, RimMask, MatCapResult, EmissionResult | 선택된 Vector3 DebugColor |
-
-```text
-S = SpecularMask * SpecularColor * SpecularIntensity
-Rim = RimMask * RimColor * RimIntensity
-A = B * Vis + S + Rim
-M = MatCapResult * MatCapIntensity
-E = EmissionResult
-F = lerp(A, M, MatCapBlend) + E
-Output = SelectDebug(DebugMode, F, D, SpecularMask, RimMask, MatCapResult, E)
-```
-
-MatCapBlend는 0–1의 Constant 또는 선택적인 MI Parameter이다. Blend=0은 A, Blend=1은 M을 선택한다. Intensity=0만으로 MatCap Off가 되는 것은 아니다. E는 Blend 뒤에 더하므로 MatCapBlend=1에도 유지된다.
-
-현재 Vis는 수동 Test Input이며 Base에만 적용하는 Artistic 정책이다. 실제 Cast Shadow 공급과 같은 Light의 물리적 Specular 차폐는 완료된 기능이 아니다. 8.4의 ungated Phong Mask 역시 PBR BRDF가 아니다. LightDirection의 기본 경로는 명시적 World Vector이며 Scene Adapter와 Forward 전용 Expression의 지원은 8.2 기준으로 검증한다.
-
-DebugMode는 정수 0–5이다. 0=F, 1=D, 2=SpecularMask, 3=RimMask, 4=MatCapResult, 5=EmissionResult이며 Shadow/Region Mask는 현재 계약에 없다. 화면 출력은 Unlit Emissive를 거쳐도 Post Process의 영향을 받는다.
-
-### Basic Contract Checks
-
-아래 값은 식에서 도출한 예상 결과이며 Engine 실행 결과가 아니다. 각 Function과 합성 연결을 따로 확인하고, 화면 비교에는 Fixed Exposure 조건을 사용한다.
-
-| Check | Input | Expected Calculation |
-|---|---|---|
-| Base Lighting | Unit N=L, 수직 N/L, N=-L | D=1, 0, 0; B=BaseColor·D |
-| Manual Shadow | B=(0.2,0.4,0.6), Vis=1/0.5/0 | B, (0.1,0.2,0.3), (0,0,0) |
-| Rim | Width=0.4, Softness=0.1, X=1-saturate(N·V) | Smoothstep edges=0.6/0.7; X=0.6/0.65/0.7에서 Mask≈0/0.5/1 |
-| MatCap Blend | Blend=0 또는 1 | Emission을 더하기 전 A 또는 M; Intensity=0만으로 Off 판정 금지 |
-| Emission | Mask=0 또는 1 | (0,0,0) 또는 EmissionColor·Intensity |
-| Debug Selection | 서로 구분되는 각 입력, Mode=0–5 | 위 Mode 표의 입력만 선택; Scalar는 RGB로 표시 |
-
-Zero Direction, 비유효 Rim 범위, DebugMode의 비정수 값은 정상 입력 테스트와 분리한다. 현재 Graph가 모든 비유효 입력을 자동 보정한다고 가정하지 않는다. Renderer Shadow 수집, Engine Light Adapter 지원, Platform별 Compile/Runtime 동작은 별도 실행 검증 대상이다.
-
----
-
+### Overview
 
 Chapter 08에서는 Anime Shader를 하나의 완성된 결과로 바로 만드는 대신, Rendering을 구성하는 주요 기능을 단계적으로 분해하여 각각의 역할과 Data Flow를 직접 구현했다.
 
@@ -124,6 +78,36 @@ Chapter 08.10에서는 새로운 Shader Feature를 추가하지 않는다.
 이를 통해 Chapter 08에서 구현한 구조를 단순한 학습용 Node Graph의 집합이 아니라, **Rendering Concept → Module → Data Flow → User Control → Debugging**으로 이어지는 하나의 Shader Architecture로 정리한다.
 
 ---
+
+### Canonical Interface and Composition
+
+아래 계약은 Chapter 08의 기본 교육용 Framework를 연결하는 기준이다. 각 Function은 논리적 Module의 구현 단위이며 Renderer Stage가 아니다. 모든 방향은 명시한 Space의 비영 Unit Vector를 사용한다.
+
+| Function | Inputs | Outputs / Composition |
+|---|---|---|
+| MF_BaseLighting | World N, Surface→Light L, Linear BaseColor | D=saturate(N·L) Scalar; B=BaseColor·D Vector3 |
+| MF_Shadow | B, manual Vis Scalar 0–1 | B·Vis Vector3; Renderer Visibility 공급은 별도 |
+| MF_Specular | N, L, Surface→Camera V, Shininess>0 | saturate(R·V)^Shininess Scalar Artistic Mask; Color/Intensity 외부 적용 |
+| MF_RimLight | N, V, RimWidth, RimSoftness | Scalar RimMask; 0<Softness≤Width≤1, Width=0 Off 별도 정책 |
+| MF_MatCap | World Normal, Texture Object | View-normal Lookup의 Linear RGB; Intensity 외부 적용 |
+| MF_Emission | Linear EmissionColor, Intensity, 현재 UV Sample의 Mask Scalar | Color·Intensity·Mask Vector3; Texture Sample은 함수 밖 |
+| MF_DebugView | DebugMode, F, D, SpecularMask, RimMask, MatCapResult, EmissionResult | 선택된 Vector3 DebugColor |
+
+```text
+S = SpecularMask * SpecularColor * SpecularIntensity
+Rim = RimMask * RimColor * RimIntensity
+A = B * Vis + S + Rim
+M = MatCapResult * MatCapIntensity
+E = EmissionResult
+F = lerp(A, M, MatCapBlend) + E
+Output = SelectDebug(DebugMode, F, D, SpecularMask, RimMask, MatCapResult, E)
+```
+
+MatCapBlend는 0–1의 Constant 또는 선택적인 MI Parameter이다. Blend=0은 A, Blend=1은 M을 선택한다. Intensity=0만으로 MatCap Off가 되는 것은 아니다. E는 Blend 뒤에 더하므로 MatCapBlend=1에도 유지된다.
+
+현재 Vis는 수동 Test Input이며 Base에만 적용하는 Artistic 정책이다. 실제 Cast Shadow 공급과 같은 Light의 물리적 Specular 차폐는 완료된 기능이 아니다. 8.4의 ungated Phong Mask 역시 PBR BRDF가 아니다. LightDirection의 기본 경로는 명시적 World Vector이며 Scene Adapter와 Forward 전용 Expression의 지원은 8.2 기준으로 검증한다.
+
+DebugMode는 정수 0–5이다. 0=F, 1=D, 2=SpecularMask, 3=RimMask, 4=MatCapResult, 5=EmissionResult이며 Shadow/Region Mask는 현재 계약에 없다. 화면 출력은 Unlit Emissive를 거쳐도 Post Process의 영향을 받는다.
 
 ### Final Framework Overview
 
@@ -1023,7 +1007,7 @@ Final Framework 정리
 
 ---
 
-#### Summary
+#### Architecture Review
 
 현재 ASF Master Material은 여러 Feature Module이 독립적으로 계산을 수행하고, 그 결과를 Final Composition에서 합성한 뒤, `MF_DebugView`를 통해 Final Output 또는 Debug Data를 선택적으로 출력하는 구조를 가진다.
 
@@ -3039,7 +3023,7 @@ Debugging
 
 ---
 
-#### Summary
+#### User Control Review
 
 Material Instance는 Master Material의 단순한 복사본이 아니다.
 
@@ -3753,6 +3737,24 @@ Chapter 08의 마지막 단계에서는 지금까지 구현한 각 Shader Featur
 
 ---
 
+#### Expected Calculation Checks
+
+아래 값은 식에서 도출한 예상 결과이며 Engine 실행 결과가 아니다. 각 Function과 합성 연결을 따로 확인하고, 화면 비교에는 Fixed Exposure 조건을 사용한다.
+
+| Check | Input | Expected Calculation |
+|---|---|---|
+| Base Lighting | Unit N=L, 수직 N/L, N=-L | D=1, 0, 0; B=BaseColor·D |
+| Manual Shadow | B=(0.2,0.4,0.6), Vis=1/0.5/0 | B, (0.1,0.2,0.3), (0,0,0) |
+| Rim | Width=0.4, Softness=0.1, X=1-saturate(N·V) | Smoothstep edges=0.6/0.7; X=0.6/0.65/0.7에서 Mask≈0/0.5/1 |
+| MatCap Blend | Blend=0 또는 1 | Emission을 더하기 전 A 또는 M; Intensity=0만으로 Off 판정 금지 |
+| Emission | Mask=0 또는 1 | (0,0,0) 또는 EmissionColor·Intensity |
+| Debug Selection | 서로 구분되는 각 입력, Mode=0–5 | 위 Mode 표의 입력만 선택; Scalar는 RGB로 표시 |
+
+Zero Direction, 비유효 Rim 범위, DebugMode의 비정수 값은 정상 입력 테스트와 분리한다. 현재 Graph가 모든 비유효 입력을 자동 보정한다고 가정하지 않는다. Renderer Shadow 수집, Engine Light Adapter 지원, Platform별 Compile/Runtime 동작은 별도 실행 검증 대상이다.
+
+---
+
+
 #### Base Lighting Validation
 
 `MF_BaseLighting`은 기본 Lighting 계산을 담당한다.
@@ -4131,7 +4133,7 @@ Chapter 08은 기본 교육용 계산과 Interface, 합성 및 검증 절차를 
 
 ---
 
-### Chapter 08 Summary
+### Chapter Summary
 
 Chapter 08에서는 하나의 Anime Shader 결과를 빠르게 만드는 것이 아니라, Shader가 어떤 Data와 계산을 통해 최종 Pixel Color를 만드는지를 단계적으로 이해하는 것을 목표로 했다.
 
@@ -4165,9 +4167,7 @@ Final Framework 정리
 
 #### Rendering as Data Processing
 
-Chapter 08에서 가장 중요한 변화 중 하나는 Shader를 단순히 최종 화면 결과로만 보지 않게 된 것이다.
-
-Shader 내부에서는 다양한 Data가 단계적으로 생성되고 변환된다.
+이 장에서 얻은 핵심 관점은 Final Color보다 그 값을 만든 Intermediate Data와 Feature Result를 따라가는 것이다. 아래의 Processing 흐름과 실제 관찰 Data는 그 학습 결과를 요약한다.
 
 ~~~text
 Input
@@ -4181,8 +4181,6 @@ Composition
 Final Result
 ~~~
 
-예를 들어 다음 Data를 직접 확인했다.
-
 ~~~text
 LightingData
 SpecularMask
@@ -4192,13 +4190,11 @@ EmissionResult
 FinalResult
 ~~~
 
-이 과정을 통해 최종 Pixel Color는 하나의 계산 결과가 아니라 여러 단계의 Data Processing을 거쳐 만들어지는 값이라는 것을 확인했다.
-
 ---
 
 #### Function-based Implementation
 
-Rendering Feature를 `MF_` 단위로 분리했다.
+각 Rendering Feature를 명확한 Input/Output과 하나의 책임을 가진 Material Function으로 정리했다. 아래 목록은 책임의 빠른 참조이며 상세 계약은 앞의 Canonical Interface와 Material Function Responsibilities를 따른다.
 
 ~~~text
 MF_BaseLighting
@@ -4210,8 +4206,6 @@ MF_Emission
 MF_DebugView
 ~~~
 
-이 과정에서 Material Function을 단순히 Graph를 정리하는 기능이 아니라 **명확한 Input과 Output을 가진 Shader Module**로 사용하는 방법을 확인했다.
-
 ~~~text
 Input
       ↓
@@ -4219,8 +4213,6 @@ Material Function
       ↓
 Output
 ~~~
-
-각 Module은 가능한 한 하나의 책임을 가지도록 구성했다.
 
 ~~~text
 MF_BaseLighting
@@ -4245,15 +4237,11 @@ MF_DebugView
 → Debug Selection
 ~~~
 
-이러한 역할 분리는 Shader 구조를 이해하고 수정하며 재사용하는 데 중요한 기반이 된다.
-
 ---
 
 #### Intermediate and Feature Results
 
-Chapter 08에서는 모든 Shader Output이 같은 의미를 가지는 것이 아니라는 점도 확인했다.
-
-예를 들어:
+LightingData·SpecularMask·RimMask 같은 Intermediate Data와 MatCapResult·EmissionResult·FinalResult 같은 Color 결과는 역할이 다르다. Data Type과 함께 Pipeline에서 어떤 목적의 값인지 읽어야 한다.
 
 ~~~text
 LightingData
@@ -4261,27 +4249,17 @@ SpecularMask
 RimMask
 ~~~
 
-는 계산 과정에서 사용되는 Intermediate Data에 가깝다.
-
-반면:
-
 ~~~text
 MatCapResult
 EmissionResult
 FinalResult
 ~~~
 
-는 Color 정보를 가진 Feature 또는 Final Result다.
-
-즉 Shader Architecture를 이해할 때는 단순히 Data Type만 보는 것이 아니라, **그 값이 Pipeline 안에서 어떤 역할을 가지는지**까지 함께 이해해야 한다.
-
 ---
 
 #### Scalar and Vector Data
 
-Shader 구현 과정에서 Scalar와 Vector의 차이도 실제 문제를 통해 확인했다.
-
-예를 들어:
+Scalar/Vector3의 Type 경계는 실제 결과에 영향을 준다. Debug Selector에서 RGB 손실을 피하기 위해 Scalar를 (1,1,1)로 확장하고 모든 후보의 Output Type을 통일했다.
 
 ~~~text
 SpecularMask
@@ -4297,26 +4275,16 @@ EmissionResult
 → Vector3
 ~~~
 
-Debug View에서 Scalar와 Vector3를 동일한 `If` Chain에 직접 혼합했을 때 Color 정보가 손실되는 문제를 경험했다.
-
-이를 해결하기 위해:
-
 ~~~text
 Scalar × (1,1,1)
 → Vector3
 ~~~
 
-방식으로 Output Type을 통일했다.
-
-이 과정은 Shader Data Type이 단순한 설정 값이 아니라, 실제 Data Flow와 Result에 직접 영향을 주는 중요한 요소라는 것을 보여준다.
-
 ---
 
 #### Texture Resource and Sample
 
-MatCap과 Emission을 구현하면서 Texture 자체와 현재 Pixel에서 Sample된 Result가 서로 다른 개념이라는 점을 반복해서 확인했다.
-
-예를 들어 Emission은 다음 흐름을 가진다.
+Texture Resource와 현재 Pixel에서 Sample한 값은 다르다. Emission은 UV의 선택 Channel Scalar를 받고 MatCap은 내부에서 Resource를 Lookup하여 MatCapResult를 만든다. Debug에서도 원본 Texture 대신 실제 계산 결과를 관찰한다.
 
 ~~~text
 Texture
@@ -4328,12 +4296,6 @@ Selected Channel
 Scalar Mask
 ~~~
 
-즉 Texture 전체가 하나의 Scalar로 바뀌는 것이 아니다.
-
-현재 Pixel의 UV 위치에서 Texture를 Sample한 뒤 선택한 Channel 값이 해당 Pixel의 Scalar Data로 사용된다.
-
-MatCap 역시:
-
 ~~~text
 Texture2D
       ↓
@@ -4342,17 +4304,11 @@ Mapping / Sample
 MatCapResult
 ~~~
 
-구조를 가지며, Debug View에서 확인하는 값은 원본 Texture가 아니라 실제 계산된 `MatCapResult`다.
-
-이 차이는 이후 Texture, Mask, Normal, Material Function을 다룰 때 계속 중요한 개념이 된다.
-
 ---
 
 #### Calculation and Artist Controls
 
-Specular와 Rim Light에서는 Feature 계산과 최종 표현을 분리했다.
-
-Specular의 경우:
+Specular/Rim의 Mask 계산은 Function, Color·Intensity는 Artist Control, 최종 합성은 Master의 책임으로 분리했다. 아래의 두 경로가 이 관계를 보여준다.
 
 ~~~text
 MF_Specular
@@ -4365,8 +4321,6 @@ SpecularIntensity
 Specular Result
 ~~~
 
-Rim Light는:
-
 ~~~text
 MF_RimLight
       ↓
@@ -4377,10 +4331,6 @@ RimIntensity
       ↓
 Rim Result
 ~~~
-
-형태를 가진다.
-
-이를 통해 다음 역할을 구분할 수 있었다.
 
 ~~~text
 Material Function
@@ -4393,13 +4343,11 @@ Master Material
 → Feature Composition
 ~~~
 
-이 구조는 이후 Production Master Material을 설계할 때 더욱 중요해진다.
-
 ---
 
 #### Material Instance Interface
 
-Master Material과 Material Instance의 역할도 구분했다.
+Master는 Shader Logic, Function은 Feature Module, Material Instance는 Look Control을 담당한다. Artist가 Graph를 매번 수정하지 않고 하나의 Master에서 여러 Look을 만들 수 있는 경계다.
 
 ~~~text
 Master Material
@@ -4412,15 +4360,11 @@ Material Instance
 → User Control
 ~~~
 
-Material Instance에서는 Look Development에 필요한 Parameter만 조절하고, Shader 내부 계산 구조는 Master Material에 유지한다.
-
-이 구조를 사용하면 하나의 Master Material을 여러 Material Instance에서 재사용할 수 있으며, Artist가 Shader Graph를 직접 수정하지 않고도 다양한 Look을 만들 수 있다.
-
 ---
 
 #### Debug Data Inspection
 
-Chapter 08 후반부에서는 `MF_DebugView`를 구현했다.
+MF_DebugView는 실제 계산 Data를 선택하여 시각화한다. 아래 Mode 참조와 문제 범위를 좁히는 경로는 자동 해결 기능이 아니라 Data Flow Inspection의 학습 결과다.
 
 ~~~text
 DebugMode 0
@@ -4442,10 +4386,6 @@ DebugMode 5
 → EmissionResult
 ~~~
 
-이 구조를 통해 Shader 내부 Data를 직접 시각화할 수 있게 되었다.
-
-Debug View의 목적은 문제를 자동으로 해결하는 것이 아니다.
-
 ~~~text
 Final Result 문제 발견
         ↓
@@ -4456,13 +4396,11 @@ Final Result 문제 발견
 문제 범위 축소
 ~~~
 
-즉 Shader Debugging을 **Data Flow Inspection** 관점에서 접근하는 방법을 익혔다.
-
 ---
 
 #### Final Framework Structure
 
-Chapter 08의 최종 Architecture는 다음과 같다.
+작은 Framework의 최종 구조는 입력·Feature 계산·합성·Inspection·출력으로 이어진다. 아래 Module Branch는 모든 Function을 직렬 연결하는 구조와 구분하여 읽는다.
 
 ~~~text
 Input Data
@@ -4482,8 +4420,6 @@ Debug View
 Final Output
 ~~~
 
-이를 Module 관점에서 보면:
-
 ~~~text
 Shared N/L/V + Material Inputs
   ├─ MF_BaseLighting → MF_Shadow (manual Vis) ─┐
@@ -4494,17 +4430,11 @@ Shared N/L/V + Material Inputs
 Actual intermediate outputs + F → MF_DebugView → Emissive Color
 ~~~
 
-즉 Chapter 08에서 만든 것은 단순한 Shader Effect 하나가 아니라, Rendering Feature가 Module화되고 서로 Data를 전달하며 최종 결과를 만드는 작은 규모의 Shader Framework다.
-
 ---
 
 #### Learning and Production
 
-현재 ASF Chapter 08 Framework는 Unreal Renderer를 대체하기 위한 시스템이 아니다.
-
-Chapter 08에서 직접 Base Lighting, Specular, Shadow 등을 구현한 목적은 Engine 기능을 사용하지 않기 위해서가 아니라, **Engine이 처리하는 Rendering 원리를 이해하기 위해서**였다.
-
-따라서 이후 Production Material에서는 다음 원칙을 사용한다.
+이 교육용 ASF는 Unreal Renderer를 대체하지 않는다. 직접 구현한 경험은 Engine 기능의 원리를 이해하고 Built-in 기능과 프로젝트 Custom Logic의 경계를 판단하는 기반이다. 아래처럼 기본 기능을 먼저 검토하고 부족한 부분만 Function·Custom HLSL·필요한 Custom Shader 수준에서 확장한다.
 
 ~~~text
 Unreal 기본 기능으로 해결 가능한가?
@@ -4513,8 +4443,6 @@ Unreal 기본 기능으로 해결 가능한가?
         ↓
 Built-in 기능 사용
 ~~~
-
-부족한 기능만 확장한다.
 
 ~~~text
 Built-in 기능 부족
@@ -4525,14 +4453,6 @@ Custom HLSL
       ↓
 필요 시 Custom Shader
 ~~~
-
-즉 앞으로의 목표는 모든 Shader 계산을 직접 다시 구현하는 것이 아니다.
-
-중요한 것은 다음 능력이다.
-
-> **Engine이 제공하는 기능과 프로젝트에서 필요한 Custom Logic의 경계를 판단하고, 적절한 구현 수준을 선택하는 것**
-
-Chapter 08에서 직접 구현한 경험은 이러한 판단을 위한 Foundation 역할을 한다.
 
 ---
 
@@ -4610,13 +4530,15 @@ Chapter 08을 한 문장으로 정리하면 다음과 같다.
 문제가 발생하면 어느 Data를 확인해야 하는가?
 ~~~
 
-이 질문을 할 수 있는 것이 Chapter 08에서 얻은 가장 중요한 Foundation이다.s
+이 질문을 할 수 있는 것이 Chapter 08에서 얻은 가장 중요한 Foundation이다.
 
 ---
 
-#### Chapter 08 Complete
+#### Learning Path and Production Scope
 
-Chapter 08에서는 Rendering Concept를 직접 구현하고, 이를 Material Function으로 Module화하며, Master Material에 통합하고, Material Instance와 Debug View까지 연결하는 전체 과정을 완료했다.
+Chapter 08은 Concept를 직접 구현하고 Module·Master Composition·Material Instance·Debug View로 연결하는 기본 교육용 Framework의 문서 범위를 정리했다. 아래는 이 장에서 연결한 전체 학습 흐름이다.
+
+이후 Production Material 학습에서는 Engine의 기본 기능을 활용하면서 프로젝트에 필요한 확장만 선택하는 원칙을 유지한다. 문서의 완료와 모든 Engine 조합의 실행 검증 완료는 앞에서 구분한 범위를 따른다.
 
 ~~~text
 Concept
@@ -4636,6 +4558,8 @@ Debugging
 Final Framework
 ~~~
 
-이로써 Chapter 08의 구현과 Documentation을 완료한다.
+다음 Chapter 09에서는 이 흐름을 바탕으로 Debugging·Profiling·Optimization의 판단 과정을 이어간다.
 
-이후 단계에서는 Chapter 08에서 직접 구현하며 이해한 Rendering Foundation을 기반으로 Unreal의 실제 Material System과 Rendering Pipeline을 더 깊게 학습하고, Production 환경에서는 Engine의 기본 기능을 적극적으로 활용하면서 프로젝트에서 필요한 기능만 선택적으로 확장하는 방향으로 진행한다.
+---
+
+**Next → [Chapter 09 — Rendering Debug and Optimization](<../Chapter09_RenderingDebugandOptimization.md>)**

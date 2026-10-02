@@ -1,4 +1,4 @@
-# Chapter 08 Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 ## 8.9 Debug View
 
@@ -3325,21 +3325,15 @@ Framework
 
 ---
 
-### Summary
+### Implementation Reference
 
-Chapter 8.9에서는 ASF 내부에서 계산되는 주요 데이터를 직접 시각화할 수 있는 Debug View System을 설계하고 구현했다.
-
-Shader가 단순할 때는 Final Result만으로도 대부분의 문제를 확인할 수 있다.
-
-하지만 Base Lighting, Specular, Rim Light, MatCap, Emission과 같이 여러 Feature가 하나의 Master Material 안에서 결합되면, 최종 화면만으로는 어느 단계에서 문제가 발생했는지 판단하기 어려워진다.
-
-이를 해결하기 위해 ASF에서는 Final Shading을 구성하는 과정에서 생성되는 Intermediate Data와 Feature Result를 별도의 Debug Path로 노출했다.
+Debug View의 Mode, Selector 입력, Data Type, 통합 경로와 검증 기준을 다시 찾기 위한 참조이다. 실제 데이터 선택과 구현·검증 절차는 앞의 해당 단계에 정리되어 있다.
 
 ---
 
 #### Selected Debug Data
 
-ASF의 모든 내부 데이터를 Debug 대상으로 만드는 대신, 실제 문제 진단에 의미가 높은 Data를 선택했다.
+모든 값을 노출하는 대신 진단에 유용한 실제 Data를 선택했다. 아래 Mode 목록은 빠른 참조이며 각 Feature에서 같은 계산 단계를 선택해야 한다는 뜻은 아니다. Intermediate Data, Mask, Feature Result의 구분을 함께 읽는다.
 
 ~~~text
 DebugMode 0
@@ -3361,8 +3355,6 @@ DebugMode 5
 → Emission Result
 ~~~
 
-각 Feature에서 동일한 종류의 데이터를 선택한 것은 아니다.
-
 ~~~text
 Lighting
 → Intermediate Data
@@ -3380,13 +3372,11 @@ Emission
 → Feature Result
 ~~~
 
-Debug View의 목적은 모든 Feature에서 동일한 계산 단계를 보여주는 것이 아니라, **각 기능의 문제를 판단하는 데 가장 유용한 데이터를 보여주는 것**이기 때문이다.
-
 ---
 
 #### Function Implementation
 
-선정한 Debug Data를 하나의 공통 Material Function에서 선택할 수 있도록 `MF_DebugView`를 구현했다.
+MF_DebugView는 아래 Interface로 입력을 받고 If Chain으로 일치하는 Mode를 선택한다. 별도 Equal Node를 사용하지 않으며 A>B와 A<B는 모두 A/B가 일치하지 않은 경우의 다음 Path다.
 
 ~~~text
 MF_DebugView
@@ -3404,12 +3394,6 @@ Output
 └─ DebugColor
 ~~~
 
-`DebugMode`는 0~5 값을 사용하여 출력할 Data를 선택한다.
-
-Unreal Material Graph에서 별도의 `Equal` 비교 Node를 사용하지 않고 `If` Node를 연속으로 연결하여 Mode Selection 구조를 구현했다.
-
-각 `If` Node는 다음 구조를 가진다.
-
 ~~~text
 A = DebugMode
 B = Mode Number
@@ -3422,13 +3406,11 @@ A < B
 → 다음 If Result
 ~~~
 
-이번 구조에서는 `A > B`와 `A < B`를 각각 다른 조건으로 사용하는 것이 아니라, 둘 다 **A와 B가 일치하지 않는 경우**를 처리하는 Path로 사용했다.
-
 ---
 
 #### Output Type
 
-Debug Data는 Scalar와 Vector3가 혼합되어 있다.
+공통 Selector Output은 Vector3다. Scalar는 (1,1,1)을 곱해 Gray Scale Vector3로 만들고 기존 RGB Result는 그대로 유지한다. 아래 Type과 Output 비교는 이 경계의 빠른 참조다.
 
 ~~~text
 Scalar
@@ -3442,14 +3424,10 @@ Vector3
 → Emission Result
 ~~~
 
-하나의 `If` Chain에서 안정적으로 Color 정보를 유지하기 위해 Scalar Data는 `(1,1,1)` Vector를 곱하여 Vector3로 변환했다.
-
 ~~~text
 Scalar × (1,1,1)
 → Vector3 Gray Scale
 ~~~
-
-반면 기존 RGB Result는 Vector3 상태를 그대로 유지했다.
 
 ~~~text
 MatCap Result
@@ -3462,13 +3440,11 @@ Final Result
 → RGB 유지
 ~~~
 
-이를 통해 Gray Scale Debug Data와 Color Debug Data를 하나의 `DebugColor` Output으로 안정적으로 전달할 수 있었다.
-
 ---
 
 #### Master Material Integration
 
-`MF_DebugView`를 ASF Master Material의 Final Output Path에 통합했다.
+Final Result도 Input으로 전달하여 Mode=0에서 기존 Rendering을 유지한다. Material Instance의 DebugMode 하나로 실제 Data를 전환하며 Graph 배선을 매번 변경하지 않는다.
 
 ~~~text
 Shader Data
@@ -3480,18 +3456,10 @@ DebugColor
 Emissive Color
 ~~~
 
-기존 Final Result 역시 `MF_DebugView`의 Input으로 전달한다.
-
-따라서:
-
 ~~~text
 DebugMode = 0
 → 기존 Final Rendering
 ~~~
-
-상태를 유지하면서 필요할 때만 Intermediate Data를 출력할 수 있다.
-
-Material Graph 연결을 직접 변경하지 않고 Material Instance의 `DebugMode` 값 하나만 수정하여 Debug View를 전환할 수 있도록 구성했다.
 
 ---
 
@@ -3536,7 +3504,7 @@ Material Instance에서 `DebugMode = 0~5`를 순차적으로 변경하며 모든
 
 #### Debug Responsibility
 
-Material Instance와 Debug View는 서로 다른 목적을 가진다.
+Material Instance는 Look을 제어하고 Debug View는 내부 Data를 관찰한다. Parameter만으로 원인을 판단하기 어려울 때 Final Result에서 관련 Data로 확인 범위를 좁힌다. Debug View는 문제를 자동으로 해결하는 기능이 아니다.
 
 ~~~text
 Material Instance
@@ -3548,19 +3516,9 @@ Debug View
 → 문제 원인 추적
 ~~~
 
-일반적인 Look Development에서는 Material Instance Parameter만으로 충분한 경우가 많다.
-
-하지만 Parameter만으로 원인을 판단하기 어려운 문제가 발생하면 Debug View를 사용하여 내부 Data Flow를 직접 확인할 수 있다.
-
-따라서 Debug View의 핵심 질문은 다음과 같다.
-
-> **최종 결과가 왜 이렇게 만들어졌는가?**
-
-Final Result에서 시작하여 관련 Intermediate Data를 확인하면서 문제의 위치를 단계적으로 좁히는 것이 Debug View의 주요 목적이다.
-
 ---
 
-#### Key Takeaways
+### Key Takeaways
 
 이번 절에서 확인한 핵심 내용은 다음과 같다.
 
@@ -3603,3 +3561,7 @@ Debug Data 확인
 Chapter 8.9까지 완료하면서 ASF는 단순히 여러 Shader Feature를 조합하는 구조를 넘어, 내부 Data Flow를 직접 확인하고 검증할 수 있는 기본 진단 구조까지 갖추게 되었다.
 
 다음 단계에서는 지금까지 Chapter 8에서 구현한 Shader Feature와 Debug System을 전체적으로 정리하고, ASF의 최종 Framework 구조를 확인한다.
+
+---
+
+**Next → [8.10 Final Framework](<./Chapter08.10_FinalFramwork.md>)**

@@ -1,4 +1,4 @@
-# Chapter 08 Building an Anime Shader
+# Chapter 08 — Building an Anime Shader
 
 ## 8.4 Phong Specular — From Reflection to Specular Highlight
 
@@ -1719,7 +1719,7 @@ Master Material은
 
 ---
 
-#### 8.4 Summary
+### Key Takeaways
 
 이번 절에서는 Anime Shader에서 사용하는 Specular Highlight를 구현하면서, 현실적인 반사광을 그대로 재현하는 것이 아니라 **필요한 형태만 선택적으로 단순화하고 제어하는 과정**을 살펴보았다.
 
@@ -1739,12 +1739,12 @@ Specular Highlight는 단순히 표면을 밝게 만드는 효과가 아니다.
 
 이러한 방향 기반 계산은 다음 단계에서도 다시 사용된다.
 
-다음 절에서는 카메라 방향과 Surface Normal의 관계를 이용하여 캐릭터의 외곽 영역을 강조하는 **Rim Light**를 구현한다.
-
 Specular가 주로 빛의 방향과 시선 방향이 만들어내는 Highlight를 다루었다면, Rim Light에서는 시선에 대해 표면이 얼마나 비스듬하게 놓여 있는지를 이용해 외곽 영역을 검출한다.
 
 이를 통해 지금까지 사용해 온 Normal과 View Direction의 개념을 다시 연결하고, View-dependent한 표현이 Anime Shader에서 어떻게 스타일 요소로 활용될 수 있는지 살펴본다.
 
+다음 절에서는 카메라 방향과 Surface Normal의 관계를 이용하여 캐릭터의 외곽 영역을 강조하는 **Rim Light**를 구현한다.
+
 ---
 
-**Next → 8.5 Rim Light**
+**Next → [8.5 Rim Light](<./Chapter08.5_RimLight.md>)**

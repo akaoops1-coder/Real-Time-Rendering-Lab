@@ -1,8 +1,9 @@
 # ASF-003 Documentation Standard
 
-> Version : v0.2  
+> Version : v0.3  
 > Status : Draft  
 > Scope : Anime Shader Framework Project
+> Revision : 2026-10-02
 
 ---
 
@@ -523,7 +524,7 @@ Chapter와 Section Title은 English를 기본으로 한다.
 
 ## Explanatory Text
 
-설명 문장은 Korean을 기본으로 한다.
+설명 문장은 Korean을 기본으로 하고, 문체는 `…다`로 통일한다. 원문 인용, 실제 UI 문구와 Code는 원래 표현을 유지한다.
 
 예:
 
@@ -551,10 +552,12 @@ ASF Chapter Documentation은 Heading Level을 단순하게 유지한다.
 
 Chapter Title에는 `#`을 사용한다.
 
+Foundation의 Chapter Title은 두 자리 Chapter Number와 `—` 구분자를 사용한다. Chapter 08처럼 여러 파일에 걸친 장은 같은 Chapter Title을 사용하고, 각 파일의 Module 번호와 이름을 `##`로 구분한다. 기존 파일명은 유지한다.
+
 예:
 
 ```text id="t426xg"
-# Chapter 09 - Rendering Debug and Optimization
+# Chapter 09 — Rendering Debug and Optimization
 ```
 
 ---
@@ -562,6 +565,8 @@ Chapter Title에는 `#`을 사용한다.
 ## Numbered Major Section
 
 주요 Section에는 `##`를 사용하고 Chapter Section Number를 포함한다.
+
+Chapter 목차와 안내만 제공하는 index 문서는 동등한 안내 항목을 번호 없는 `##`로 구분한다. 개별 Module 본문에는 기존 `## 8.x`와 그 아래의 `###` 학습 단계를 유지한다.
 
 예:
 
@@ -616,6 +621,54 @@ Heading Depth가 지나치게 깊어지지 않도록 한다.
 ##
 ###
 ```
+
+---
+
+# Section Flow and Closing Roles
+
+Section의 도입, 본문, 요약, 다음 주제 연결은 서로 다른 역할을 가진다. 이 역할을 문서 전체에서 일관되게 유지하되, 모든 Section에 같은 제목이나 같은 수의 항목을 넣지 않는다.
+
+## Opening and Concept Development
+
+도입은 직전 내용에서 준비된 Data나 남은 질문을 현재 주제와 연결한다. 새로운 Concept가 왜 필요한지를 먼저 설명하고, 관계와 처리 흐름을 따라 정의·수식·예시·적용 조건으로 이어간다.
+
+개념 설명, Module 구현, 측정·진단은 각각의 목적에 맞게 전개한다. Chapter 08의 프로젝트 준비에 계산 Module의 Interface 양식을 강제로 적용하거나, Profiling 설명에 PBR/Stylized 비교 양식을 반복하지 않는다.
+
+## Explanation and Validation Before Review
+
+새 개념, 수치 예시, 기술 조건, 실제 검증 절차는 본문에서 설명한다. Summary나 Key Takeaways로 해당 학습 단위를 닫은 뒤 새 본문 설명을 다시 시작하지 않는다.
+
+비교표, Data Flow, 용어표는 관계를 설명하거나 빠르게 참조하는 역할이 있다. 요약과 표현 형식이 다르다는 이유로 모두 중복으로 취급하지 않는다. 같은 결론을 다시 진술하는 문단은 합치고, 서로 다른 입력·조건·판단을 보여주는 사례는 유지한다.
+
+## Section and Module Review
+
+핵심 관계와 판단 조건을 다시 묶을 필요가 있는 Section이나 Module에 선택적으로 `Key Takeaways`를 둔다. 모든 짧은 Section에 요약을 추가하지 않는다.
+
+요약은 본문에서 설명한 관계와 범위를 유지한다. 현재 구현, 교육용 예제, 설계 방향, 향후 확장을 모두 구현 완료로 바꾸지 않는다. 요약을 짧게 만들기 위해 Unit Vector, Coordinate Space, View/Pass, Format, 비교 조건 등의 중요한 전제를 제거하지 않는다.
+
+장 전체의 연결과 학습 결과를 합성하는 회고에는 `Chapter Summary`를 사용한다. 여러 Section을 묶는 `Part Summary`는 개별 절의 요약을 다시 나열하는 대신 그 관계를 합성할 때 사용한다. Function 계약, 데이터 흐름, 용어 비교가 목적이라면 해당 역할이 드러나는 제목을 사용한다.
+
+## Connections and Navigation
+
+`Callback`을 반복되는 독립 소제목으로 사용하지 않는다. 이전 Concept를 현재 설명에 다시 사용하는 내용은 도입이나 해당 본문에 자연스러운 연결 문단으로 둔다. 다음 주제가 필요한 이유는 해당 학습 단위의 마무리 뒤에 한 번 설명한다.
+
+다음 Section의 도입이 이미 직전 내용을 받아주면 같은 연결을 앞뒤에 반복하지 않는다. 같은 Chapter 안에서는 앞 절과 다음 절을 구분하고, 실제 순서와 다른 주제를 예고할 경우 거쳐 가는 학습 경로를 밝힌다.
+
+문서 내부의 참조는 실제 Heading 이름이나 Anchor에 맞춘다. 본문에 없는 세부 번호를 만들어 이동 대상으로 표시하지 않는다. 다른 파일로 이동하는 안내는 하단에 실제 상대 경로의 Markdown 링크로 제공한다. 파일명, 주요 Section 번호, Figure 경로는 형식을 정리한다는 이유로 변경하지 않는다.
+
+현재 존재하지 않는 다음 문서에 가짜 링크를 만들지 않는다. 향후 실습·Advanced·Case Study 계획은 다음 단계의 계획으로 구분하며, 현재 Chapter의 새 기술 설명이나 완료된 실측 결과처럼 표시하지 않는다.
+
+## Notes and Verification Scope
+
+짧은 국소적인 구현 조건과 읽기 조건은 해당 주장 가까이에 Note로 둔다. 실제 실습 순서, 기대값, 관찰과 확인 절차는 독립적인 검증 본문으로 유지한다. 긴 Architecture 책임이나 Production 논의도 그 설명 역할에 맞는 본문에 둔다.
+
+캡션은 Figure에서 무엇을 읽을지 안내한다. 긴 정정 이력이나 구현별 조건은 Figure 바로 뒤의 Reading 또는 Implementation Note로 구분할 수 있다. 오독을 막는 조건, 개념도의 범위, 실행 미검증 상태를 삭제하거나 검증 완료로 바꾸지 않는다.
+
+## Heading Scope and Narrative Paragraphs
+
+같은 파일에서 큰 학습 단계와 그 단계의 세부 설명을 Heading 수준으로 구분한다. 문서 전체의 요약을 마지막 Function 설명의 하위 항목처럼 표시하지 않는다. 소단위의 요약은 그 학습 단계 아래에 둔다.
+
+연속된 원인과 결과는 자연스러운 문단으로 연결한다. 질문·수식·도식에 필요한 여백은 유지하되, 하나의 문장을 단어마다 별도 문단으로 나누지 않는다.
 
 ---
 

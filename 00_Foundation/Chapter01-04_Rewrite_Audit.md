@@ -1,3 +1,5 @@
+> **후속 Figure 교정 — 2026-10-02:** 아래 Audit은 2026-10-01 본문 재작성 당시의 상태와 원본 Figure 검토 이력이다. 이후 사용자 요청으로 선택한 12개 Figure를 재생성하고 관련 본문 설명을 갱신했다. 현재 이미지의 교정 및 검수 결과는 [Figure Regeneration Audit](Figure_Regeneration_Audit.md)을 따른다. 아래의 과거 “미수정” 및 “Revision Required” 기록은 당시 상태를 보존한 것이다.
+
 # Chapter 01–04 Rewrite Audit
 
 ## 1. Rewrite Goal

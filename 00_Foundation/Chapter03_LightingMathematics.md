@@ -410,7 +410,7 @@ Dot Product의 핵심은 복잡한 성분 계산을 외우는 것이 아니다.
 
 <img src="Figures/Chapter03/Fig3_02.png" width="90%">
 
-**Figure 3-2. Dot Product and Direction Factor.** 위쪽의 Signed Dot Product와 아래쪽의 Clamped Factor를 나누어 읽는다. 두 값 모두 최종 화면 밝기는 아니다. 그림 하단의 `3.2 Dot Product`는 이전 Section 표기이며, 현재 본문에서는 **3.3 Dot Product**에 해당한다.
+**Figure 3-2. Dot Product and Direction Factor.** 위쪽의 Signed Dot Product와 아래쪽의 Clamped Factor를 나누어 읽는다. 두 값 모두 최종 화면 밝기는 아니다.
 
 ### Key Takeaways
 
@@ -1033,7 +1033,7 @@ Light Direction과 View Direction은 Light와 Camera의 Position 자체가 아�
 
 <img src="Figures/Chapter03/Fig3_05.png" width="90%">
 
-**Figure 3-5. Light and View Direction.** Directional Light의 빛 진행 방향 D와 Surface → Light 방향 L은 서로 반대다. Point/Spot Light에서는 같은 Space의 Position 차이로 L을 준비한다. 그림의 Camera Position 차이로 만드는 V는 **Perspective Camera 예제**이며, Orthographic Camera에는 위에서 설명한 평행 Viewing Ray 기준을 사용한다.
+**Figure 3-5. Light and View Direction.** Directional Light의 빛 진행 방향 D와 Surface → Light 방향 L은 서로 반대다. Point/Spot Light에서는 같은 Space의 Position 차이로 L을 준비한다. 그림은 Camera Position 차이로 V를 만드는 **Perspective Camera 예제**와, 평행 Viewing Ray의 반대 방향을 V로 사용하는 **Orthographic Camera 경로**를 별도로 구분한다.
 
 다음 Section에서는 이렇게 준비한 N, L, V를 하나의 Lighting 계산에 연결한다.
 
@@ -1106,7 +1106,7 @@ Position은 Chapter 02의 Position Transform 경로를 사용하고, Normal은 3
 
 <img src="Figures/Chapter03/Fig3_06.png" width="90%">
 
-**Figure 3-6. A Common Coordinate Space.** 오른쪽 비교에서는 물리적으로 같은 L을 World와 View의 서로 다른 성분으로 표현한 뒤, 기준을 섞었을 때 Dot Product가 달라지는 문제를 보여준다. 아래 Position 차이 경로의 L은 Point Light 예제이고 V는 Perspective Camera 예제다. Directional Light와 Orthographic Camera에는 3.6의 입력 경로를 사용한다.
+**Figure 3-6. A Common Coordinate Space.** 오른쪽 비교에서는 물리적으로 같은 L을 World와 View의 서로 다른 성분으로 표현한 뒤, 기준을 섞었을 때 Dot Product가 달라지는 문제를 보여준다. 아래 표의 Position 차이 경로는 **Point/Spot Light와 Perspective Camera 예제**다. 별도의 `다른 준비 경로`는 Directional Light의 L과 Orthographic Camera의 V를 구분한다. 이 방향들도 선택한 같은 Lighting Space의 Unit Vector로 준비하며, 입력 조건은 3.6의 구분을 따른다.
 
 ---
 

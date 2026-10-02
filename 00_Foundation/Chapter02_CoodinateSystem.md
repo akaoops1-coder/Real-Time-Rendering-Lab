@@ -7725,7 +7725,7 @@ Matrix × (x, y, z, w) = (x', y', z', w')
 
 ---
 
-Figure 2-11의 4×4 배열은 앞에서 설명한 Transform 규칙을 같은 형태의 곱으로 표현한 것이다. 이 장은 Column Vector를 사용한다. Figure의 제목 설명은 Rendering에서의 Space Conversion 용도를 중심으로 읽으며, Matrix를 사용하는 모든 연산이 Space Conversion이라는 뜻은 아니다.
+Figure 2-11의 4×4 배열은 앞에서 설명한 Transform 규칙을 같은 형태의 곱으로 표현한 것이다. 이 장은 Column Vector를 사용한다. 같은 Space 안의 Scale·Rotation과 Rendering에서의 Model / View / Projection에 의한 Space 전달을 함께 보여준다.
 
 <img src="Figures/Chapter02/Fig2_11.png" width="90%">
 
@@ -9748,7 +9748,7 @@ Artist가 만든 Shading Normal도 Translation을 받지 않는 방향 Data다. 
 
 ---
 
-Figure 2-13에서는 Translation이 Position에만 참여하는 이유를 먼저 비교한다. M=T·R·S는 Column Vector의 곱이며 실제 적용 순서는 Scale → Rotation → Translation이다. Normal 패널은 Non-uniform Scale에서 Surface 관계를 별도로 보존해야 한다는 점을 요약한다.
+Figure 2-13에서는 Translation이 Position에만 참여하는 이유를 먼저 비교한다. M=T·R·S는 Column Vector의 곱이며 실제 적용 순서는 Scale → Rotation → Translation이다. Normal 패널은 Geometric Normal과 Shading Normal을 구분하고, Non-uniform Scale에서 Surface 관계를 별도로 보존해야 한다는 점을 요약한다.
 
 <img src="Figures/Chapter02/Fig2_13.png" width="90%">
 
@@ -10381,7 +10381,7 @@ Scale이 있는 Object의 Normal을 어떻게 준비할지는 2.13의 Normal Tra
 
 ---
 
-Figure 2-14에서는 Texture 저장 값의 Decode와 TBN에 의한 Space Conversion을 나누어 읽는다. (0.5, 0.5, 1)은 기본 (0, 0, 1) Direction의 RGB 예다. 변환식의 T/B/N은 목표 Space에서 표현한 정규 직교 Basis를 가정한다. 이미 Decode한 Sampler 출력에는 같은 Decode를 반복하지 않는다.
+Figure 2-14에서는 Texture 저장 값의 Decode와 TBN에 의한 Space Conversion을 나누어 읽는다. Basis N은 Vertex / Shading Normal일 수 있으며 Face Normal과 항상 같은 것은 아니다. (0.5, 0.5, 1)은 기본 (0, 0, 1) Direction의 RGB 예다. 변환식의 T/B/N은 목표 Space에서 표현한 정규 직교 Basis를 가정한다. 이미 Decode한 Sampler 출력에는 같은 Decode를 반복하지 않는다.
 
 <img src="Figures/Chapter02/Fig2_14.png" width="90%">
 
@@ -11820,7 +11820,7 @@ Viewport Effect
 
 ---
 
-Figure 2-15의 Space 목록은 실행 순서가 아니라 사용할 수 있는 기준의 비교다. Normal과 Camera Direction이 같은 Space의 Unit Vector가 된 뒤 dot(N,V)를 읽는다. Object Position의 기준점, ScreenPosition의 출력 모드와 Transform 지원 범위는 실제 Node와 대상 Engine에서 검증한다.
+Figure 2-15의 Space 목록은 실행 순서가 아니라 사용할 수 있는 기준의 비교다. Normal과 Camera Direction이 같은 Space의 Unit Vector가 된 뒤 dot(N,V)를 읽는다. 그림의 ObjectPositionWS는 Bounds의 World Center를 뜻한다. 이 그림은 실제 Editor Screenshot이나 Graph 실행 결과가 아니라 Data와 Space 변환의 개념도다. 정확한 Node 출력과 Position 기준점, ScreenPosition의 출력 모드, Transform 지원 범위와 Non-uniform Scale 조건은 대상 Engine에서 검증한다.
 
 <img src="Figures/Chapter02/Fig2_15.png" width="90%">
 

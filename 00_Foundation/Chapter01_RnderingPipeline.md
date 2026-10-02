@@ -5761,14 +5761,14 @@ Vertex Processing에서 시작해서 Primitive Assembly, Culling / Clipping, Ras
 
 Figure 1-12는 CPU / Engine이 Scene과 Object를 확인하고 Rendering에 필요한 Data를 준비한 뒤, Draw Call을 통해 GPU에 작업을 전달하는 기본적인 CPU-driven 흐름을 보여준다.
 
-그림 중앙의 목록은 **Draw가 참조하는 Data와 State**로 읽는다. `Send to GPU`가 매 Draw마다 Vertex / Index Buffer 전체를 다시 복사한다는 뜻은 아니다. Material별 Draw 목록도 예시이며, 실제 Draw 수는 Pass, Section, Instancing 등에 따라 달라진다.
+그림 중앙은 **필요할 때 자원을 생성·업로드하는 단계**, **준비된 자원과 State를 바인딩·참조하는 단계**, **Draw 명령을 제출하는 단계**를 구분한다. 매 Draw마다 Vertex / Index Buffer 전체를 다시 복사하는 것은 아니다. 하나의 Object가 여러 Draw로 나뉘는 목록도 예시이며, 실제 Draw 수는 Pass, Section, Instancing 등에 따라 달라진다.
 
 <details>
 <summary>Figure / Implementation Note — resource references and verification scope</summary>
 
-필요한 자원과 State를 준비·바인딩한 뒤 Draw 명령이 이를 참조한다. 기존 Figure의 전송 화살표는 명령과 참조 관계를 단순화한 것이므로 Buffer 업로드량을 추정하는 근거로 사용하지 않는다.
+GPU Resources는 Resource 수명 동안 유지되며, Draw 명령이 필요한 자원과 State를 참조한다. 이 개념도만으로 실제 Buffer 업로드량이나 비용을 추정하지 않는다.
 
-그림 안의 Character 화면은 개념 설명에 포함된 기존 자료다. 이 자료만으로 특정 Engine Version이나 현재 ASF 구현의 검증 완료를 확인할 수는 없다. 출처와 실행 설정은 추가 확인이 필요하다.
+그림 안의 Scene과 Monitor 화면은 `Concept Illustration`으로 표시한 개념 설명용 삽화다. 특정 Engine Version이나 현재 ASF 구현의 실행 검증 결과를 보여주는 자료는 아니다.
 
 </details>
 
@@ -6586,18 +6586,16 @@ GPU는 전달받은 Geometry Data와 Shader State를 사용하여 Vertex Process
 
 Figure 1-13은 Chapter 01에서 살펴본 전체 Rendering 흐름을 하나의 Diagram으로 정리한 것이다.
 
-이 Figure에는 추가 수정이 필요한 표현이 있다. `GPU - Geometry Stage`와 `GPU - Screen Stage`는 여러 처리를 묶은 **Processing Group**으로 읽는다. `View Frustum Culling`을 Primitive Assembly 직후의 고정 GPU 단계로 해석하지 않는다. `Framebuffer (Render Target)`도 두 개념이 동일하다는 뜻으로 사용하지 않는다. 본문의 1.6과 1.11 구분을 기준으로 읽는다.
+이 Figure의 여섯 **Processing Group**은 준비, Geometry 처리, Screen / Fragment 처리, 저장 자원, 표시 흐름을 묶은 교육용 개요다. Object / Bounds Frustum 선별은 `Preparation / Selection`에 따로 표시하고, GPU Geometry 처리의 Backface / Clipping과 구분한다. `Framebuffer / Output Bindings` 아래에는 개별 Color Render Target, Depth / Stencil Buffer, 기타 Render Target을 나누어 표시한다. 본문의 1.6과 1.11 구분을 함께 읽는다.
 
 <details>
-<summary>Figure Review Required — grouping, resource terminology and small labels</summary>
+<summary>Figure / Implementation Note — processing groups and verification scope</summary>
 
-각 Group은 하나의 Hardware Stage가 아니다. Object / Bounds를 선별하는 Frustum Culling과 Triangle의 Backface / Clipping은 판정 대상과 수행 위치가 다를 수 있다. Figure의 `View Frustum Culling` 배치는 이 구분을 충분히 드러내지 못한다.
+각 Group은 하나의 Hardware Stage가 아니다. Object / Bounds를 선별하는 Frustum Culling은 CPU 또는 GPU에서 수행할 수 있으며, Triangle의 Backface / Clipping과 판정 대상이 다르다. 현재 View 밖의 Object도 Shadow / Reflection Pass에는 필요할 수 있다.
 
-`Framebuffer (Render Target)`은 여러 Buffer / Attachment를 함께 구성하는 관계와 개별 저장 대상을 혼합할 수 있는 표기다. 정확한 구분은 1.11을 따른다.
+Framebuffer / Output Bindings는 여러 Buffer / Attachment를 함께 구성하는 관계이고, 각 Render Target은 개별 저장 대상이다. Depth Test와 Depth Write는 별도 조건이며, 실제 기록은 통과 조건과 Write 설정에 따라 달라진다.
 
-작게 뭉개진 Label은 학습 근거로 사용하지 않고 아래 본문의 Group별 설명을 기준으로 읽는다. 포함된 기존 Character / Editor 화면의 출처와 실행 설정은 이 그림만으로 확인되지 않는다.
-
-이 Rewrite에서는 기존 Figure 파일과 경로를 보존했다. Figure 표현의 수정 제안과 추가 검증 항목은 Rewrite Audit에 별도로 기록한다.
+그림은 논리적 학습 흐름을 보여준다. Early Depth 등 실제 실행 순서와 Engine의 Pass 구성을 고정하지 않는다. Scene과 Final Image는 `Concept Illustration`으로 표시한 개념 설명용 삽화이며, 특정 Engine Version이나 현재 ASF 구현의 실행 검증 결과를 보여주는 자료는 아니다.
 
 </details>
 

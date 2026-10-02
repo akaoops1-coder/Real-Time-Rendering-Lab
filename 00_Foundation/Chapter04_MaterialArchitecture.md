@@ -832,20 +832,20 @@ Camera에서 먼 Object는 화면에서 작게 보인다. 이때 고해상도 Te
 
 <img src="Figures/Chapter04/Fig4_04.png" width="90%">
 
-**Figure 4-4. UV and Texture Sampling.** Vertex UV가 Rasterization을 거쳐 현재 Pixel의 UV가 되고, 그 UV로 여러 Texture를 Sample하는 흐름을 확인한다. 6번은 네 주변 Texel을 이용하는 Filtering, 7번은 여러 해상도의 Mipmap을 설명한다.
+**Figure 4-4. UV and Texture Sampling.** Vertex UV가 Rasterization을 거쳐 현재 Pixel의 UV가 되고, 그 UV로 여러 Texture를 Sample하는 흐름을 확인한다. 3번의 별도 숫자 예시는 Affine 보간의 가중치와 UV 관계를 보여준다. 6번은 네 주변 Texel Center를 이용하는 Filtering, 7번은 Texture footprint에 맞춘 Mip 선택, 9번은 비대칭 Pattern의 Addressing 차이를 설명한다.
 
 <details>
-<summary>Figure Review Note — Existing Verification Items</summary>
+<summary>Figure Reading Note — UV Sampling Conditions</summary>
 
-Character/UV 자료가 포함된 기존 합성 이미지는 보존한다. 그림의 선택 지점과 비교 이미지를 정량 검증 자료로 사용하지 않는다.
+Character/UV 자료와 Sample Color, Filtering 결과는 관계를 설명하는 개념 예시다. 그림의 비교 이미지를 정량 검증 자료로 사용하지 않는다.
 
-- 3번 Vertex UV를 affine 보간하면 UV `(0.34, 0.62)`의 가중치는 왼쪽 아래 `0.35`, 오른쪽 아래 `0.03`, 위쪽 `0.62`다. 표시점은 그림의 중앙이 아니라 왼쪽 위쪽 경계 가까이에 있어야 한다. 실제 Rasterization의 UV는 Perspective-correct 보간 조건을 확인한다.
-- 7번 Mip 선택은 거리만이 아니라 Texture footprint에 따른다.
-- 8번 Normal `(0.52, 0.47, 1.00)`은 Encoded RGB 예시이며 Decode된 Unit Normal이 아니다.
-- 9번의 대칭 Checker는 Wrap과 Mirror의 차이를 식별하기 어렵다. 실제 비교에는 비대칭 패턴을 사용한다.
-- 서문의 중복된 “값을”은 표기 오류다.
+- 3번의 Vertex UV는 A `(0, 0)`, B `(1, 0)`, C `(0.5, 1.0)`이다. Affine 가중치 A `0.35`, B `0.03`, C `0.62`를 적용하면 UV `(0.34, 0.62)`가 된다. 이 숫자 관계는 별도 Box로 읽으며, 실제 Rasterization의 UV는 Perspective-correct 보간 조건을 확인한다.
+- 6번은 한 Mip Level에서 주변 네 Texel의 값에 위치 가중치를 적용하는 Bilinear Filtering 예시다. 네 가중치의 합은 `1`이며, 표시한 Color는 설명용 값이다.
+- 7번의 Mip 선택은 화면 Pixel이 Texture에서 차지하는 footprint에 따른다. 거리 외에도 UV Scale, Surface 기울기, 화면 해상도와 좌표 변화율이 영향을 줄 수 있다.
+- 8번 Normal `(0.52, 0.47, 1.00)`은 Tangent Space Direction을 저장한 Encoded RGB 예시이며 Decode된 Unit Normal이 아니다. 실제 sampler output의 Direction 복원 여부는 4.6의 구분을 따른다.
+- 9번은 가로 Pattern `A B C`를 예로 든다. U `0~1`의 첫 구간은 세 방식 모두 `A B C`이며, U `1~2`에서는 Wrap은 `A B C`, Clamp는 `C C C`, Mirror는 `C B A`가 된다. 비대칭 Pattern이므로 반복과 반전의 차이를 구분할 수 있다.
 
-이 항목은 Figure 수정·Engine 검증이 필요한 상태로 Audit에 남긴다. 이미지를 변경해 검증을 완료한 것으로 취급하지 않는다.
+이는 이미지의 관계를 읽는 안내다. 실제 Engine의 Perspective-correct UV, Mip/Filtering, Addressing과 sampler output은 해당 Setting과 Format에서 확인해야 한다. Engine 재현 검증을 완료한 것으로 취급하지 않는다.
 
 </details>
 
@@ -1028,20 +1028,18 @@ Linear `0.50`을 sRGB로 Encode하면 약 `0.735`가 된다. 이것은 반대 �
 
 <img src="Figures/Chapter04/Fig4_05.png" width="90%">
 
-**Figure 4-5. Color Space for Material Data.** 5번과 6번의 Roughness 비교는 올바른 `0.50`과 잘못된 sRGB Decode 후 약 `0.21`을 구분한다. 낮은 Roughness에서 더 Glossy해지는 수정 방향을 유지한다. Color Texture와 Numeric Data를 구분하는 표도 함께 읽는다.
+**Figure 4-5. Color Space for Material Data.** 1번과 2번은 같은 저장값을 sRGB로 Decode한 값과 Linear Data로 읽은 값을 구분한다. 5번과 6번의 Roughness 비교에서는 올바른 `0.50`과 잘못된 sRGB Decode 후 약 `0.214`를 비교한다. 낮아진 Roughness에서 더 Glossy해지는 방향을 읽고, Color Texture와 Numeric Data의 해석 차이를 함께 확인한다.
 
 <details>
-<summary>Figure Review Note — Remaining Color Space Issues</summary>
+<summary>Implementation Note — Texture Encoding and Sampling</summary>
 
-기존 이미지의 수정된 Roughness 예시를 유지하지만 다른 부분에는 검토할 항목이 남아 있다.
+- 1번은 동일한 저장 RGB `0.5`를 sRGB로 해석하면 Linear 약 `0.214`, 선형 Data로 해석하면 Linear `0.500`이 된다는 비교다. Sphere는 같은 Lighting, Camera, Exposure와 Display 가정을 둔 개념 예시이며 정량 Render Capture가 아니다.
+- 2번 Curve는 Stored sRGB Value를 Linear Value로 바꾸는 Decode 방향이다. `0.50 → 약 0.214`는 이 관계의 수치 예시다. Linear→sRGB Encode와 반대 방향이며, 정확한 sRGB transfer를 단일 Gamma 2.2 식과 동일하게 취급하지 않는다.
+- 4번의 `sRGB Off / No sRGB Decode`는 sRGB transfer Decode가 없다는 뜻이다. Filtering, Compression, Format 변환과 Normal reconstruction까지 없다는 뜻은 아니다.
+- 7번은 Texture Asset의 저장 Encoding 설정과 Material의 Sampler Type을 구분하는 개념 표다. 구체적인 UI, Format과 sampler output은 대상 Engine Version에서 확인한다. 자동 Decode된 Color에 수동 SRGBToLinear를 다시 적용하지 않는다. Raw Encoded Data를 수동 Decode하는 예시는 아직 Decode되지 않은 값에 한정한다.
+- sRGB-encoded Color는 Linear로 Decode하고 Roughness/Metallic/Mask 같은 Numeric Data는 sRGB Decode로 바꾸지 않는다. 이미 Linear로 저장한 Color, HDR 등에는 저장 방식에 맞는 설정을 사용하며 중복 Decode하지 않는다. Normal의 Direction 복원은 sRGB Color Decode와 별도 작업이다.
 
-- 1번의 같은 Stored RGB `0.5` 비교는 sRGB 해석 쪽이 더 밝게 보이도록 그려져 있다. 동일한 조건에서 Decode 후 Linear 값은 약 `0.214`이므로 Linear `0.5`보다 낮다. 그림의 밝기 비교를 정량 근거로 사용하지 않는다.
-- 2번의 위로 볼록한 Curve는 Linear→sRGB Encode에 가까운 형태다. 근처의 sRGB→Linear Decode 설명과 방향을 구분하는 Label이 필요하다. sRGB는 정확히 단일 Gamma 2.2 식인 것도 아니다.
-- 4번의 `sRGB Off / No Conversion`은 sRGB transfer Decode가 없다는 뜻으로 제한해 읽는다. Filtering, Compression, Format 변환과 Normal reconstruction까지 없다는 뜻은 아니다.
-- 7번의 Texture Sample에 그려진 sRGB Checkbox는 실제 Engine UI 사용법으로 보증하지 않는다. Texture Asset의 저장 Encoding 설정과 Material의 Sampler Type을 대상 Engine에서 확인한다. 자동 Decode된 값을 수동으로 다시 Decode해서는 안 된다.
-- `Lighting은 항상 Linear`, `Color Texture는 sRGB` 같은 요약은 이 Section의 일반적인 입력 처리 원칙을 뜻한다. 이미 Linear인 Color Texture와 다른 Rendering 경로의 조건은 본문의 구분을 따른다.
-
-이미지의 Pixel과 Path는 변경하지 않았다. 해당 항목은 Audit에서 Figure Revision Required와 대상 Engine 확인 항목으로 기록한다.
+이미지의 값과 Curve는 입력 해석 관계를 설명한다. 실제 Engine의 Texture Format/Sampler 처리와 동일 조건의 Roughness Appearance 비교는 별도 검증 대상이며, 이미지 교정만으로 Engine 검증을 완료한 것으로 표시하지 않는다.
 
 </details>
 
@@ -1356,7 +1354,7 @@ Tangent Space Normal
 
 <img src="Figures/Chapter04/Fig4_06.png" width="90%">
 
-**Figure 4-6. Normal Map and Normal Encoding.** Geometry를 유지하면서 Shading Direction을 바꾸는 원리, raw RGB의 복원, Tangent Space에서 TBN을 거쳐 Lighting Space로 가는 연결을 확인한다. 4번의 수식은 raw RGB에만 적용하며 그림의 중복 Decode 경고를 유지한다. 3번의 `(0.52, 0.47, 1.00)`은 저장 RGB 예시이고, 6번의 flat/+X/+Y는 Decode된 Direction의 극단적인 예시다. 실제 Normal sampler와 Compression 경로는 별도 Engine 검증이 필요하다.
+**Figure 4-6. Normal Map and Normal Encoding.** Geometry를 유지하면서 Shading Direction을 바꾸는 원리와 Tangent Space의 방향을 Lighting Space로 준비하는 연결을 확인한다. 4번은 raw RGB를 복원하는 경로와 Normal sampler가 이미 Decode한 Direction을 반환하는 경로를 구분한다. `RGB × 2 - 1`은 raw RGB에만 적용하며 이미 Decode된 Direction에는 중복 적용하지 않는다. 3번의 `(0.52, 0.47, 1.00)`은 저장 RGB 예시이고, 6번의 flat/+X/+Y는 Encoded RGB와 복원된 Unit Direction을 함께 보여준다. 5번의 TBN→World 경로는 World Space에서 Lighting을 계산하는 예제다. N, L, V는 선택한 같은 Lighting Space의 Unit Direction으로 준비한다. 실제 Normal sampler, Compression/Format과 TBN의 목표 Space·Basis 조건은 별도 Engine 검증이 필요하다.
 
 ---
 

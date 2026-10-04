@@ -1,32 +1,34 @@
 # Chapter 02 — Coordinate System
 
-Chapter 01에서는 Geometry Data가 Rendering Pipeline을 거쳐 2D Image가 되는 흐름을 살펴보았다. 이번 Chapter에서는 그 과정에서 사용하는 Coordinate Space와 변환을 자세히 다룬다.
+Chapter 01에서는 Geometry Data가 Rendering Pipeline을 거쳐 2D Image가 되는 흐름을 살펴보았다. 이번에는 그 과정에서 같은 Vertex가 왜 여러 기준으로 표현되는지 따라가 보자.
 
-같은 `(1, 0, 0)`도 Object, World, Camera 중 무엇을 기준으로 표현했는지에 따라 다른 위치를 뜻한다. 따라서 **값의 의미와 기준 Space를 함께 확인해야 한다.**
+Scene에 놓인 Cube를 오른쪽으로 옮겨도 Mesh 안의 Vertex 배치 자체는 유지할 수 있다. Camera만 옮기면 Cube를 건드리지 않아도 화면에서 보이는 위치는 달라진다. Renderer는 **Mesh의 형태, Scene의 배치, Camera에서 본 위치**를 구분해야 한다.
+
+이를 위해 숫자를 측정할 시작점과 축 방향을 정한다. 그 기준 체계가 **Coordinate System(좌표를 읽는 기준)**이다. 같은 `(1, 0, 0)`도 무엇을 기준으로 측정했는지에 따라 다른 위치를 뜻한다.
+
+이 Data가 현재 어떤 기준으로 표현되어 있는지 나타내는 말이 **Coordinate Space**다. Chapter 01에서 본 Local Space는 Object 자체의 기준이고, World Space는 Scene 안의 관계를 비교하는 공통 기준이다. View Space는 그 Scene을 특정 Camera에서 다시 읽는 3D 기준이다.
+
+Camera의 3D 위치를 실제 화면과 연결할 때는 중간 단계가 더 필요하다. **Clip Space**는 투영 결과를 Camera 범위와 비교해 Geometry를 잘라내기 위한 표현이다. 그다음 **NDC(Normalized Device Coordinates)**는 실제 Pixel 크기로 바꾸기 전, 위치를 해상도와 독립적인 공통 범위로 읽은 좌표다. 마지막 Screen Space에서 현재 화면 영역의 위치와 연결한다.
 
 ~~~text
 Local Space → World Space → View Space → Clip Space → NDC → Screen Space
 ~~~
 
-이 흐름을 따라 Position이 변환되는 이유와 Matrix의 역할을 살펴보고, Direction / Normal의 변환 차이와 Tangent Space를 연결한다. 목표는 공식을 외우는 것이 아니라 각 Data의 기준과 변환 목적을 이해하는 것이다. 후반부에서는 이를 Unreal Material의 World Position, Camera Vector, Normal, Transform 관련 Node에 적용한다.
+기준을 바꾸거나 Object의 위치·방향·크기를 바꾸는 과정을 **Transform(변환)**이라고 한다. **Matrix**는 그 변환 규칙을 숫자로 담아 여러 입력에 일관되게 적용하는 도구다. Matrix의 모양부터 외우기보다, 먼저 변환 전후에 무엇의 의미가 달라지는지를 살펴본다.
+
+Position은 “어디에 있는가”, Direction은 “어느 쪽을 향하는가”에 답한다. 두 값이 모두 XYZ여도 필요한 변환은 다를 수 있다. Surface에 붙은 방향 기준인 Tangent Space까지 연결한 뒤, Unreal Material의 Position·Normal·Camera 관련 Node에서 이 구분을 사용한다.
 
 ---
 
 ## 2.1 Why Coordinate Systems Matter
 
-Scene에서 Cube를 옮겼다고 생각해보자.
-
-화면에서는 Cube가 다른 위치에 보이지만, Mesh 안의 Vertex를 확인하면 Object 내부의 형태와 위치 관계는 그대로 남아 있을 수 있다. Camera만 옮겨도 Cube의 화면 위치는 다시 달라진다.
-
-Renderer는 이 세 가지 질문에 각각 답해야 한다.
+Scene에서 Cube를 옮겼다고 생각해보자. 화면에서는 Cube가 다른 위치에 보이지만, Mesh 안의 Vertex를 확인하면 Object 내부의 형태와 위치 관계는 그대로 남아 있을 수 있다. Camera만 옮겨도 Cube의 화면 위치는 다시 달라진다. Renderer는 이 세 가지 질문에 각각 답해야 한다.
 
 - 이 Vertex는 **Mesh 자체의 기준에서** 어디에 있는가?
 - 배치된 Object 안의 Vertex는 **Scene 전체에서** 어디에 있는가?
 - 그 Vertex는 **Camera를 기준으로** 어디에 보이는가?
 
-하나의 Vertex를 다루지만 질문마다 필요한 기준이 다르다. 그래서 같은 Position을 여러 Coordinate Space로 표현한다. Space를 바꾸는 것은 다음 계산에 필요한 기준으로 값을 옮기는 과정이다.
-
-예를 들어 (1, 0, 0)이라는 값만 받으면 X 방향으로 1만큼 떨어졌다는 사실은 알 수 있다. 하지만 **무엇의 Origin에서, 어느 X Axis를 따라 측정했는지**는 알 수 없다. Object의 Origin과 World Origin이 다르다면 두 기준의 (1, 0, 0)은 다른 Point를 가리킨다.
+하나의 Vertex를 다루지만 질문마다 필요한 기준이 다르다. 그래서 같은 Position을 여러 Coordinate Space로 표현한다. Space를 바꾸는 것은 다음 계산에 필요한 기준으로 값을 옮기는 과정이다. 예를 들어 (1, 0, 0)이라는 값만 받으면 X 방향으로 1만큼 떨어졌다는 사실은 알 수 있다. 하지만 **무엇의 Origin에서, 어느 X Axis를 따라 측정했는지**는 알 수 없다. Object의 Origin과 World Origin이 다르다면 두 기준의 (1, 0, 0)은 다른 Point를 가리킨다.
 
 > **Coordinate 값은 그 값을 측정한 기준과 함께 읽어야 한다.**
 
@@ -36,9 +38,9 @@ Renderer는 이 세 가지 질문에 각각 답해야 한다.
 
 ### Coordinate System
 
-어떤 Point의 위치를 다른 사람에게 숫자로 전달한다고 생각해보자. 측정의 시작점이 다르거나 “오른쪽”으로 정한 방향이 다르면 같은 숫자를 받아도 다른 장소를 찾게 된다.
+숫자를 보낼 때 함께 보내야 하는 것은 “자를 어디에 놓았고 어느 쪽으로 세었는가”라는 정보다. Cube의 한 꼭짓점을 Object 기준과 Scene 기준에서 각각 측정해도 꼭짓점이 두 개로 늘어나는 것은 아니다. 측정의 기준이 두 개일 뿐이다.
 
-따라서 3D Position을 표현하기 전에 먼저 다음 기준을 정해야 한다.
+어떤 Point의 위치를 다른 사람에게 숫자로 전달한다고 생각해보자. 측정의 시작점이 다르거나 “오른쪽”으로 정한 방향이 다르면 같은 숫자를 받아도 다른 장소를 찾게 된다. 따라서 3D Position을 표현하기 전에 먼저 다음 기준을 정해야 한다.
 
 - 어디를 시작점으로 할 것인가?
 - 어느 방향을 X Axis로 할 것인가?
@@ -61,37 +63,25 @@ Position에는 Origin과 Axis가 모두 필요하다. Direction은 어디에 놓
 
 ### Origin
 
-**Origin**은 Coordinate System의 기준점이다.
-
-일반적으로 Coordinate 값
+**Origin**은 Coordinate System의 기준점이다. 일반적으로 Coordinate 값
 
 ~~~text
 (0, 0, 0)
 ~~~
 
-에 해당하는 위치다.
-
-쉽게 말하면
+에 해당하는 위치다. 쉽게 말하면
 
 > **이 Coordinate System에서 모든 위치를 측정하기 시작하는 기준점**
 
-이다.
+이다. 예를 들어 Object 자체를 기준으로 사용하는 Local Space에서는 Object의 Origin이 기준점이 될 수 있다. World Space에서는 Scene 전체의 World Origin이 기준점이 된다.
 
-예를 들어 Object 자체를 기준으로 사용하는 Local Space에서는 Object의 Origin이 기준점이 될 수 있다.
-
-World Space에서는 Scene 전체의 World Origin이 기준점이 된다.
-
-View Space에서는 Camera가 기준이 된다.
-
-따라서 같은 Point라도 Origin이 달라지면 Coordinate 값도 달라질 수 있다.
+View Space에서는 Camera가 기준이 된다. 따라서 같은 Point라도 Origin이 달라지면 Coordinate 값도 달라질 수 있다.
 
 ---
 
 ### Axis
 
-**Axis**는 Coordinate System에서 방향을 정의하는 기준축이다.
-
-3D Graphics에서는 일반적으로 세 개의 Axis를 사용한다.
+**Axis**는 Coordinate System에서 방향을 정의하는 기준축이다. 3D Graphics에서는 일반적으로 세 개의 Axis를 사용한다.
 
 - X Axis
 - Y Axis
@@ -111,17 +101,13 @@ Y 방향으로 3
 Z 방향으로 1
 ~~~
 
-만큼 Origin에서 떨어져 있다는 의미를 가진다.
-
-따라서 Axis의 방향이 달라지면 같은 숫자라도 실제 공간에서 다른 방향을 의미할 수 있다.
+만큼 Origin에서 떨어져 있다는 의미를 가진다. 따라서 Axis의 방향이 달라지면 같은 숫자라도 실제 공간에서 다른 방향을 의미할 수 있다.
 
 ---
 
 ### Coordinate
 
-**Coordinate**는 Coordinate System의 Origin과 Axis를 기준으로 표현된 값이다.
-
-예를 들어
+**Coordinate**는 Coordinate System의 Origin과 Axis를 기준으로 표현된 값이다. 예를 들어
 
 ~~~text
 (1, 0, 0)
@@ -141,28 +127,28 @@ Z 방향으로 1
 
 ### Space
 
-Scene 전체의 기준은 여러 Object를 비교하기에 편리하지만 Mesh 내부를 편집할 때는 Object 자신의 기준이 더 편리하다. Camera에서 보이는 위치를 계산할 때는 Camera의 기준이 필요하다.
+예를 들어 문 위의 한 점을 문고리에서 얼마나 떨어졌는지 측정할 수도 있고, 방 한쪽 모서리에서 측정할 수도 있다. 문을 열 때는 문 자체의 기준이 편하고, 방의 Light와 거리를 비교할 때는 방의 공통 기준이 편하다. Rendering의 Space 선택도 다음 계산에서 무엇과 관계를 맺어야 하는지를 고르는 일이다.
 
-이렇게 **현재 Data를 어떤 Coordinate System으로 표현하고 있는지**를 구분하기 위해 Rendering에서는 Space라는 용어를 사용한다.
+Scene 전체의 기준은 여러 Object를 비교하기에 편리하지만 Mesh 내부를 편집할 때는 Object 자신의 기준이 더 편리하다. Camera에서 보이는 위치를 계산할 때는 Camera의 기준이 필요하다. 이렇게 **현재 Data를 어떤 Coordinate System으로 표현하고 있는지**를 구분하기 위해 Rendering에서는 Space라는 용어를 사용한다.
 
 - Local Space: Object 자체를 기준으로 표현한다.
 - World Space: Scene 전체의 공통 기준으로 표현한다.
 - View Space: Camera를 기준으로 표현한다.
 - Clip Space: Projection 이후 Clipping을 위한 표현을 사용한다.
 - Screen Space: 화면의 Viewport 위치로 표현한다.
-- Tangent Space: Surface의 T/B/N 방향을 기준으로 표현한다.
+- Tangent Space: Scene 전체의 축 대신 현재 Surface에 붙은 기준 방향으로 표현한다.
 
-예를 들어 World Space Position은 World의 Origin과 Axis를 기준으로 측정한 위치다. Tangent Space Normal은 Surface에 붙어 있는 방향 기준으로 표현한 Normal이다.
+Chapter 01의 Tangent는 Surface를 따라가는 기준 방향이었다. 그와 구분되는 Surface 위의 두 번째 기준 방향이 Bitangent다. 여기에 Surface가 기본적으로 향하는 Normal을 더하면 방향을 읽을 세 기준이 준비된다.
 
-Space는 단순히 “물체가 들어 있는 다른 장소”라는 뜻이 아니다. 같은 Point나 Direction도 계산 목적에 따라 다른 Space의 값으로 표현할 수 있다. Clip Space처럼 일반적인 3D 위치와 다르게 해석해야 하는 표현은 뒤에서 구분한다.
+이렇게 방향 성분을 해석하는 기준 방향의 묶음을 Basis라고 한다. 세 방향의 머리글자를 묶은 TBN(Tangent, Bitangent, Normal)은 이후 Normal Map의 방향을 다른 Space로 옮기는 데 사용한다. 자세한 구성과 변환은 2.14에서 연결한다.
+
+예를 들어 World Space Position은 World의 Origin과 Axis를 기준으로 측정한 위치다. Tangent Space Normal은 Surface에 붙어 있는 방향 기준으로 표현한 Normal이다. Space는 단순히 “물체가 들어 있는 다른 장소”라는 뜻이 아니다. 같은 Point나 Direction도 계산 목적에 따라 다른 Space의 값으로 표현할 수 있다. Clip Space처럼 일반적인 3D 위치와 다르게 해석해야 하는 표현은 뒤에서 구분한다.
 
 ---
 
 ### One Position in Different Coordinates
 
-Figure 2-1의 Cube에 있는 하나의 Point를 다시 생각해보자.
-
-Local Space에서는 다음과 같은 Position을 가질 수 있다.
+Figure 2-1의 Cube에 있는 하나의 Point를 다시 생각해보자. Local Space에서는 다음과 같은 Position을 가질 수 있다.
 
 ~~~text
 Local Position = (1, 0, 0)
@@ -180,25 +166,17 @@ Local Position = (1, 0, 0)
 World Position = (6, 2, 0)
 ~~~
 
-Point 자체가 Mesh 안에서 움직인 것은 아니다.
-
-기준이 Object에서 World로 바뀌었기 때문에 Coordinate 값이 달라진 것이다.
+Point 자체가 Mesh 안에서 움직인 것은 아니다. 기준이 Object에서 World로 바뀌었기 때문에 Coordinate 값이 달라진 것이다.
 
 ---
 
 ### Coordinate Systems in DCC Tools
 
-Coordinate System은 생소한 Rendering 전용 개념이 아니다.
+Blender처럼 Modeling·Animation 등의 Asset을 제작하는 프로그램을 **DCC(Digital Content Creation) Tool**이라고 한다. 여기서는 이미 익숙한 편집 동작을 통해, Object의 배치와 Mesh 내부 Data의 차이를 읽는다.
 
-Blender와 같은 DCC Tool을 사용하면서 이미 계속 접하고 있다.
+Coordinate System은 생소한 Rendering 전용 개념이 아니다. Blender와 같은 DCC Tool을 사용하면서 이미 계속 접하고 있다. 예를 들어 Object 하나를 World에서 이동시켰다고 생각해보자.
 
-예를 들어 Object 하나를 World에서 이동시켰다고 생각해보자.
-
-Object Mode에서는 Object의 World Position이 바뀐다.
-
-하지만 Edit Mode에서 Mesh의 Vertex를 보면 Object 내부에서 Vertex의 상대적인 위치 관계는 그대로 유지될 수 있다.
-
-개념적으로는 다음과 같다.
+Object Mode에서는 Object의 World Position이 바뀐다. 하지만 Edit Mode에서 Mesh의 Vertex를 보면 Object 내부에서 Vertex의 상대적인 위치 관계는 그대로 유지될 수 있다. 개념적으로는 다음과 같다.
 
 ~~~text
 Mesh Vertex Local Position
@@ -216,13 +194,13 @@ Object Transform
 - Mesh 자체의 Local Coordinate
 - Scene의 World Coordinate
 
-를 서로 구분해서 사용하고 있는 것이다.
-
-Chapter 02에서는 이 익숙한 경험을 Rendering Pipeline의 Coordinate Transformation과 연결한다.
+를 서로 구분해서 사용하고 있는 것이다. Chapter 02에서는 이 익숙한 경험을 Rendering Pipeline의 Coordinate Transformation과 연결한다.
 
 ---
 
 ### Object Transform and Mesh Data
+
+여기서 **Object Transform**은 원본 Mesh를 Scene의 어느 위치·방향·크기로 배치할지 정하는 변환 정보다. 원본 Vertex를 다시 모델링하는 일과 Object 전체의 배치를 바꾸는 일을 분리해야 같은 Mesh를 여러 곳에 사용할 수 있다.
 
 Cube의 한 Vertex가 Local Space에서 다음 위치에 있다고 하자.
 
@@ -248,19 +226,13 @@ World 위치 이동
 World Position 변화
 ~~~
 
-이 구조 덕분에 같은 Mesh Data를 World의 여러 위치에서 사용할 수 있다.
-
-예를 들어 같은 Tree Mesh를 Scene에 여러 개 배치하더라도 Tree Mesh 자체의 Local Vertex Data를 매번 새로 만들 필요는 없다.
-
-각 Object의 Transform만 다르게 적용하면 된다.
+이 구조 덕분에 같은 Mesh Data를 World의 여러 위치에서 사용할 수 있다. 예를 들어 같은 Tree Mesh를 Scene에 여러 개 배치하더라도 Tree Mesh 자체의 Local Vertex Data를 매번 새로 만들 필요는 없다. 각 Object의 Transform만 다르게 적용하면 된다.
 
 ---
 
 ### Shared Mesh Data and Multiple Transforms
 
-같은 Rock Mesh를 Scene에 세 개 배치했다고 생각해보자.
-
-세 Rock은 동일한 Local Vertex Data를 사용할 수 있다.
+같은 Rock Mesh를 Scene에 세 개 배치했다고 생각해보자. 세 Rock은 동일한 Local Vertex Data를 사용할 수 있다.
 
 ~~~text
 Rock Mesh
@@ -282,19 +254,13 @@ Rock C
 → World Position C
 ~~~
 
-그래서 동일한 Mesh를 서로 다른 위치와 방향으로 Rendering할 수 있다.
-
-이것이 Local Space와 World Space를 분리해서 사용하는 중요한 이유 중 하나다.
+그래서 동일한 Mesh를 서로 다른 위치와 방향으로 Rendering할 수 있다. 이것이 Local Space와 World Space를 분리해서 사용하는 중요한 이유 중 하나다.
 
 ---
 
 ### Camera as a Coordinate Reference
 
-World Space만 있으면 모든 문제가 해결될 것처럼 보일 수 있다.
-
-하지만 Rendering에서는 Camera가 필요하다.
-
-Camera는 World의 특정 위치에 있고 특정 방향을 바라본다.
+World Space만 있으면 모든 문제가 해결될 것처럼 보일 수 있다. 하지만 Rendering에서는 Camera가 필요하다. Camera는 World의 특정 위치에 있고 특정 방향을 바라본다.
 
 최종적으로 Screen Image를 만들려면
 
@@ -304,11 +270,7 @@ Camera는 World의 특정 위치에 있고 특정 방향을 바라본다.
 
 > **Camera에서 바라봤을 때 어디에 있는가**
 
-를 알아야 한다.
-
-그래서 World Space의 Position을 Camera 기준 Coordinate System으로 다시 표현한다.
-
-이것이 **View Space** 또는 **Camera Space**다.
+를 알아야 한다. 그래서 World Space의 Position을 Camera 기준 Coordinate System으로 다시 표현한다. 이것이 **View Space** 또는 **Camera Space**다.
 
 즉,
 
@@ -326,9 +288,7 @@ View Space
 
 ### Coordinates Relative to the Camera
 
-Object가 World에서 전혀 움직이지 않아도 Camera가 움직이면 View Space Position은 달라질 수 있다.
-
-예를 들어 World에 Cube가 고정되어 있다고 생각해보자.
+Object가 World에서 전혀 움직이지 않아도 Camera가 움직이면 View Space Position은 달라질 수 있다. 예를 들어 World에 Cube가 고정되어 있다고 생각해보자.
 
 ~~~text
 Cube World Position
@@ -351,29 +311,28 @@ Cube의 View Space Position 변화
 
 ---
 
-Figure 2-1에서는 Object의 Rotation이 Identity이고 Scale이 1인 Translation-only 예를 먼저 읽는다. Local Point (1, 0, 0)에 Object의 (5, 2, 0) 배치를 반영하면 World Position은 (6, 2, 0)이다. Camera도 Rotation이 Identity이며 (4, 1, 5)에 있으므로 Camera 위치를 빼면 (2, 1, -5)로 표현된다. 이 Figure의 View Forward는 -Z다. 축과 부호를 모든 Engine에 강제하지 않는다.
-
-중요한 것은 Point가 세 번 다른 곳으로 움직였다는 뜻이 아니라 **같은 Point를 Object, World, Camera 기준으로 읽었다**는 점이다. Camera Rotation까지 있는 일반 View Transform은 2.5에서 이어서 확인한다.
+Figure 2-1에서 Point 하나를 세 가지 기준으로 읽어 보자. 먼저 Cube의 Origin에서 읽고, 다음으로 Scene의 Origin에서 읽고, 마지막으로 Camera에서 읽는다. 숫자가 달라져도 같은 Point를 추적한다.
 
 <img src="Figures/Chapter02/Fig2_01.png" width="90%">
 
 **Figure 2-1. The same position can have different coordinate values depending on the coordinate system used.**
 
+<details>
+<summary>Figure Reading Note — Example Conditions and Scope</summary>
+
+Figure 2-1에서는 Object의 Rotation이 Identity이고 Scale이 1인 Translation-only 예를 먼저 읽는다. Local Point (1, 0, 0)에 Object의 (5, 2, 0) 배치를 반영하면 World Position은 (6, 2, 0)이다. Camera도 Rotation이 Identity이며 (4, 1, 5)에 있으므로 Camera 위치를 빼면 (2, 1, -5)로 표현된다. 이 Figure의 View Forward는 -Z다. 축과 부호를 모든 Engine에 강제하지 않는다.
+
+중요한 것은 Point가 세 번 다른 곳으로 움직였다는 뜻이 아니라 **같은 Point를 Object, World, Camera 기준으로 읽었다**는 점이다. Camera Rotation까지 있는 일반 View Transform은 2.5에서 이어서 확인한다.
+
+</details>
+
 ---
 
 #### View Space and Screen Space
 
-DCC Tool의 Viewport를 오래 사용했다면 **View Space**와 **Screen Space**가 비슷한 개념처럼 느껴질 수 있다.
+DCC Tool의 Viewport를 오래 사용했다면 **View Space**와 **Screen Space**가 비슷한 개념처럼 느껴질 수 있다. 둘 다 Camera 또는 Viewport를 기준으로 Scene을 바라본다는 점에서는 서로 연결되어 있기 때문이다. 하지만 Rendering Pipeline에서는 두 Space의 역할이 다르다.
 
-둘 다 Camera 또는 Viewport를 기준으로 Scene을 바라본다는 점에서는 서로 연결되어 있기 때문이다.
-
-하지만 Rendering Pipeline에서는 두 Space의 역할이 다르다.
-
-**View Space**는 아직 Camera를 기준으로 표현된 **3D 공간**이다.
-
-즉, Object나 Vertex가 Camera의 앞쪽에 얼마나 떨어져 있는지, 왼쪽이나 오른쪽에 얼마나 위치하는지와 같은 3D Position 정보가 남아 있다.
-
-반면 **Screen Space**는 Projection을 거친 뒤, 해당 Position이 실제 화면의 어느 2D 위치에 나타나는지를 표현하는 단계다.
+**View Space**는 아직 Camera를 기준으로 표현된 **3D 공간**이다. 즉, Object나 Vertex가 Camera의 앞쪽에 얼마나 떨어져 있는지, 왼쪽이나 오른쪽에 얼마나 위치하는지와 같은 3D Position 정보가 남아 있다. 반면 **Screen Space**는 Projection을 거친 뒤, 해당 Position이 실제 화면의 어느 2D 위치에 나타나는지를 표현하는 단계다.
 
 ~~~text
 View Space
@@ -383,23 +342,13 @@ Screen Space
 → 화면 기준의 2D Position
 ~~~
 
-예를 들어 Camera 기준에서 같은 X 방향에 있지만 서로 다른 Depth를 가진 두 Point가 있다고 하자.
+예를 들어 Camera 기준에서 같은 X 방향에 있지만 서로 다른 Depth를 가진 두 Point가 있다고 하자. View Space에서는 두 Point 모두 Camera 기준의 3D Position으로 존재한다. 하지만 Perspective Projection을 거치면 Camera에서 더 먼 Point는 화면 중심 쪽으로 더 가까워지는 방향으로 변환된다.
 
-View Space에서는 두 Point 모두 Camera 기준의 3D Position으로 존재한다.
-
-하지만 Perspective Projection을 거치면 Camera에서 더 먼 Point는 화면 중심 쪽으로 더 가까워지는 방향으로 변환된다.
-
-이것이 멀리 있는 Object가 화면에서 더 작게 보이는 Perspective의 기본적인 결과다.
-
-즉,
+이것이 멀리 있는 Object가 화면에서 더 작게 보이는 Perspective의 기본적인 결과다. 즉,
 
 > **View Space는 Camera 기준의 3D 위치를 표현하고, Screen Space는 Projection을 거친 뒤 실제 화면에 나타날 2D 위치를 표현한다.**
 
-라고 이해하면 된다.
-
-다만 Screen Space 역시 아직 **Final Pixel Color**를 의미하는 것은 아니다.
-
-화면에서의 위치가 정해진 이후에도 Rasterization, Fragment Processing, Depth Test 등의 Rendering Stage가 남아 있다.
+라고 이해하면 된다. 다만 Screen Space 역시 아직 **Final Pixel Color**를 의미하는 것은 아니다. 화면에서의 위치가 정해진 이후에도 Rasterization, Fragment Processing, Depth Test 등의 Rendering Stage가 남아 있다.
 
 따라서 다음과 같이 구분하면 이해하기 쉽다.
 
@@ -414,9 +363,7 @@ Final Pixel
 → 해당 화면 위치에 최종적으로 표시되는 Color
 ~~~
 
-DCC Tool의 Viewport에서는 이 과정이 하나의 화면 결과로 바로 보이기 때문에 View Space와 Screen Space가 비슷하게 느껴질 수 있다.
-
-하지만 Rendering Pipeline 내부에서는
+DCC Tool의 Viewport에서는 이 과정이 하나의 화면 결과로 바로 보이기 때문에 View Space와 Screen Space가 비슷하게 느껴질 수 있다. 하지만 Rendering Pipeline 내부에서는
 
 > **Camera 기준 3D 공간과 실제 화면 기준 2D 공간은 서로 다른 단계**
 
@@ -426,11 +373,7 @@ DCC Tool의 Viewport에서는 이 과정이 하나의 화면 결과로 바로 �
 
 ### Coordinate Representation and Geometry
 
-여기서 중요한 점을 하나 구분해야 한다.
-
-Local Space의 Point를 World Space나 View Space로 변환했다고 해서 Mesh Geometry 자체가 계속 새롭게 만들어지는 것은 아니다.
-
-같은 위치를 서로 다른 기준으로 **표현하는 방식이 달라지는 것**이다.
+여기서 중요한 점을 하나 구분해야 한다. Local Space의 Point를 World Space나 View Space로 변환했다고 해서 Mesh Geometry 자체가 계속 새롭게 만들어지는 것은 아니다. 같은 위치를 서로 다른 기준으로 **표현하는 방식이 달라지는 것**이다.
 
 예를 들어 서울의 한 건물 위치를
 
@@ -438,11 +381,7 @@ Local Space의 Point를 World Space나 View Space로 변환했다고 해서 Mesh
 - 서울시 기준
 - 특정 도로 기준
 
-으로 서로 다른 숫자로 표현할 수 있는 것과 비슷하다.
-
-실제 건물이 움직인 것은 아니다.
-
-기준이 달라졌기 때문에 위치를 표현하는 숫자가 달라진 것이다.
+으로 서로 다른 숫자로 표현할 수 있는 것과 비슷하다. 실제 건물이 움직인 것은 아니다. 기준이 달라졌기 때문에 위치를 표현하는 숫자가 달라진 것이다.
 
 3D Coordinate Transformation도 기본적으로 이와 같은 관점에서 이해할 수 있다.
 
@@ -450,9 +389,7 @@ Local Space의 Point를 World Space나 View Space로 변환했다고 해서 Mesh
 
 ### Why Multiple Spaces Are Needed
 
-그렇다면 모든 작업을 World Space 하나로 처리하면 더 간단하지 않을까?
-
-그렇게 구현할 수도 있지만, Mesh의 형태, Object의 배치, Camera의 관점, 화면 크기까지 하나의 계산에 계속 섞이게 된다. 기준을 나누면 각 단계가 필요한 정보를 받아 자신의 문제를 해결하고 다음 단계로 넘길 수 있다.
+그렇다면 모든 작업을 World Space 하나로 처리하면 더 간단하지 않을까? 그렇게 구현할 수도 있지만, Mesh의 형태, Object의 배치, Camera의 관점, 화면 크기까지 하나의 계산에 계속 섞이게 된다. 기준을 나누면 각 단계가 필요한 정보를 받아 자신의 문제를 해결하고 다음 단계로 넘길 수 있다.
 
 #### Local Space
 
@@ -480,9 +417,7 @@ Clipping 뒤에는 Perspective Divide로 NDC를 얻고, 그 상대적 위치를 
 
 ### Position Through the Pipeline
 
-Chapter 01에서 Vertex Position은 Rendering 과정에서 여러 Coordinate Space를 거친다고 설명했다.
-
-이제 그 흐름을 조금 더 의미 있게 볼 수 있다.
+Chapter 01에서 Vertex Position은 Rendering 과정에서 여러 Coordinate Space를 거친다고 설명했다. 이제 그 흐름을 조금 더 의미 있게 볼 수 있다.
 
 ~~~text
 Local Position
@@ -520,15 +455,11 @@ Position 자체가 계속 다른 Point로 바뀌는 것이 아니라,
 
 #### Normalized Device Coordinates
 
-Rendering Pipeline에서 **NDC**는 **Normalized Device Coordinates**의 약자다.
-
-쉽게 말하면,
+Rendering Pipeline에서 **NDC**는 **Normalized Device Coordinates**의 약자다. 쉽게 말하면,
 
 > **Projection을 거친 좌표를 실제 Screen Resolution에 맞추기 전에 일정한 범위로 정리한 중간 Coordinate Space**
 
-라고 이해하면 된다.
-
-예를 들어 실제 Screen이
+라고 이해하면 된다. 예를 들어 실제 Screen이
 
 ~~~text
 1920 × 1080
@@ -540,11 +471,7 @@ Rendering Pipeline에서 **NDC**는 **Normalized Device Coordinates**의 약자�
 2560 × 1440
 ~~~
 
-이든 GPU가 처음부터 각각의 Pixel 좌표를 기준으로 계산하는 것보다,
-
-먼저 일정한 공통 범위 안에서 Position을 정리한 뒤 마지막에 실제 Viewport 크기로 변환하는 편이 더 다루기 쉽다.
-
-개념적인 흐름은 다음과 같다.
+이든 GPU가 처음부터 각각의 Pixel 좌표를 기준으로 계산하는 것보다, 먼저 일정한 공통 범위 안에서 Position을 정리한 뒤 마지막에 실제 Viewport 크기로 변환하는 편이 더 다루기 쉽다. 개념적인 흐름은 다음과 같다.
 
 ~~~text
 View Space
@@ -562,32 +489,22 @@ Viewport Transform
 Screen Space
 ~~~
 
-NDC에서는 화면에 보일 위치가 일정한 정규화된 범위 안으로 표현된다.
-
-API에 따라 정확한 범위는 다를 수 있지만, 개념적으로는
+NDC에서는 화면에 보일 위치가 일정한 정규화된 범위 안으로 표현된다. API에 따라 정확한 범위는 다를 수 있지만, 개념적으로는
 
 > **실제 Pixel 좌표로 바꾸기 직전의 공통화된 Screen 기준 좌표**
 
-라고 생각하면 된다.
-
-예를 들어 NDC의 화면 중심은 대략 다음과 같은 위치로 생각할 수 있다.
+라고 생각하면 된다. 예를 들어 NDC의 화면 중심은 대략 다음과 같은 위치로 생각할 수 있다.
 
 ~~~text
 Center
 ≈ (0, 0)
 ~~~
 
-그리고 화면의 왼쪽, 오른쪽, 위쪽, 아래쪽은 일정한 정규화 범위의 끝에 대응한다.
-
-이후 Viewport Transform을 거치면 이 값이 실제 Screen Resolution의 Pixel 위치로 변환된다.
-
-따라서 NDC는
+그리고 화면의 왼쪽, 오른쪽, 위쪽, 아래쪽은 일정한 정규화 범위의 끝에 대응한다. 이후 Viewport Transform을 거치면 이 값이 실제 Screen Resolution의 Pixel 위치로 변환된다. 따라서 NDC는
 
 > **3D Camera/Projection 공간과 실제 2D Screen Pixel Coordinate 사이를 연결하는 중간 단계**
 
-라고 이해하면 된다.
-
-NDC의 정확한 범위와 Perspective Divide 과정은 이후 **2.9 Perspective Divide and NDC**에서 자세히 다룬다.
+라고 이해하면 된다. NDC의 정확한 범위와 Perspective Divide 과정은 이후 **2.9 Perspective Divide and NDC**에서 자세히 다룬다.
 
 ---
 
@@ -599,17 +516,11 @@ Coordinate Data는 값과 Space를 함께 읽는다. 같은 `Normal = (0, 0, 1)`
 
 ### Mixed Coordinate Spaces
 
-Rendering 계산에서는 서로 다른 Coordinate Space에 있는 Data를 그대로 계산하면 잘못된 결과가 나올 수 있다.
+World X와 Camera의 오른쪽은 Camera가 회전하면 다른 방향일 수 있다. 두 값에 X라는 같은 글자가 붙었다고 그 방향까지 같아지는 것은 아니다. 따라서 숫자를 곱하거나 빼기 전에, 먼저 두 숫자가 같은 자와 같은 축으로 측정되었는지 확인한다.
 
-예를 들어 Normal은 World Space에 있는데 Light Direction은 View Space에 있다고 생각해보자.
+Rendering 계산에서는 서로 다른 Coordinate Space에 있는 Data를 그대로 계산하면 잘못된 결과가 나올 수 있다. 예를 들어 Normal은 World Space에 있는데 Light Direction은 View Space에 있다고 생각해보자. 둘은 서로 다른 기준 Coordinate System의 Vector다.
 
-둘은 서로 다른 기준 Coordinate System의 Vector다.
-
-이 상태에서 두 방향을 바로 비교하면 의미 있는 결과를 얻을 수 없다.
-
-먼저 같은 Space로 맞춰야 한다.
-
-개념적으로는 다음과 같다.
+이 상태에서 두 방향을 바로 비교하면 의미 있는 결과를 얻을 수 없다. 먼저 같은 Space로 맞춰야 한다. 개념적으로는 다음과 같다.
 
 ~~~text
 Normal
@@ -652,6 +563,9 @@ Coordinate System은 Vertex Transform, Camera, Lighting, Normal Mapping, Shadow 
 
 ---
 
+<details>
+<summary>Review Note — Origin, Axis and Space</summary>
+
 ### Key Terms
 
 #### Origin
@@ -674,6 +588,8 @@ Coordinate System은 Vertex Transform, Camera, Lighting, Normal Mapping, Shadow 
 
 > 특정 Coordinate System을 기준으로 Data가 표현되고 있는 상태
 
+</details>
+
 ---
 
 ### The Key Question
@@ -688,11 +604,7 @@ Coordinate를 읽을 때는 **“어떤 Space의 Position 또는 Direction인가
 
 ## 2.2 Position, Direction and Vector
 
-Cube를 오른쪽으로 옮기면 Cube의 위치는 바뀐다. 하지만 그 동작만으로 Cube가 바라보는 방향까지 바뀌지는 않는다.
-
-이 차이를 Renderer에게도 알려줘야 한다. Vertex가 어디에 있는지 나타내는 Data에 이동량을 더하는 것은 맞지만, Surface가 어느 방향을 향하는지 나타내는 Data에 같은 이동량을 더하면 방향이 틀어진다.
-
-두 Data는 모두 (x, y, z) 형태로 저장될 수 있다. 그래서 숫자의 개수만 보고 같은 방식으로 처리해서는 안 된다.
+Cube를 오른쪽으로 옮기면 Cube의 위치는 바뀐다. 하지만 그 동작만으로 Cube가 바라보는 방향까지 바뀌지는 않는다. 이 차이를 Renderer에게도 알려줘야 한다. Vertex가 어디에 있는지 나타내는 Data에 이동량을 더하는 것은 맞지만, Surface가 어느 방향을 향하는지 나타내는 Data에 같은 이동량을 더하면 방향이 틀어진다. 두 Data는 모두 (x, y, z) 형태로 저장될 수 있다. 그래서 숫자의 개수만 보고 같은 방식으로 처리해서는 안 된다.
 
 **Position**은 기준 Origin에서 측정한 Point의 위치다. **Direction**은 어느 쪽을 향하는지 나타낸다. Direction을 계산에 사용할 때는 **Vector**로 표현하며, Vector에는 방향뿐 아니라 Magnitude도 있을 수 있다.
 
@@ -708,9 +620,7 @@ Vector    = (3, 2, 2) → 어느 방향으로 얼마나 떨어져 있는가?
 
 ### Position
 
-**Position**은 Space 안에서 특정 Point가 **어디에 있는가**를 나타낸다.
-
-예를 들어 다음과 같은 Position이 있다고 하자.
+**Position**은 Space 안에서 특정 Point가 **어디에 있는가**를 나타낸다. 예를 들어 다음과 같은 Position이 있다고 하자.
 
 ~~~text
 P = (2, 3, 1)
@@ -728,11 +638,7 @@ Z 방향으로 1
 만큼 떨어진 위치
 ~~~
 
-즉, Position은 항상 **Coordinate System의 Origin을 기준으로 한 위치**다.
-
-따라서 같은 숫자라도 어떤 Coordinate Space에서 표현되었는지에 따라 실제 의미가 달라질 수 있다.
-
-예를 들어 다음 두 Position이 있다고 하자.
+즉, Position은 항상 **Coordinate System의 Origin을 기준으로 한 위치**다. 따라서 같은 숫자라도 어떤 Coordinate Space에서 표현되었는지에 따라 실제 의미가 달라질 수 있다. 예를 들어 다음 두 Position이 있다고 하자.
 
 ~~~text
 Local Position = (2, 3, 1)
@@ -752,17 +658,15 @@ World Position = (2, 3, 1)
 
 ### Position Depends on Origin
 
-Position의 중요한 특징 중 하나는 **Origin에 영향을 받는다는 것**이다.
+주소를 같은 장소에서 새 기준점까지 다시 측정하면 장소는 그대로여도 거리 숫자는 달라진다. Position도 실제 Point와 그 Point를 적은 좌표값을 구분해야 한다. Origin 변경에 따라 달라지는 것은 우선 좌표 표현이다.
 
-하나의 Point가 현재 Coordinate System에서 다음 위치에 있다고 하자.
+Position의 중요한 특징 중 하나는 **Origin에 영향을 받는다는 것**이다. 하나의 Point가 현재 Coordinate System에서 다음 위치에 있다고 하자.
 
 ~~~text
 P = (2, 0, 0)
 ~~~
 
-이것은 Origin에서 X 방향으로 2만큼 떨어져 있다는 의미다.
-
-그런데 Coordinate System의 Origin이 이동한다면 실제 Point가 움직이지 않았더라도 그 Point를 표현하는 Coordinate 값은 달라질 수 있다.
+이것은 Origin에서 X 방향으로 2만큼 떨어져 있다는 의미다. 그런데 Coordinate System의 Origin이 이동한다면 실제 Point가 움직이지 않았더라도 그 Point를 표현하는 Coordinate 값은 달라질 수 있다.
 
 ~~~text
 같은 Point
@@ -778,17 +682,13 @@ Coordinate System B
 
 > **Point의 실제 위치와 그 Point를 표현하는 Coordinate 값은 같은 개념이 아니다.**
 
-Coordinate는 항상 현재 사용하고 있는 Coordinate System을 기준으로 한 표현이다.
-
-이 원리는 이후 Local Space, World Space, View Space를 이해하는 데 중요한 기반이 된다.
+Coordinate는 항상 현재 사용하고 있는 Coordinate System을 기준으로 한 표현이다. 이 원리는 이후 Local Space, World Space, View Space를 이해하는 데 중요한 기반이 된다.
 
 ---
 
 ### Direction
 
-**Direction**은 어떤 Point의 위치가 아니라 **어느 방향을 향하고 있는가**를 나타낸다.
-
-예를 들어 다음 값이 있다고 하자.
+**Direction**은 어떤 Point의 위치가 아니라 **어느 방향을 향하고 있는가**를 나타낸다. 예를 들어 다음 값이 있다고 하자.
 
 ~~~text
 Direction = (1, 0, 0)
@@ -807,11 +707,7 @@ Direction = (1, 0, 0)
 → Forward
 ~~~
 
-단, 실제로 어느 Axis가 Up 또는 Forward에 해당하는지는 Engine이나 Coordinate System의 규칙에 따라 달라질 수 있다.
-
-중요한 것은 Direction이 특정 Point를 가리키는 것이 아니라는 점이다.
-
-예를 들어 공간의 서로 다른 위치에 같은 방향의 화살표를 놓을 수 있다.
+단, 실제로 어느 Axis가 Up 또는 Forward에 해당하는지는 Engine이나 Coordinate System의 규칙에 따라 달라질 수 있다. 중요한 것은 Direction이 특정 Point를 가리키는 것이 아니라는 점이다. 예를 들어 공간의 서로 다른 위치에 같은 방향의 화살표를 놓을 수 있다.
 
 ~~~text
 →          →
@@ -819,9 +715,7 @@ Direction = (1, 0, 0)
 →          →
 ~~~
 
-화살표가 놓인 위치는 서로 다르지만 모두 오른쪽을 향하고 있다면 같은 Direction을 나타낼 수 있다.
-
-즉,
+화살표가 놓인 위치는 서로 다르지만 모두 오른쪽을 향하고 있다면 같은 Direction을 나타낼 수 있다. 즉,
 
 > **Direction은 "어디에 있는가"가 아니라 "어느 쪽을 향하는가"를 나타낸다.**
 
@@ -829,19 +723,15 @@ Direction = (1, 0, 0)
 
 ### Direction Does Not Depend on Position
 
-Position은 Origin과의 관계가 중요하지만 Direction은 특정 위치를 필요로 하지 않는다.
+종이에 오른쪽 화살표를 그린 뒤 종이 전체를 오른쪽으로 밀어 보자. 화살표의 시작 위치는 이동하지만 끝이 가리키는 방향은 계속 오른쪽이다. **Translation**은 이렇게 위치를 옮기는 Transform이다. 화살표를 돌리는 **Rotation**과는 결과가 다르다.
 
-예를 들어 다음 Direction이 있다고 하자.
+Position은 Origin과의 관계가 중요하지만 Direction은 특정 위치를 필요로 하지 않는다. 예를 들어 다음 Direction이 있다고 하자.
 
 ~~~text
 Direction = (1, 0, 0)
 ~~~
 
-이 방향을 World의 어느 위치에 놓더라도 여전히 같은 X 방향을 의미할 수 있다.
-
-따라서 Object 전체를 단순히 이동시키는 **Translation**은 Position에는 영향을 주지만 Direction 자체에는 영향을 주지 않는다.
-
-예를 들어 Object를 오른쪽으로 10만큼 이동했다고 하자.
+이 방향을 World의 어느 위치에 놓더라도 여전히 같은 X 방향을 의미할 수 있다. 따라서 Object 전체를 단순히 이동시키는 **Translation**은 Position에는 영향을 주지만 Direction 자체에는 영향을 주지 않는다. 예를 들어 Object를 오른쪽으로 10만큼 이동했다고 하자.
 
 ~~~text
 Position
@@ -852,9 +742,7 @@ Translation +10
 (11, 0, 0)
 ~~~
 
-Position은 바뀐다.
-
-하지만 오른쪽을 향하고 있던 Direction은 Object가 이동했다고 해서 다른 방향으로 바뀌지 않는다.
+Position은 바뀐다. 하지만 오른쪽을 향하고 있던 Direction은 Object가 이동했다고 해서 다른 방향으로 바뀌지 않는다.
 
 ~~~text
 Direction
@@ -875,11 +763,7 @@ Translation +10
 
 ### Vector
 
-Point A에서 Point B로 이동해야 한다면 출발점과 도착점만 아는 것으로는 부족하다. **어느 방향으로, 얼마나 이동해야 하는지**를 함께 표현할 값이 필요하다.
-
-이 관계를 나타내는 것이 **Vector**다. 여기서 Magnitude는 Vector의 크기 또는 길이를 뜻한다. 일반적인 0이 아닌 공간 Vector는 Direction과 Magnitude를 함께 가진다.
-
-예를 들어 같은 Space의 두 Point가 다음 위치에 있다고 하자.
+Point A에서 Point B로 이동해야 한다면 출발점과 도착점만 아는 것으로는 부족하다. **어느 방향으로, 얼마나 이동해야 하는지**를 함께 표현할 값이 필요하다. 이 관계를 나타내는 것이 **Vector**다. 여기서 Magnitude는 Vector의 크기 또는 길이를 뜻한다. 일반적인 0이 아닌 공간 Vector는 Direction과 Magnitude를 함께 가진다. 예를 들어 같은 Space의 두 Point가 다음 위치에 있다고 하자.
 
 ~~~text
 A = (1, 1, 0)
@@ -894,27 +778,21 @@ Vector AB = B - A
           = (3, 2, 2)
 ~~~
 
-이 Vector의 Direction은 A에서 B로 향한다. Magnitude는 두 Point 사이의 거리와 연결된다. 즉, Vector는 단순한 위치나 방향의 별칭이 아니라 **방향과 크기를 함께 다룰 수 있는 값**이다.
-
-방향만 필요한 경우에는 Magnitude를 1로 맞춰 사용한다. 같은 Point끼리의 차이는 Zero Vector여서 고유한 방향이 없으므로, 그 처리 조건은 Chapter 03의 Normalize 설명에서 확인한다.
+이 Vector의 Direction은 A에서 B로 향한다. Magnitude는 두 Point 사이의 거리와 연결된다. 즉, Vector는 단순한 위치나 방향의 별칭이 아니라 **방향과 크기를 함께 다룰 수 있는 값**이다. 방향만 필요한 경우에는 Chapter 01에서 본 Normalize를 사용해 방향을 유지하면서 Magnitude를 1로 맞춘다. 같은 Point끼리의 차이는 Zero Vector여서 고유한 방향이 없으므로, 그 처리 조건은 Chapter 03의 Normalize 설명에서 확인한다.
 
 ---
 
 ### Direction and Vector
 
-여기서 Direction과 Vector의 관계가 조금 헷갈릴 수 있다.
+Light가 어느 쪽에 있는지만 비교하는 계산에 거리까지 섞이면 같은 방향도 서로 다른 값으로 읽힌다. 그래서 방향을 유지하면서 Vector의 길이를 1로 맞추는 **Normalize(정규화)**를 사용한다. 그 결과가 **Unit Vector(길이 1인 Vector)**다. 아래 예에서는 X 방향은 유지하고 길이 3만 길이 1로 바꾼다.
 
-Direction 역시 실제 계산에서는 Vector 형태로 표현하는 경우가 많기 때문이다.
-
-예를 들어 다음 Vector가 있다고 하자.
+여기서 Direction과 Vector의 관계가 조금 헷갈릴 수 있다. Direction 역시 실제 계산에서는 Vector 형태로 표현하는 경우가 많기 때문이다. 예를 들어 다음 Vector가 있다고 하자.
 
 ~~~text
 V = (3, 0, 0)
 ~~~
 
-이 Vector는 X 방향을 향하면서 Magnitude가 3이다.
-
-하지만 우리가 단순히 **방향만 필요하다면** Vector의 길이를 1로 맞춰 사용할 수 있다.
+이 Vector는 X 방향을 향하면서 Magnitude가 3이다. 하지만 우리가 단순히 **방향만 필요하다면** Vector의 길이를 1로 맞춰 사용할 수 있다.
 
 ~~~text
 V = (3, 0, 0)
@@ -949,9 +827,7 @@ Direction = (1, 0, 0)
 
 ### Position and Vector
 
-Position과 Vector 역시 모두 XYZ 값을 사용할 수 있기 때문에 처음에는 비슷하게 보인다.
-
-하지만 의미는 다르다.
+Position과 Vector 역시 모두 XYZ 값을 사용할 수 있기 때문에 처음에는 비슷하게 보인다. 하지만 의미는 다르다.
 
 ~~~text
 Position = (3, 2, 1)
@@ -963,23 +839,19 @@ Position의 경우:
 
 > 현재 Coordinate System의 Origin을 기준으로 `(3, 2, 1)` 위치에 있는 Point
 
-를 의미한다.
-
-Vector의 경우:
+를 의미한다. Vector의 경우:
 
 > `(3, 2, 1)` 방향과 그에 해당하는 Magnitude를 가진 값
 
-을 의미한다.
-
-같은 숫자라도 **Data의 의미가 다르다.**
+을 의미한다. 같은 숫자라도 **Data의 의미가 다르다.**
 
 ---
 
 ### Vector Between Two Positions
 
-Vector는 두 Position 사이의 관계를 표현할 때 자주 사용된다.
+출발점에서 도착점으로 가는 변화량을 얻으려면 도착 위치에서 출발 위치를 뺀다. 두 위치가 같은 Space에 있어야 이 차이를 이동 화살표로 해석할 수 있다. 빼는 순서를 바꾸면 같은 길이의 반대 화살표가 된다.
 
-예를 들어 Character의 Position과 Camera의 Position을 알고 있다고 하자.
+Vector는 두 Position 사이의 관계를 표현할 때 자주 사용된다. 예를 들어 Character의 Position과 Camera의 Position을 알고 있다고 하자.
 
 ~~~text
 Character Position
@@ -1011,9 +883,7 @@ Character에서 Camera로 향하는 Vector
 
 > **두 Position을 빼면 한 Point에서 다른 Point로 향하는 Vector를 만들 수 있다.**
 
-이 개념은 이후 Lighting에서도 반복해서 사용된다.
-
-예를 들어
+이 개념은 이후 Lighting에서도 반복해서 사용된다. 예를 들어
 
 - Surface → Light
 - Surface → Camera
@@ -1033,9 +903,7 @@ Figure 2-2의 왼쪽은 Origin에서 측정한 위치, 가운데는 놓인 위�
 
 ### Translation Affects Position but Not Direction
 
-Position과 Direction의 차이를 가장 명확하게 보여주는 것이 **Translation**이다.
-
-Object를 World에서 이동시키는 상황을 생각해보자.
+Position과 Direction의 차이를 가장 명확하게 보여주는 것이 **Translation**이다. Object를 World에서 이동시키는 상황을 생각해보자.
 
 ~~~text
 Before
@@ -1070,7 +938,7 @@ Direction
 → 영향을 받지 않음
 ~~~
 
-이 차이는 이후 `Homogeneous Coordinate`와 `Matrix Transform`을 배울 때 다음과 연결된다.
+이 차이는 이후 `Homogeneous Coordinate`와 `Matrix Transform`을 배울 때 다음과 연결된다. Homogeneous Coordinate는 XYZ에 w를 더해 변환을 이어가는 좌표 표현이다. 여기서는 같은 Matrix에서 Translation이 참여할지 구분하는 역할을 먼저 보고, Projection 이후에는 좌표의 비율을 읽는 역할도 2.8에서 연결한다.
 
 ~~~text
 Position
@@ -1080,9 +948,7 @@ Direction
 → w = 0
 ~~~
 
-지금 단계에서는 이 값을 외울 필요는 없다.
-
-중요한 것은
+지금 단계에서는 이 값을 외울 필요는 없다. 중요한 것은
 
 > **GPU가 Position과 Direction을 서로 다른 종류의 Data로 구분해서 Transform할 필요가 있다.**
 
@@ -1094,9 +960,9 @@ Direction
 
 ### Rotation Affects Both Position and Direction
 
-Translation과 달리 Rotation은 Position과 Direction 모두에 영향을 줄 수 있다.
+이번에는 화살표가 그려진 종이를 회전시켜 보자. 화살표가 있는 위치뿐 아니라 화살표의 끝이 가리키는 방향도 함께 돈다. Translation과 달리 Rotation에서는 방향에도 회전 규칙을 적용해야 한다. 아래의 Right/Forward는 어떤 축을 기준으로 돌렸는지에 따른 개념 예다.
 
-예를 들어 Object가 오른쪽을 향하고 있다고 하자.
+Translation과 달리 Rotation은 Position과 Direction 모두에 영향을 줄 수 있다. 예를 들어 Object가 오른쪽을 향하고 있다고 하자.
 
 ~~~text
 Direction = Right
@@ -1112,9 +978,7 @@ After Rotation
 → Forward
 ~~~
 
-Object 내부의 Vertex Position 역시 Object가 회전하면서 World에서 다른 위치를 가지게 된다.
-
-따라서 개념적으로 다음과 같이 볼 수 있다.
+Object 내부의 Vertex Position 역시 Object가 회전하면서 World에서 다른 위치를 가지게 된다. 따라서 개념적으로 다음과 같이 볼 수 있다.
 
 ~~~text
              Position    Direction
@@ -1124,19 +988,13 @@ Translation     O            X
 Rotation        O            O
 ~~~
 
-여기서 중요한 점은 Position과 Direction 모두 Transform의 영향을 받을 수 있지만 **어떤 Transform이 적용되는 방식은 서로 다르다**는 것이다.
-
-이 차이를 이후 Matrix Transformation에서 다시 살펴본다.
+여기서 중요한 점은 Position과 Direction 모두 Transform의 영향을 받을 수 있지만 **어떤 Transform이 적용되는 방식은 서로 다르다**는 것이다. 이 차이를 이후 Matrix Transformation에서 다시 살펴본다.
 
 ---
 
 ### Normal Is a Direction
 
-Chapter 01에서 살펴본 **Normal**도 Position이 아니다.
-
-Normal은 Surface가 어느 방향을 향하는지를 나타내는 **Direction Data**다.
-
-예를 들어 Surface가 위쪽을 향하고 있다면 개념적으로 다음과 같은 Normal을 가질 수 있다.
+Chapter 01에서 살펴본 **Normal**도 Position이 아니다. Normal은 Surface가 어느 방향을 향하는지를 나타내는 **Direction Data**다. 예를 들어 Surface가 위쪽을 향하고 있다면 개념적으로 다음과 같은 Normal을 가질 수 있다.
 
 ~~~text
 Normal = (0, 1, 0)
@@ -1150,9 +1008,7 @@ Normal은
 
 > Surface가 어느 방향을 향하는가
 
-를 알려주는 값이다.
-
-따라서 Vertex Position과 Vertex Normal이 모두 XYZ Data로 저장되어 있더라도 의미는 완전히 다르다.
+를 알려주는 값이다. 따라서 Vertex Position과 Vertex Normal이 모두 XYZ Data로 저장되어 있더라도 의미는 완전히 다르다.
 
 ~~~text
 Vertex Position
@@ -1162,19 +1018,17 @@ Vertex Normal
 → Surface가 어느 방향을 향하는가
 ~~~
 
-이 구분은 Lighting 계산에서 매우 중요하다.
-
-빛이 Surface를 얼마나 정면으로 비추고 있는지를 계산하려면 Surface Position보다 **Normal Direction**이 필요하기 때문이다.
+이 구분은 Lighting 계산에서 매우 중요하다. 빛이 Surface를 얼마나 정면으로 비추고 있는지를 계산하려면 Surface Position보다 **Normal Direction**이 필요하기 때문이다.
 
 ---
 
 ### Tangent Is Also a Direction
 
-**Tangent** 역시 Direction Data다.
+Surface 위에 작은 화살표를 그리면 바깥쪽을 가리키는 Normal과 Surface를 따라가는 화살표를 구분할 수 있다. Surface 위의 기준 방향이 **Tangent**다. Chapter 01에서 Texture 위치를 나타내던 UV의 두 좌표 U/V 가운데 U 방향과 연결해 사용하는 경우가 일반적이다.
 
-Tangent는 Surface 위에서 특정 방향, 일반적으로 Texture의 U 방향과 연결된 Surface Direction을 나타낸다.
+다른 Surface 기준 방향인 **Bitangent**와 바깥 방향인 Normal을 함께 두면 Surface의 방향을 읽을 기준이 생긴다.
 
-그리고 Normal, Tangent와 함께 Surface 기준 Coordinate System인 **Tangent Space**를 구성한다.
+**Tangent** 역시 Direction Data다. Tangent는 Surface 위에서 특정 방향, 일반적으로 Texture의 U 방향과 연결된 Surface Direction을 나타낸다. 그리고 Normal, Tangent와 함께 Surface 기준 Coordinate System인 **Tangent Space**를 구성한다.
 
 ~~~text
 Normal
@@ -1186,19 +1040,13 @@ Bitangent
 Tangent Space
 ~~~
 
-Tangent Space는 이후 **2.14 Tangent Space**에서 자세히 다룬다.
-
-지금은 Normal과 Tangent 역시 Position이 아니라 **Surface의 방향을 표현하는 Data**라는 점만 기억하면 된다.
+Tangent Space는 이후 **2.14 Tangent Space**에서 자세히 다룬다. 지금은 Normal과 Tangent 역시 Position이 아니라 **Surface의 방향을 표현하는 Data**라는 점만 기억하면 된다.
 
 ---
 
 ### Position, Direction and Vector in Rendering
 
-Rendering에서는 이 세 개념이 계속 함께 사용된다.
-
-예를 들어 Character Surface의 한 Point를 Lighting한다고 생각해보자.
-
-필요한 Data에는 다음과 같은 것들이 있을 수 있다.
+Rendering에서는 이 세 개념이 계속 함께 사용된다. 예를 들어 Character Surface의 한 Point를 Lighting한다고 생각해보자. 필요한 Data에는 다음과 같은 것들이 있을 수 있다.
 
 ~~~text
 Surface Position
@@ -1214,11 +1062,7 @@ View Direction
 → Camera가 어느 방향에 있는가
 ~~~
 
-여기서 Position은 위치를 나타내고,
-
-Normal, Light Direction, View Direction은 모두 방향과 관련된 Vector Data다.
-
-이러한 Data를 올바르게 구분해야 이후 Lighting Calculation을 정확하게 이해할 수 있다.
+여기서 Position은 위치를 나타내고, Normal, Light Direction, View Direction은 모두 방향과 관련된 Vector Data다. 이러한 Data를 올바르게 구분해야 이후 Lighting Calculation을 정확하게 이해할 수 있다.
 
 ---
 
@@ -1269,13 +1113,9 @@ Coordinate Data를 사용할 때는 **의미(Position / Direction / Vector), Spa
 
 ## 2.3 Local Space / Object Space
 
-같은 Tree Mesh를 Scene의 여러 위치에 배치한다고 생각해보자. 배치할 때마다 Mesh의 모든 Vertex를 새로운 World Position으로 저장한다면, 형태가 같은 Tree에도 별도의 Geometry Data가 필요해진다.
+같은 Tree Mesh를 Scene의 여러 위치에 배치한다고 생각해보자. 배치할 때마다 Mesh의 모든 Vertex를 새로운 World Position으로 저장한다면, 형태가 같은 Tree에도 별도의 Geometry Data가 필요해진다. Mesh의 형태와 Scene의 배치를 분리하면 이 문제를 피할 수 있다. 먼저 Mesh 자체의 기준으로 Vertex를 저장하고, 각 Object를 World에 놓을 때 별도의 Transform을 적용한다.
 
-Mesh의 형태와 Scene의 배치를 분리하면 이 문제를 피할 수 있다. 먼저 Mesh 자체의 기준으로 Vertex를 저장하고, 각 Object를 World에 놓을 때 별도의 Transform을 적용한다.
-
-이때 Mesh를 표현하는 기준을 **Local Space** 또는 **Object Space**라고 한다. Object 자신의 Origin과 Axis가 기준이다.
-
-예를 들어 Cube의 한 Vertex가 Local Position = (1, 1, 1)이면 Cube의 Origin에서 Local X, Y, Z 방향으로 각각 1만큼 떨어졌다는 뜻이다. Cube가 Scene 어디에 배치되어 있는지는 아직 이 값에 포함되지 않는다.
+이때 Mesh를 표현하는 기준을 **Local Space** 또는 **Object Space**라고 한다. Object 자신의 Origin과 Axis가 기준이다. 예를 들어 Cube의 한 Vertex가 Local Position = (1, 1, 1)이면 Cube의 Origin에서 Local X, Y, Z 방향으로 각각 1만큼 떨어졌다는 뜻이다. Cube가 Scene 어디에 배치되어 있는지는 아직 이 값에 포함되지 않는다.
 
 ~~~text
 Mesh의 형태 → Local Vertex Data
@@ -1289,18 +1129,14 @@ Scene의 배치 → Object Transform
 
 ### Object Has Its Own Coordinate System
 
-각 Object는 자신의 Coordinate System을 가질 수 있다.
-
-기본적으로 다음과 같은 기준으로 생각할 수 있다.
+각 Object는 자신의 Coordinate System을 가질 수 있다. 기본적으로 다음과 같은 기준으로 생각할 수 있다.
 
 - Object Origin
 - Local X Axis
 - Local Y Axis
 - Local Z Axis
 
-따라서 Mesh의 Vertex Position도 이 Object Coordinate System을 기준으로 표현할 수 있다.
-
-예를 들어 다음 Vertex가 있다고 하자.
+따라서 Mesh의 Vertex Position도 이 Object Coordinate System을 기준으로 표현할 수 있다. 예를 들어 다음 Vertex가 있다고 하자.
 
 ~~~text
 Vertex Local Position = (1, 1, 1)
@@ -1310,13 +1146,13 @@ Vertex Local Position = (1, 1, 1)
 
 > **Object Origin에서 Local X, Y, Z 방향으로 각각 1만큼 떨어진 Point**
 
-를 의미한다.
-
-World에서 Object가 어디에 배치되어 있는지는 이 Local Position 자체와 별개의 문제다.
+를 의미한다. World에서 Object가 어디에 배치되어 있는지는 이 Local Position 자체와 별개의 문제다.
 
 ---
 
 ### Local Space and Object Space
+
+Engine이나 **Graphics API(Application Programming Interface)**는 Software가 Graphics 기능과 Data를 요청·전달하는 인터페이스다. 같은 기준을 가리키는 이름이 구현 문맥에 따라 달라질 수 있으므로, 이름과 함께 Data의 기준을 읽는다.
 
 `Local Space`와 `Object Space`는 문맥에 따라 거의 같은 의미로 사용되는 경우가 많다.
 
@@ -1324,9 +1160,7 @@ World에서 Object가 어디에 배치되어 있는지는 이 Local Position 자
 
 > **Object 자체를 기준으로 Data를 표현하는 Coordinate Space**
 
-를 의미한다.
-
-예를 들어 Mesh의 Vertex Position을 Object 자신의 Origin과 Axis를 기준으로 표현했다면 다음과 같이 부를 수 있다.
+를 의미한다. 예를 들어 Mesh의 Vertex Position을 Object 자신의 Origin과 Axis를 기준으로 표현했다면 다음과 같이 부를 수 있다.
 
 ~~~text
 Local Position
@@ -1346,17 +1180,15 @@ Engine이나 Graphics API에 따라 용어가 조금 다르게 사용될 수 있
 
 ### Object Transform
 
-Local Space 안에 있는 Mesh를 Scene에 배치하려면 Object가 World에서 어디에 있어야 하는지를 결정해야 한다.
+Tree Mesh의 가지 형태를 바꾸는 일과 그 Tree를 Scene의 다른 자리에 놓는 일은 다르다. Object Transform에서는 원본 Local Data를 입력으로 두고, Scene에서 필요한 배치를 출력으로 만든다. 위치 이동·회전·크기 조절을 각각 Translation·Rotation·Scale이라고 부른다.
 
-이를 위해 Object에는 일반적으로 다음과 같은 Transform 정보가 있다.
+Local Space 안에 있는 Mesh를 Scene에 배치하려면 Object가 World에서 어디에 있어야 하는지를 결정해야 한다. 이를 위해 Object에는 일반적으로 다음과 같은 Transform 정보가 있다.
 
 - Translation
 - Rotation
 - Scale
 
-이를 **Object Transform**이라고 생각할 수 있다.
-
-각 Transform의 역할을 단순화하면 다음과 같다.
+이를 **Object Transform**이라고 생각할 수 있다. 각 Transform의 역할을 단순화하면 다음과 같다.
 
 ~~~text
 Translation
@@ -1375,9 +1207,7 @@ Object Transform을 적용하면 Local Space 안에 있는 Mesh를 World Space�
 
 ### Local Position and World Position
 
-하나의 Vertex는 Local Space에서의 Position과 World Space에서의 Position을 각각 가질 수 있다.
-
-예를 들어 Vertex의 Local Position이 다음과 같다고 하자.
+하나의 Vertex는 Local Space에서의 Position과 World Space에서의 Position을 각각 가질 수 있다. 예를 들어 Vertex의 Local Position이 다음과 같다고 하자.
 
 ~~~text
 Local Position = (1, 1, 1)
@@ -1406,21 +1236,13 @@ World Position
 (6, 3, 2)
 ~~~
 
-여기서는 원리를 쉽게 이해하기 위해 Translation만 사용했다.
-
-실제 Object에는 Rotation과 Scale도 적용될 수 있으므로 Local Space에서 World Space로의 변환은 단순한 덧셈만으로 처리되지 않는다.
-
-이러한 여러 Transform을 함께 처리하기 위해 이후 **Matrix**를 사용한다.
+여기서는 원리를 쉽게 이해하기 위해 Translation만 사용했다. 실제 Object에는 Rotation과 Scale도 적용될 수 있으므로 Local Space에서 World Space로의 변환은 단순한 덧셈만으로 처리되지 않는다. 이러한 여러 Transform을 함께 처리하기 위해 이후 **Matrix**를 사용한다.
 
 ---
 
 ### Local Position and Object Translation
 
-Local Space를 이해할 때 가장 중요한 부분 중 하나다.
-
-Object 전체를 World에서 이동했다고 생각해보자.
-
-이동하기 전 상태가 다음과 같다고 하자.
+Local Space를 이해할 때 가장 중요한 부분 중 하나다. Object 전체를 World에서 이동했다고 생각해보자. 이동하기 전 상태가 다음과 같다고 하자.
 
 ~~~text
 Object Translation = (0, 0, 0)
@@ -1436,11 +1258,7 @@ Object Translation = (5, 0, 0)
 Vertex Local Position = (1, 1, 1)
 ~~~
 
-Object가 이동했지만 Vertex의 **Local Position은 그대로 유지될 수 있다.**
-
-변경된 것은 Object의 World 배치다.
-
-따라서 같은 Vertex의 World Position은 달라진다.
+Object가 이동했지만 Vertex의 **Local Position은 그대로 유지될 수 있다.** 변경된 것은 Object의 World 배치다. 따라서 같은 Vertex의 World Position은 달라진다.
 
 ~~~text
 Local Position
@@ -1461,19 +1279,15 @@ World Position
 
 ### Local Position and Rotation
 
-Object를 회전시키더라도 Mesh 내부의 Local Vertex Position은 그대로 유지될 수 있다.
+문에 붙은 점을 문의 기준으로 보면 문이 열려도 그 점은 같은 곳에 붙어 있다. 방의 기준으로 보면 점은 문과 함께 움직인다. Local Position을 유지한다는 말과 World Position이 변한다는 말은 이런 서로 다른 관찰을 설명한다.
 
-예를 들어 다음 Vertex가 있다고 하자.
+Object를 회전시키더라도 Mesh 내부의 Local Vertex Position은 그대로 유지될 수 있다. 예를 들어 다음 Vertex가 있다고 하자.
 
 ~~~text
 Local Position = (1, 0, 0)
 ~~~
 
-이 값은 Object Origin에서 Local X 방향으로 1만큼 떨어진 Position이다.
-
-Object를 회전시키면 이 Vertex의 Local Position 자체가 반드시 바뀌는 것은 아니다.
-
-대신 Object Coordinate System 전체가 World에 대해 회전한다.
+이 값은 Object Origin에서 Local X 방향으로 1만큼 떨어진 Position이다. Object를 회전시키면 이 Vertex의 Local Position 자체가 반드시 바뀌는 것은 아니다. 대신 Object Coordinate System 전체가 World에 대해 회전한다.
 
 ~~~text
 Local Position
@@ -1492,11 +1306,7 @@ World Position
 
 ### Local Axes and Object Rotation
 
-Local Space의 Axis는 Object 자신의 기준축이다.
-
-따라서 Object가 회전하면 Local Axis 역시 Object와 함께 회전한다.
-
-처음에는 Local Axis와 World Axis가 같은 방향을 향할 수 있다.
+Local Space의 Axis는 Object 자신의 기준축이다. 따라서 Object가 회전하면 Local Axis 역시 Object와 함께 회전한다. 처음에는 Local Axis와 World Axis가 같은 방향을 향할 수 있다.
 
 ~~~text
 Local X → World X와 같은 방향
@@ -1526,11 +1336,7 @@ Local Axis
 
 ### Coordinate Systems in DCC Tools
 
-Local Space는 Rendering에서 처음 등장하는 새로운 개념이 아니다.
-
-Blender와 같은 DCC Tool을 사용하면서 이미 자연스럽게 사용하고 있다.
-
-대표적인 예가 **Object Mode**와 **Edit Mode**의 차이다.
+Local Space는 Rendering에서 처음 등장하는 새로운 개념이 아니다. Blender와 같은 DCC Tool을 사용하면서 이미 자연스럽게 사용하고 있다. 대표적인 예가 **Object Mode**와 **Edit Mode**의 차이다.
 
 #### Object Mode
 
@@ -1558,9 +1364,7 @@ Vertex 이동
 Local Vertex Position 변경
 ~~~
 
-즉, Object의 World 배치를 변경하는 것이 아니라 Object 내부의 Mesh 구조를 수정하는 것이다.
-
-이 차이는 Local Space를 이해하는 데 매우 좋은 예다.
+즉, Object의 World 배치를 변경하는 것이 아니라 Object 내부의 Mesh 구조를 수정하는 것이다. 이 차이는 Local Space를 이해하는 데 매우 좋은 예다.
 
 ---
 
@@ -1596,6 +1400,8 @@ Figure 2-3의 계산은 Rotation과 Scale 없이 Translation만 적용한 예다
 
 ### Applying Transforms
 
+화면의 외형이 같다고 내부 숫자의 역할까지 같은 것은 아니다. DCC Tool의 **Apply Transform**은 현재 변환의 효과를 Mesh Data 쪽에 반영하고 Object의 변환 표현을 다시 정리하는 작업이다. 아래의 Scale 예에서는 “두 배 크기”라는 정보를 어디에 저장하는지가 바뀐다.
+
 DCC Tool에서 `Apply Transform`을 사용하면 화면에서 보이는 Object의 형태나 위치를 유지하면서 내부 Data의 표현 방식이 달라질 수 있다.
 
 예를 들어 Object Scale이 다음과 같다고 하자.
@@ -1610,9 +1416,7 @@ Scale을 Apply하면 외형은 그대로 유지하면서 Object Scale이 다시 
 Object Scale = (1, 1, 1)
 ~~~
 
-그 대신 Mesh의 Local Vertex Position이 새로운 크기를 반영하도록 변경된다.
-
-개념적으로는 다음과 같다.
+그 대신 Mesh의 Local Vertex Position이 새로운 크기를 반영하도록 변경된다. 개념적으로는 다음과 같다.
 
 ~~~text
 Before Apply
@@ -1640,9 +1444,7 @@ Object Scale = 1
 
 ### Shared Mesh Data
 
-Local Space를 사용하는 중요한 이유 중 하나는 **Mesh Data와 World 배치를 분리할 수 있기 때문**이다.
-
-예를 들어 Tree Mesh 하나가 있다고 하자.
+Local Space를 사용하는 중요한 이유 중 하나는 **Mesh Data와 World 배치를 분리할 수 있기 때문**이다. 예를 들어 Tree Mesh 하나가 있다고 하자.
 
 ~~~text
 Tree Mesh
@@ -1666,9 +1468,7 @@ Tree Object C
 → Transform C
 ~~~
 
-각 Object의 World Position, Rotation, Scale은 서로 다르지만 기본 Mesh Data는 동일할 수 있다.
-
-즉,
+각 Object의 World Position, Rotation, Scale은 서로 다르지만 기본 Mesh Data는 동일할 수 있다. 즉,
 
 ~~~text
 Same Mesh Data
@@ -1678,17 +1478,13 @@ Different Object Transform
 Different World Placement
 ~~~
 
-가 가능하다.
-
-이 구조 덕분에 같은 Geometry를 여러 위치에서 효율적으로 재사용할 수 있다.
+가 가능하다. 이 구조 덕분에 같은 Geometry를 여러 위치에서 효율적으로 재사용할 수 있다.
 
 ---
 
 ### Why Local Space Is Useful
 
-모든 Vertex가 처음부터 World Space Position만 저장한다고 생각해보자.
-
-Object 전체를 이동하려면 Mesh를 구성하는 모든 Vertex Position을 직접 변경해야 한다.
+모든 Vertex가 처음부터 World Space Position만 저장한다고 생각해보자. Object 전체를 이동하려면 Mesh를 구성하는 모든 Vertex Position을 직접 변경해야 한다.
 
 ~~~text
 Object 이동
@@ -1722,11 +1518,7 @@ Object Transform
 
 ### Object Origin and Geometry Center
 
-Object Origin은 반드시 Mesh의 가운데에 있어야 하는 것은 아니다.
-
-Object의 목적에 따라 다른 위치에 둘 수 있다.
-
-예를 들어
+Object Origin은 반드시 Mesh의 가운데에 있어야 하는 것은 아니다. Object의 목적에 따라 다른 위치에 둘 수 있다. 예를 들어
 
 - Character는 발 아래
 - Door는 Hinge 위치
@@ -1744,9 +1536,7 @@ Door Geometry
   Hinge
 ~~~
 
-이 경우 Vertex Position은 Geometry의 중심이 아니라 **Object Origin을 기준으로 표현된다.**
-
-따라서 Origin의 위치는 Local Coordinate의 값에도 직접적인 영향을 준다.
+이 경우 Vertex Position은 Geometry의 중심이 아니라 **Object Origin을 기준으로 표현된다.** 따라서 Origin의 위치는 Local Coordinate의 값에도 직접적인 영향을 준다.
 
 ---
 
@@ -1754,15 +1544,9 @@ Door Geometry
 
 DCC Tool에서는 `Origin`과 `Pivot`이라는 용어를 모두 사용한다.
 
-둘은 비슷하게 느껴질 수 있지만 완전히 같은 개념은 아니다.
+둘은 비슷하게 느껴질 수 있지만 완전히 같은 개념은 아니다. **Object Origin**은 Object Coordinate System의 기준점과 연결된다. 반면 **Pivot**은 Rotation이나 Scale 같은 Transform Operation을 수행할 때 사용하는 중심점을 의미하는 경우가 많다.
 
-**Object Origin**은 Object Coordinate System의 기준점과 연결된다.
-
-반면 **Pivot**은 Rotation이나 Scale 같은 Transform Operation을 수행할 때 사용하는 중심점을 의미하는 경우가 많다.
-
-DCC Tool에서는 Pivot을 일시적으로 다른 위치에 설정할 수도 있다.
-
-따라서 Chapter 02에서는 우선 다음 개념에 집중한다.
+DCC Tool에서는 Pivot을 일시적으로 다른 위치에 설정할 수도 있다. 따라서 Chapter 02에서는 우선 다음 개념에 집중한다.
 
 > **Local Space의 기본적인 기준점은 Object Origin이다.**
 
@@ -1770,9 +1554,7 @@ DCC Tool에서는 Pivot을 일시적으로 다른 위치에 설정할 수도 있
 
 ### Local Space in Rendering Pipeline
 
-Chapter 01에서 살펴본 Rendering Pipeline의 Vertex Processing은 Mesh의 Vertex Data에서 시작한다.
-
-이 Vertex Position은 일반적으로 Object 기준의 Local Position으로 생각할 수 있다.
+Chapter 01에서 살펴본 Rendering Pipeline의 Vertex Processing은 Mesh의 Vertex Data에서 시작한다. 이 Vertex Position은 일반적으로 Object 기준의 Local Position으로 생각할 수 있다.
 
 ~~~text
 Mesh Vertex
@@ -1788,9 +1570,7 @@ World Position
 
 > **Local Space → World Space**
 
-변환이다.
-
-그 이후에는 World Position을 Camera 기준으로 다시 변환한다.
+변환이다. 그 이후에는 World Position을 Camera 기준으로 다시 변환한다.
 
 ~~~text
 Local Space
@@ -1812,9 +1592,7 @@ Chapter 01에서 보았던 Coordinate 흐름이 이제 Local Space에서부터 �
 
 ### Local Space in Shader
 
-Mesh Data를 재사용하는 것 외에도 Local Space는 **Object를 따라 움직이는 Effect의 기준**을 제공한다.
-
-예를 들어 Object의 위쪽 부분에만 색을 적용하고 싶다고 하자. World의 높이를 기준으로 하면 Object를 위아래로 옮길 때 색이 적용되는 부분도 달라진다. 반면 Object 내부의 높이를 기준으로 하면 같은 부분에 계속 색을 적용할 수 있다.
+Mesh Data를 재사용하는 것 외에도 Local Space는 **Object를 따라 움직이는 Effect의 기준**을 제공한다. 예를 들어 Object의 위쪽 부분에만 색을 적용하고 싶다고 하자. World의 높이를 기준으로 하면 Object를 위아래로 옮길 때 색이 적용되는 부분도 달라진다. 반면 Object 내부의 높이를 기준으로 하면 같은 부분에 계속 색을 적용할 수 있다.
 
 ~~~text
 Local Position의 높이 성분
@@ -1826,9 +1604,7 @@ Object의 같은 부분에 Effect 적용
 
 Local Y가 Up인 예에서는 Local Position Y를 사용할 수 있다. [Unreal의 Coordinate System](https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinate-system-and-spaces-in-unreal-engine)처럼 Z를 Up으로 사용하는 Convention에서는 해당 높이 성분도 Z다. **높이는 현재 Coordinate System에서 Up으로 정한 Axis를 기준으로 읽는다.**
 
-Object를 World에서 이동하거나 회전하더라도 Effect가 Object 자신의 축을 따르도록 만들 수 있다. World Position만으로 계산한 Effect와의 차이는 2.4와 2.15에서 다시 확인한다.
-
-어떤 Space를 사용하는지는 단순한 Node 선택이 아니라 **Effect가 무엇을 기준으로 유지되어야 하는가**에 대한 결정이다.
+Object를 World에서 이동하거나 회전하더라도 Effect가 Object 자신의 축을 따르도록 만들 수 있다. World Position만으로 계산한 Effect와의 차이는 2.4와 2.15에서 다시 확인한다. 어떤 Space를 사용하는지는 단순한 Node 선택이 아니라 **Effect가 무엇을 기준으로 유지되어야 하는가**에 대한 결정이다.
 
 ---
 
@@ -1872,17 +1648,13 @@ Object Transform
 World Position
 ~~~
 
-실제 Rendering에서는 Translation, Rotation, Scale을 함께 처리하기 위해 Matrix Transformation을 사용한다.
-
-다음 절에서는 Local Space에 존재하는 Object가 Scene 전체의 기준 Coordinate System인 **World Space**에서 어떻게 표현되는지 살펴본다.
+실제 Rendering에서는 Translation, Rotation, Scale을 함께 처리하기 위해 Matrix Transformation을 사용한다. 다음 절에서는 Local Space에 존재하는 Object가 Scene 전체의 기준 Coordinate System인 **World Space**에서 어떻게 표현되는지 살펴본다.
 
 ---
 
 ## 2.4 World Space
 
-Local Space만으로는 Tree Mesh의 모양을 설명할 수 있다. 하지만 Character가 그 Tree보다 왼쪽에 있는지, Light가 Surface에서 얼마나 떨어져 있는지는 각각의 Local Position만으로 비교하기 어렵다.
-
-각 Object는 자신의 Origin과 Axis를 기준으로 값을 가지고 있기 때문이다. 다른 Object와 관계를 계산하려면 먼저 공통 기준으로 옮겨야 한다.
+Local Space만으로는 Tree Mesh의 모양을 설명할 수 있다. 하지만 Character가 그 Tree보다 왼쪽에 있는지, Light가 Surface에서 얼마나 떨어져 있는지는 각각의 Local Position만으로 비교하기 어렵다. 각 Object는 자신의 Origin과 Axis를 기준으로 값을 가지고 있기 때문이다. 다른 Object와 관계를 계산하려면 먼저 공통 기준으로 옮겨야 한다.
 
 Scene 전체가 공유하는 그 기준이 **World Space**다. Object Transform은 Mesh의 Local Position을 World Position으로 바꾼다. 이제 서로 다른 Object뿐 아니라 Light와 Camera의 위치도 같은 기준에서 비교할 수 있다.
 
@@ -1900,11 +1672,7 @@ World Space가 필요한 이유를 이해한 뒤, World Origin과 World Axis가 
 
 ### World Space Is Shared by the Scene
 
-Local Space는 Object마다 각각 존재할 수 있다.
-
-예를 들어 Scene에 Cube A, Cube B, Cube C가 있다고 하자.
-
-각 Cube는 자신의 Local Space를 가진다.
+Local Space는 Object마다 각각 존재할 수 있다. 예를 들어 Scene에 Cube A, Cube B, Cube C가 있다고 하자. 각 Cube는 자신의 Local Space를 가진다.
 
 ~~~text
 Cube A
@@ -1917,11 +1685,7 @@ Cube C
 → Local Space C
 ~~~
 
-이 Local Space들은 서로 독립적이다.
-
-각 Object는 자신의 Origin과 Local Axis를 기준으로 Vertex Position을 표현한다.
-
-하지만 Scene 전체의 관점에서는 이 Object들이 서로 어디에 있는지를 비교할 수 있어야 한다.
+이 Local Space들은 서로 독립적이다. 각 Object는 자신의 Origin과 Local Axis를 기준으로 Vertex Position을 표현한다. 하지만 Scene 전체의 관점에서는 이 Object들이 서로 어디에 있는지를 비교할 수 있어야 한다.
 
 이를 위해 하나의 공통 Coordinate System을 사용한다.
 
@@ -1945,17 +1709,13 @@ Cube C Local Space
 
 ### World Origin
 
-World Space에도 기준점이 있다.
-
-이 기준점을 **World Origin**이라고 하며 일반적으로 다음 위치로 표현한다.
+World Space에도 기준점이 있다. 이 기준점을 **World Origin**이라고 하며 일반적으로 다음 위치로 표현한다.
 
 ~~~text
 World Origin = (0, 0, 0)
 ~~~
 
-World Space의 Position은 이 World Origin과 World Axis를 기준으로 표현된다.
-
-예를 들어 다음 World Position이 있다고 하자.
+World Space의 Position은 이 World Origin과 World Axis를 기준으로 표현된다. 예를 들어 다음 World Position이 있다고 하자.
 
 ~~~text
 World Position = (5, 2, 0)
@@ -1969,9 +1729,7 @@ World Y 방향으로 2
 World Z 방향으로 0
 ~~~
 
-만큼 떨어진 위치를 의미한다.
-
-Local Position이 Object 내부의 위치를 나타낸다면,
+만큼 떨어진 위치를 의미한다. Local Position이 Object 내부의 위치를 나타낸다면,
 
 > **World Position은 Scene 전체를 기준으로 한 위치를 나타낸다.**
 
@@ -1987,11 +1745,7 @@ World Y Axis
 World Z Axis
 ~~~
 
-이 Axis는 각 Object의 Local Axis와는 구분된다.
-
-Object가 회전하지 않았다면 Local Axis와 World Axis가 같은 방향을 향할 수도 있다.
-
-하지만 Object를 회전시키면 Local Axis는 Object와 함께 회전한다.
+이 Axis는 각 Object의 Local Axis와는 구분된다. Object가 회전하지 않았다면 Local Axis와 World Axis가 같은 방향을 향할 수도 있다. 하지만 Object를 회전시키면 Local Axis는 Object와 함께 회전한다.
 
 World Axis는 그대로 유지된다.
 
@@ -2009,11 +1763,7 @@ Local Axis
 
 ### Multiple Objects in One World Space
 
-Scene에 여러 Object가 있다고 생각해보자.
-
-각 Object는 서로 다른 Object Transform을 가지고 있다.
-
-예를 들어 다음과 같을 수 있다.
+Scene에 여러 Object가 있다고 생각해보자. 각 Object는 서로 다른 Object Transform을 가지고 있다. 예를 들어 다음과 같을 수 있다.
 
 ~~~text
 Cube A
@@ -2026,11 +1776,7 @@ Cube C
 World Position = (0, 0, -6)
 ~~~
 
-각 Object의 Local Coordinate System은 서로 다를 수 있다.
-
-하지만 World Position으로 표현하면 모든 Object의 위치를 하나의 기준에서 비교할 수 있다.
-
-예를 들어
+각 Object의 Local Coordinate System은 서로 다를 수 있다. 하지만 World Position으로 표현하면 모든 Object의 위치를 하나의 기준에서 비교할 수 있다. 예를 들어
 
 ~~~text
 Cube A는 World Origin 오른쪽에 있다.
@@ -2040,17 +1786,13 @@ Cube B는 Cube A보다 왼쪽에 있다.
 Cube C는 World의 다른 깊이 위치에 있다.
 ~~~
 
-처럼 Object 사이의 공간 관계를 하나의 공통 기준에서 이해할 수 있다.
-
-이것이 World Space의 가장 중요한 역할 중 하나다.
+처럼 Object 사이의 공간 관계를 하나의 공통 기준에서 이해할 수 있다. 이것이 World Space의 가장 중요한 역할 중 하나다.
 
 ---
 
 ### Local Position and World Position Are Different
 
-같은 Vertex라도 Local Position과 World Position은 서로 다를 수 있다.
-
-예를 들어 Cube 내부의 한 Vertex가 다음 Local Position을 가진다고 하자.
+같은 Vertex라도 Local Position과 World Position은 서로 다를 수 있다. 예를 들어 Cube 내부의 한 Vertex가 다음 Local Position을 가진다고 하자.
 
 ~~~text
 Local Position = (1, 1, 1)
@@ -2087,11 +1829,9 @@ World Position
 
 ### Same Local Position, Different World Position
 
-World Space의 특징은 여러 Object를 비교할 때 더 분명해진다.
+동일한 Mesh의 같은 꼭짓점이라도 어느 Object에 속해 있는지에 따라 Scene의 위치가 달라진다. 원본 Local Position은 형태 정보이고 각 Object Transform은 배치 정보이므로, World Position은 둘을 함께 읽은 결과다. 아래에서는 두 Object 모두 Translation만 있다고 두고 숫자를 비교한다.
 
-Cube A와 Cube B가 같은 Mesh를 사용한다고 하자.
-
-두 Object 모두 같은 Vertex Data를 가지고 있다.
+World Space의 특징은 여러 Object를 비교할 때 더 분명해진다. Cube A와 Cube B가 같은 Mesh를 사용한다고 하자. 두 Object 모두 같은 Vertex Data를 가지고 있다.
 
 ~~~text
 Vertex Local Position = (1, 1, 1)
@@ -2129,19 +1869,24 @@ World Position = (-2, 3, 1)
 
 ---
 
-Figure 2-4는 각 Object의 Local Origin이 모두 (0, 0, 0)이어도 World에서의 위치는 다르다는 점을 비교한다. 아래 계산은 Rotation Identity, Scale 1의 조건에서만 Position에 Translation을 더한 예다.
+Figure 2-4에서는 서로 다른 Object의 Local Origin이 Scene의 서로 다른 위치에 놓이는 것을 본다. Object 자체의 0과 Scene의 0을 구분하면 공통 World Space가 왜 필요한지 읽을 수 있다.
 
 <img src="Figures/Chapter02/Fig2_04.png" width="90%">
 
 **Figure 2-4. World Space**
 
+<details>
+<summary>Figure Reading Note — Example Conditions and Scope</summary>
+
+Figure 2-4는 각 Object의 Local Origin이 모두 (0, 0, 0)이어도 World에서의 위치는 다르다는 점을 비교한다. 아래 계산은 Rotation Identity, Scale 1의 조건에서만 Position에 Translation을 더한 예다.
+
+</details>
+
 ---
 
 ### Object Transform Places Local Space into World Space
 
-Object Transform의 중요한 역할은 Object의 Local Space를 World Space 안에 배치하는 것이다.
-
-Object Transform에는 일반적으로 다음 정보가 포함된다.
+Object Transform의 중요한 역할은 Object의 Local Space를 World Space 안에 배치하는 것이다. Object Transform에는 일반적으로 다음 정보가 포함된다.
 
 - Translation
 - Rotation
@@ -2159,11 +1904,7 @@ Object Transform
 World Position
 ~~~
 
-하지만 실제 계산에서 Translation만 단순하게 더하는 것은 아니다.
-
-Rotation과 Scale까지 포함되면 Local Position의 방향과 거리도 함께 변해야 한다.
-
-따라서 실제 Rendering에서는 이러한 변환을 **Matrix Transformation**으로 처리한다.
+하지만 실제 계산에서 Translation만 단순하게 더하는 것은 아니다. Rotation과 Scale까지 포함되면 Local Position의 방향과 거리도 함께 변해야 한다. 따라서 실제 Rendering에서는 이러한 변환을 **Matrix Transformation**으로 처리한다.
 
 ~~~text
 Local Position
@@ -2173,9 +1914,7 @@ Object / Model Matrix
 World Position
 ~~~
 
-Matrix의 구체적인 구조와 계산 방식은 Chapter 2 후반에서 자세히 다룬다.
-
-지금 단계에서는
+Matrix의 구체적인 구조와 계산 방식은 Chapter 2 후반에서 자세히 다룬다. 지금 단계에서는
 
 > **Object Transform이 Local Space의 Data를 World Space로 변환한다.**
 
@@ -2185,9 +1924,7 @@ Matrix의 구체적인 구조와 계산 방식은 Chapter 2 후반에서 자세�
 
 ### Translation
 
-Local Origin을 World의 다른 위치에 놓고 싶다면 Object 전체의 위치를 옮겨야 한다. 이 이동을 **Translation**이라고 한다.
-
-예를 들어 Translation이 (5, 2, 0)이고 Rotation과 Scale이 없는 경우, Object의 Local Origin은 World의 (5, 2, 0)에 놓인다.
+Local Origin을 World의 다른 위치에 놓고 싶다면 Object 전체의 위치를 옮겨야 한다. 이 이동을 **Translation**이라고 한다. 예를 들어 Translation이 (5, 2, 0)이고 Rotation과 Scale이 없는 경우, Object의 Local Origin은 World의 (5, 2, 0)에 놓인다.
 
 ~~~text
 Local Origin = (0, 0, 0)
@@ -2196,19 +1933,13 @@ Translation = (5, 2, 0)
 World Position = (5, 2, 0)
 ~~~
 
-Object 내부의 다른 Vertex에도 같은 이동량이 적용된다. 그래서 Vertex 사이의 상대적인 형태는 유지하면서 Object 전체를 Scene의 다른 위치에 배치할 수 있다.
-
-Translation은 Position을 바꾼다. Object가 바라보는 Direction은 이 이동만으로 바뀌지 않는다. 같은 Transform에 Direction이 어떻게 참여하는지는 2.13에서 다시 구분한다.
+Object 내부의 다른 Vertex에도 같은 이동량이 적용된다. 그래서 Vertex 사이의 상대적인 형태는 유지하면서 Object 전체를 Scene의 다른 위치에 배치할 수 있다. Translation은 Position을 바꾼다. Object가 바라보는 Direction은 이 이동만으로 바뀌지 않는다. 같은 Transform에 Direction이 어떻게 참여하는지는 2.13에서 다시 구분한다.
 
 ---
 
 ### Rotation
 
-Object를 옮기기만 해서는 바라보는 방향을 바꿀 수 없다. Door가 열리는 것처럼 Object의 방향 관계를 바꾸려면 **Rotation**이 필요하다.
-
-Object의 Local X 방향에 Local Position = (1, 0, 0)인 Vertex가 있다고 하자. Local과 World Axis가 정렬되어 있다면 이 Vertex는 World X 방향에 놓인다.
-
-Object를 회전시키면 Local Axis도 World에 대해 회전한다. Vertex의 Local Position은 그대로 유지할 수 있지만, 그 Local X 방향이 가리키는 World 방향은 달라진다.
+Object를 옮기기만 해서는 바라보는 방향을 바꿀 수 없다. Door가 열리는 것처럼 Object의 방향 관계를 바꾸려면 **Rotation**이 필요하다. Object의 Local X 방향에 Local Position = (1, 0, 0)인 Vertex가 있다고 하자. Local과 World Axis가 정렬되어 있다면 이 Vertex는 World X 방향에 놓인다. Object를 회전시키면 Local Axis도 World에 대해 회전한다. Vertex의 Local Position은 그대로 유지할 수 있지만, 그 Local X 방향이 가리키는 World 방향은 달라진다.
 
 ~~~text
 Local Position → 유지
@@ -2223,9 +1954,7 @@ Rotation은 Local Space의 방향을 World에 대해 바꾼다. Rotation의 중�
 
 ### Scale
 
-Object의 위치와 바라보는 방향을 유지하면서 크기를 바꾸려면 Origin에서 Vertex까지의 간격을 바꿔야 한다. 이 비율을 조정하는 Transform이 **Scale**이다.
-
-예를 들어 Local X 방향으로 1만큼 떨어진 Vertex에 모든 Axis의 Scale 2를 적용하면, 다른 Transform을 적용하기 전의 간격은 두 배가 된다.
+Object의 위치와 바라보는 방향을 유지하면서 크기를 바꾸려면 Origin에서 Vertex까지의 간격을 바꿔야 한다. 이 비율을 조정하는 Transform이 **Scale**이다. 예를 들어 Local X 방향으로 1만큼 떨어진 Vertex에 모든 Axis의 Scale 2를 적용하면, 다른 Transform을 적용하기 전의 간격은 두 배가 된다.
 
 ~~~text
 Local Position = (1, 0, 0)
@@ -2234,17 +1963,15 @@ Scale = (2, 2, 2)
 Scaled Position = (2, 0, 0)
 ~~~
 
-Scale은 각 Axis에서 같은 비율을 사용할 수도 있고 서로 다른 비율을 사용할 수도 있다. 후자는 Object를 한 방향으로 늘리거나 누른다.
-
-실제 World Position에는 이 Scale뿐 아니라 Rotation과 Translation도 함께 반영된다. Scale이 Direction의 길이와 Normal 변환에 미치는 차이는 2.13에서 연결한다.
+Scale은 각 Axis에서 같은 비율을 사용할 수도 있고 서로 다른 비율을 사용할 수도 있다. 후자는 Object를 한 방향으로 늘리거나 누른다. 실제 World Position에는 이 Scale뿐 아니라 Rotation과 Translation도 함께 반영된다. Scale이 Direction의 길이와 Normal 변환에 미치는 차이는 2.13에서 연결한다.
 
 ---
 
 ### Translation, Rotation and Scale Work Together
 
-실제 Object는 Translation, Rotation, Scale 중 하나만 사용하는 경우보다 여러 Transform이 함께 적용되는 경우가 일반적이다.
+작은 장난감을 먼저 두 배 키우고, 방향을 돌린 뒤, 책상 위에 놓는다고 생각해보자. 세 작업은 각각 다른 관계를 바꾸지만 최종 Vertex 위치에는 모두 반영된다. 아래 순서는 이 Chapter에서 설명하는 Scale → Rotation → Translation의 예이며, 실제 순서는 변환을 어떻게 구성했는지 확인해야 한다.
 
-따라서 실제 관계는 다음에 가깝다.
+실제 Object는 Translation, Rotation, Scale 중 하나만 사용하는 경우보다 여러 Transform이 함께 적용되는 경우가 일반적이다. 따라서 실제 관계는 다음에 가깝다.
 
 ~~~text
 Local Position
@@ -2263,11 +1990,7 @@ Translation
 World Position
 ~~~
 
-다만 이 Transform의 적용 순서는 중요하며, Matrix를 어떤 방식으로 구성하는지에 따라 표현 방식도 달라질 수 있다.
-
-이 부분은 이후 **Matrix Transform Basics**에서 자세히 다룬다.
-
-지금은
+다만 이 Transform의 적용 순서는 중요하며, Matrix를 어떤 방식으로 구성하는지에 따라 표현 방식도 달라질 수 있다. 이 부분은 이후 **Matrix Transform Basics**에서 자세히 다룬다. 지금은
 
 > **Local Space의 Vertex가 Object Transform을 거쳐 World Space에 배치된다.**
 
@@ -2305,9 +2028,7 @@ World X 방향으로 이동
 
 ### Object World Transform
 
-DCC Tool의 Transform Panel에서 Location, Rotation, Scale을 확인할 수 있다. 하지만 이 값이 World 배치를 바로 뜻하는지는 먼저 기준을 확인해야 한다.
-
-Parent가 없는 단순한 Object와 Parent를 가진 Object는 같은 Panel 값이 다른 관계를 나타낼 수 있다. Parent가 있다면 Child의 Transform을 Parent 기준으로 저장하고, Parent의 Transform까지 결합해 최종 World 배치를 얻는 경우가 있다.
+DCC Tool의 Transform Panel에서 Location, Rotation, Scale을 확인할 수 있다. 하지만 이 값이 World 배치를 바로 뜻하는지는 먼저 기준을 확인해야 한다. Parent가 없는 단순한 Object와 Parent를 가진 Object는 같은 Panel 값이 다른 관계를 나타낼 수 있다. Parent가 있다면 Child의 Transform을 Parent 기준으로 저장하고, Parent의 Transform까지 결합해 최종 World 배치를 얻는 경우가 있다.
 
 그래서 값의 이름만 보고 모두 World Transform이라고 단정하지 않는다. 어떤 Transform Space를 표시하는지와 Parent 관계를 함께 확인한다.
 
@@ -2325,9 +2046,9 @@ Modeling과 Rendering에서 공통으로 필요한 것은 이 마지막 관계�
 
 ### World Space Makes Comparison Possible
 
-World Space의 중요한 장점은 서로 다른 Object의 Position이나 Direction을 **같은 기준에서 비교할 수 있다는 것**이다.
+Character의 Local X와 Light의 Local X는 서로 다른 자로 잰 값일 수 있다. Character에서 Light로 향하는 화살표를 만들려면 두 위치를 같은 World 기준으로 먼저 준비한다. 아래의 뺄셈은 그 준비가 끝난 뒤의 위치 차이를 읽는 것이다.
 
-예를 들어 Character와 Light가 있다고 하자.
+World Space의 중요한 장점은 서로 다른 Object의 Position이나 Direction을 **같은 기준에서 비교할 수 있다는 것**이다. 예를 들어 Character와 Light가 있다고 하자.
 
 ~~~text
 Character World Position = (2, 0, 0)
@@ -2335,9 +2056,7 @@ Character World Position = (2, 0, 0)
 Light World Position = (10, 5, 3)
 ~~~
 
-두 Position이 모두 World Space에 있다면 두 Object 사이의 관계를 계산할 수 있다.
-
-예를 들어
+두 Position이 모두 World Space에 있다면 두 Object 사이의 관계를 계산할 수 있다. 예를 들어
 
 ~~~text
 Light Position
@@ -2349,11 +2068,7 @@ Character Position
 Character에서 Light로 향하는 Vector
 ~~~
 
-를 만들 수 있다.
-
-반대로 한쪽은 Local Space이고 다른 한쪽은 World Space라면 두 값을 그대로 빼는 것은 올바른 공간 관계를 의미하지 않는다.
-
-즉,
+를 만들 수 있다. 반대로 한쪽은 Local Space이고 다른 한쪽은 World Space라면 두 값을 그대로 빼는 것은 올바른 공간 관계를 의미하지 않는다. 즉,
 
 > **여러 Object 사이의 관계를 계산하려면 먼저 같은 Coordinate Space에서 표현되어 있어야 한다.**
 
@@ -2363,9 +2078,7 @@ World Space는 이러한 계산에서 매우 자주 사용되는 공통 기준�
 
 ### World Space in Lighting
 
-Lighting에서도 World Space는 자주 사용된다.
-
-예를 들어 Surface에서 Lighting을 계산하기 위해 다음 Data가 필요할 수 있다.
+Lighting에서도 World Space는 자주 사용된다. 예를 들어 Surface에서 Lighting을 계산하기 위해 다음 Data가 필요할 수 있다.
 
 ~~~text
 Surface World Position
@@ -2377,9 +2090,7 @@ Light World Position
 Camera World Position
 ~~~
 
-이 Data들이 모두 World Space에 있다면 서로의 관계를 같은 기준으로 계산할 수 있다.
-
-예를 들어 Point Light가 있는 방향을 계산하려면 다음 관계를 사용할 수 있다.
+이 Data들이 모두 World Space에 있다면 서로의 관계를 같은 기준으로 계산할 수 있다. 예를 들어 Point Light가 있는 방향을 계산하려면 다음 관계를 사용할 수 있다.
 
 ~~~text
 Light World Position
@@ -2391,17 +2102,13 @@ Surface World Position
 Surface → Light Vector
 ~~~
 
-이후 이 Vector를 Normalize하면 Light Direction을 만들 수 있다.
-
-이러한 계산은 Chapter 03 - Lighting Mathematics에서 자세히 다룬다.
+이후 이 Vector를 Normalize하면 Light Direction을 만들 수 있다. 이러한 계산은 Chapter 03 - Lighting Mathematics에서 자세히 다룬다.
 
 ---
 
 ### World Space in Shader
 
-Shader 작업에서도 World Space는 매우 자주 접하게 된다.
-
-Unreal Engine Material에서는 대표적으로 다음과 같은 World Space Data를 사용할 수 있다.
+Shader 작업에서도 World Space는 매우 자주 접하게 된다. Unreal Engine Material에서는 대표적으로 다음과 같은 World Space Data를 사용할 수 있다.
 
 - Absolute World Position
 - Vertex Normal WS
@@ -2411,9 +2118,7 @@ Unreal Engine Material에서는 대표적으로 다음과 같은 World Space Dat
 
 예를 들어 `Absolute World Position`은 현재 Surface 위치를 World Space 기준으로 제공한다.
 
-이를 이용하면 Object 자신의 위치와 관계없이 World 전체를 기준으로 Effect를 만들 수 있다.
-
-예를 들어 World의 특정 높이 이상에서 색을 바꾸는 Effect를 생각해보자.
+이를 이용하면 Object 자신의 위치와 관계없이 World 전체를 기준으로 Effect를 만들 수 있다. 예를 들어 World의 특정 높이 이상에서 색을 바꾸는 Effect를 생각해보자.
 
 ~~~text
 World Position Z
@@ -2423,19 +2128,13 @@ World Position Z
 Effect 적용
 ~~~
 
-이 경우 Object를 World에서 이동시키면 Effect가 적용되는 부분도 달라진다.
-
-왜냐하면 Effect의 기준이 Object가 아니라 World이기 때문이다.
+이 경우 Object를 World에서 이동시키면 Effect가 적용되는 부분도 달라진다. 왜냐하면 Effect의 기준이 Object가 아니라 World이기 때문이다.
 
 ---
 
 ### Local Space Effect vs World Space Effect
 
-Local Space와 World Space의 차이는 Shader Effect를 만들 때 매우 중요하다.
-
-예를 들어 Object의 위쪽 절반에 색을 적용한다고 하자.
-
-Local Position을 기준으로 하면 다음과 같다.
+Local Space와 World Space의 차이는 Shader Effect를 만들 때 매우 중요하다. 예를 들어 Object의 위쪽 절반에 색을 적용한다고 하자. Local Position을 기준으로 하면 다음과 같다.
 
 ~~~text
 Local Position
@@ -2445,9 +2144,7 @@ Object 내부 높이 판단
 Object와 함께 Effect 이동
 ~~~
 
-Object를 World에서 이동시켜도 Effect는 Object 자체를 기준으로 유지된다.
-
-반면 World Position을 사용하면 다음과 같다.
+Object를 World에서 이동시켜도 Effect는 Object 자체를 기준으로 유지된다. 반면 World Position을 사용하면 다음과 같다.
 
 ~~~text
 World Position
@@ -2457,9 +2154,7 @@ World Height 판단
 World 기준 Effect
 ~~~
 
-Object가 이동하면서 World Height가 달라지면 Effect가 적용되는 위치도 달라진다.
-
-즉,
+Object가 이동하면서 World Height가 달라지면 Effect가 적용되는 위치도 달라진다. 즉,
 
 > **Local Space는 Object에 붙어 있는 기준이고, World Space는 Scene에 고정된 기준이라고 생각하면 이해하기 쉽다.**
 
@@ -2467,11 +2162,7 @@ Object가 이동하면서 World Height가 달라지면 Effect가 적용되는 �
 
 ### World Space Is Not the Final Space
 
-World Space는 Scene 전체를 표현하기에는 매우 편리하다.
-
-하지만 Rendering Pipeline에서는 여기서 끝나지 않는다.
-
-최종 Image를 만들려면 Camera가 Scene을 어떻게 바라보고 있는지를 알아야 한다.
+World Space는 Scene 전체를 표현하기에는 매우 편리하다. 하지만 Rendering Pipeline에서는 여기서 끝나지 않는다. 최종 Image를 만들려면 Camera가 Scene을 어떻게 바라보고 있는지를 알아야 한다.
 
 World Space의 Object Position을 그대로 사용하면
 
@@ -2481,9 +2172,7 @@ World Space의 Object Position을 그대로 사용하면
 
 > Camera에서 바라봤을 때 Object가 어디에 있는가
 
-는 직접 알 수 없다.
-
-따라서 다음 단계에서는 World Space의 Position을 Camera 기준으로 다시 표현한다.
+는 직접 알 수 없다. 따라서 다음 단계에서는 World Space의 Position을 Camera 기준으로 다시 표현한다.
 
 ~~~text
 Local Space
@@ -2540,9 +2229,7 @@ World Position
 
 ## 2.5 View Space / Camera Space
 
-World Space에서는 Object, Light, Camera를 하나의 기준으로 비교할 수 있다. 하지만 Camera가 Scene의 어디에 놓여 있는지만으로는 화면에서 Object가 왼쪽에 보일지 오른쪽에 보일지 바로 알 수 없다.
-
-같은 Object를 두 Camera로 보면 화면의 위치가 달라지는 이유도 이 때문이다. 화면을 만들려면 **이번 Image를 만드는 Camera에서 Object가 어디에 있는가**를 알아야 한다.
+World Space에서는 Object, Light, Camera를 하나의 기준으로 비교할 수 있다. 하지만 Camera가 Scene의 어디에 놓여 있는지만으로는 화면에서 Object가 왼쪽에 보일지 오른쪽에 보일지 바로 알 수 없다. 같은 Object를 두 Camera로 보면 화면의 위치가 달라지는 이유도 이 때문이다. 화면을 만들려면 **이번 Image를 만드는 Camera에서 Object가 어디에 있는가**를 알아야 한다.
 
 그래서 World Position을 Camera의 위치와 방향을 기준으로 다시 표현한다. 이 Camera 기준의 Coordinate Space를 **View Space** 또는 **Camera Space**라고 한다.
 
@@ -2566,6 +2253,8 @@ Figure 2-5는 World의 Scene을 그대로 두고 Camera가 기준 Origin과 방�
 
 ### Camera Becomes the Reference
 
+Scene의 좌표를 Camera가 가진 자로 다시 읽는다고 생각해보자. Camera 위치를 기준점으로 삼고 Camera의 좌우·상하·앞뒤를 축으로 삼는다. 그 뒤에는 Camera가 Scene의 어디에 놓였는지에 관계없이, Camera 자신의 기준에서는 같은 시작점에서 위치를 읽을 수 있다.
+
 World Space에서는 Scene 전체의 World Origin과 World Axis가 기준이었다.
 
 ~~~text id="2v5cam"
@@ -2578,9 +2267,7 @@ Axis
 → World X / Y / Z
 ~~~
 
-하지만 View Space에서는 기준이 Camera로 바뀐다.
-
-개념적으로는 다음과 같다.
+하지만 View Space에서는 기준이 Camera로 바뀐다. 개념적으로는 다음과 같다.
 
 ~~~text id="4b5cam"
 View Space
@@ -2592,11 +2279,7 @@ Axis
 → Camera가 바라보는 방향을 기준으로 한 Axis
 ~~~
 
-즉, Camera가 View Space의 기준점이 된다.
-
-World Space에서 Camera가 어디에 있었든 View Space로 변환한 뒤에는 Camera를 기준으로 Scene이 다시 표현된다.
-
-이때 Camera는 개념적으로 다음 위치에 있다고 생각할 수 있다.
+즉, Camera가 View Space의 기준점이 된다. World Space에서 Camera가 어디에 있었든 View Space로 변환한 뒤에는 Camera를 기준으로 Scene이 다시 표현된다. 이때 Camera는 개념적으로 다음 위치에 있다고 생각할 수 있다.
 
 ~~~text id="6c7cam"
 Camera Origin = (0, 0, 0)
@@ -2619,11 +2302,7 @@ Camera World Position
 Camera World Rotation
 ~~~
 
-World Position을 그대로 사용하면 Object가 Scene 전체에서 어디에 있는지는 알 수 있다.
-
-하지만 Rendering에서는 Camera 입장에서 Object의 위치를 알아야 한다.
-
-그래서 다음 변환을 수행한다.
+World Position을 그대로 사용하면 Object가 Scene 전체에서 어디에 있는지는 알 수 있다. 하지만 Rendering에서는 Camera 입장에서 Object의 위치를 알아야 한다. 그래서 다음 변환을 수행한다.
 
 ~~~text id="htyvx3"
 World Position
@@ -2633,9 +2312,7 @@ View Transform
 View Position
 ~~~
 
-이 결과는 같은 Object를 Camera 기준에서 다시 표현한 Position이다.
-
-즉,
+이 결과는 같은 Object를 Camera 기준에서 다시 표현한 Position이다. 즉,
 
 > **Object 자체가 다른 곳으로 이동한 것이 아니라 Coordinate System의 기준이 World에서 Camera로 변경된 것이다.**
 
@@ -2643,11 +2320,7 @@ View Position
 
 ### View Space Is Still 3D
 
-View Space를 처음 접할 때 가장 중요한 점 중 하나다.
-
-View Space는 Camera를 기준으로 만들어지기 때문에 이미 Screen에 보이는 결과처럼 느껴질 수 있다.
-
-하지만 View Space는 아직 **3D Space**다.
+View Space를 처음 접할 때 가장 중요한 점 중 하나다. View Space는 Camera를 기준으로 만들어지기 때문에 이미 Screen에 보이는 결과처럼 느껴질 수 있다. 하지만 View Space는 아직 **3D Space**다.
 
 Object는 여전히 다음과 같은 정보로 표현된다.
 
@@ -2665,23 +2338,15 @@ Forward / Backward
 View Position = (x, y, z)
 ~~~
 
-여기서 Depth에 해당하는 축 정보도 아직 존재한다.
-
-따라서 View Space는 아직 2D Screen Coordinate가 아니다.
+여기서 Depth에 해당하는 축 정보도 아직 존재한다. 따라서 View Space는 아직 2D Screen Coordinate가 아니다.
 
 ---
 
 ### View Space and Screen Space Are Different
 
-DCC Tool의 Viewport를 오래 사용했다면 View Space와 Screen Space가 비슷하게 느껴질 수 있다.
+DCC Tool의 Viewport를 오래 사용했다면 View Space와 Screen Space가 비슷하게 느껴질 수 있다. 둘 다 Camera나 Viewport를 기준으로 Scene을 바라보는 것처럼 보이기 때문이다. 하지만 Rendering Pipeline에서는 두 Space의 역할이 다르다.
 
-둘 다 Camera나 Viewport를 기준으로 Scene을 바라보는 것처럼 보이기 때문이다.
-
-하지만 Rendering Pipeline에서는 두 Space의 역할이 다르다.
-
-**View Space**는 Camera를 기준으로 표현된 **3D Space**다.
-
-반면 **Screen Space**는 Projection을 거친 뒤 실제 화면의 어느 2D 위치에 나타나는지를 표현한다.
+**View Space**는 Camera를 기준으로 표현된 **3D Space**다. 반면 **Screen Space**는 Projection을 거친 뒤 실제 화면의 어느 2D 위치에 나타나는지를 표현한다.
 
 ~~~text id="ry3brm"
 View Space
@@ -2699,9 +2364,7 @@ Screen Space
 
 ### Depth Still Exists in View Space
 
-View Space에서는 Object가 Camera로부터 얼마나 앞이나 뒤에 있는지에 대한 정보가 여전히 존재한다.
-
-예를 들어 Camera 앞에 두 Point가 있다고 하자.
+View Space에서는 Object가 Camera로부터 얼마나 앞이나 뒤에 있는지에 대한 정보가 여전히 존재한다. 예를 들어 Camera 앞에 두 Point가 있다고 하자.
 
 ~~~text id="0jw02v"
 Point A
@@ -2711,9 +2374,7 @@ Point B
 → Camera에서 멂
 ~~~
 
-두 Point가 화면상 비슷한 방향에 있더라도 View Space에서는 서로 다른 Depth를 가진다.
-
-개념적으로 다음과 같이 생각할 수 있다.
+두 Point가 화면상 비슷한 방향에 있더라도 View Space에서는 서로 다른 Depth를 가진다. 개념적으로 다음과 같이 생각할 수 있다.
 
 ~~~text id="v754iu"
 Point A
@@ -2723,19 +2384,13 @@ Point B
 View Position = (1, 0, Depth Far)
 ~~~
 
-이 Depth 차이는 이후 Perspective Projection에서 매우 중요하게 사용된다.
-
-왜냐하면 Camera에서 멀리 있는 Object를 더 작게 보이게 만드는 데 Depth가 필요하기 때문이다.
+이 Depth 차이는 이후 Perspective Projection에서 매우 중요하게 사용된다. 왜냐하면 Camera에서 멀리 있는 Object를 더 작게 보이게 만드는 데 Depth가 필요하기 때문이다.
 
 ---
 
 ### Why Camera Space Is Needed
 
-그렇다면 World Space Position을 그대로 Projection하면 안 될까?
-
-Camera는 World 안에서 자유롭게 이동하고 회전할 수 있다.
-
-따라서 World Coordinate를 그대로 사용하면 Projection 계산에서 매번 Camera의 Position과 방향을 함께 고려해야 한다.
+그렇다면 World Space Position을 그대로 Projection하면 안 될까? Camera는 World 안에서 자유롭게 이동하고 회전할 수 있다. 따라서 World Coordinate를 그대로 사용하면 Projection 계산에서 매번 Camera의 Position과 방향을 함께 고려해야 한다.
 
 View Space에서는 먼저 Scene 전체를 Camera 기준으로 변환한다.
 
@@ -2749,9 +2404,7 @@ View Space
 Projection
 ~~~
 
-이렇게 하면 Projection 단계에서는 Camera가 항상 일정한 기준 위치와 방향에 있다고 생각하고 계산할 수 있다.
-
-즉,
+이렇게 하면 Projection 단계에서는 Camera가 항상 일정한 기준 위치와 방향에 있다고 생각하고 계산할 수 있다. 즉,
 
 > **View Space는 Camera의 위치와 방향을 먼저 정리해서 Projection을 단순한 기준에서 수행할 수 있도록 만드는 중간 Coordinate Space다.**
 
@@ -2759,17 +2412,13 @@ Projection
 
 ### A Useful Way to Think About View Transform
 
-View Transform을 이해할 때 Camera가 움직이는 장면을 그대로 생각하면 처음에는 조금 헷갈릴 수 있다.
+Camera를 오른쪽으로 옮겨 Cube를 보면 Cube가 상대적으로 왼쪽에 놓인다. 이 관계를 계산하기 위해 Scene Mesh를 편집할 필요는 없다. Camera를 원점에 둔 표현으로 바꾸면 같은 World Point의 좌표가 Camera 이동과 반대 방향으로 바뀐다.
 
-Rendering 관점에서는 반대로 생각하면 이해하기 쉽다.
+View Transform을 이해할 때 Camera가 움직이는 장면을 그대로 생각하면 처음에는 조금 헷갈릴 수 있다. Rendering 관점에서는 반대로 생각하면 이해하기 쉽다.
 
 > **Camera를 기준 위치에 고정하고 World 전체를 Camera의 움직임과 반대 방향으로 변환한다.**
 
-예를 들어 Camera가 World에서 오른쪽으로 이동했다고 하자.
-
-DCC Tool에서는 Camera가 실제로 오른쪽으로 움직인 것으로 보인다.
-
-하지만 Camera 기준으로 Scene을 표현하려면 개념적으로 World 전체가 왼쪽으로 이동한 것처럼 변환할 수 있다.
+예를 들어 Camera가 World에서 오른쪽으로 이동했다고 하자. DCC Tool에서는 Camera가 실제로 오른쪽으로 움직인 것으로 보인다. 하지만 Camera 기준으로 Scene을 표현하려면 개념적으로 World 전체가 왼쪽으로 이동한 것처럼 변환할 수 있다.
 
 ~~~text id="9hbgfk"
 Camera
@@ -2785,11 +2434,7 @@ View Transform 관점
 
 ### Camera Rotation Can Be Thought of the Same Way
 
-Camera Rotation 역시 같은 방식으로 생각할 수 있다.
-
-Camera가 오른쪽으로 회전했다고 하자.
-
-Camera 기준으로 Scene을 다시 표현하려면 World 전체를 반대 방향으로 회전시키는 것처럼 생각할 수 있다.
+Camera Rotation 역시 같은 방식으로 생각할 수 있다. Camera가 오른쪽으로 회전했다고 하자. Camera 기준으로 Scene을 다시 표현하려면 World 전체를 반대 방향으로 회전시키는 것처럼 생각할 수 있다.
 
 ~~~text id="dsiear"
 Camera Rotation
@@ -2799,9 +2444,7 @@ View Transform
 → World를 반대 방향으로 변환
 ~~~
 
-이 과정을 거치면 View Space에서는 Camera가 항상 일정한 방향을 바라보는 기준 Coordinate System으로 표현될 수 있다.
-
-즉,
+이 과정을 거치면 View Space에서는 Camera가 항상 일정한 방향을 바라보는 기준 Coordinate System으로 표현될 수 있다. 즉,
 
 > **Camera Transform의 반대 변환을 World에 적용한다고 생각하면 View Transform을 이해하기 쉽다.**
 
@@ -2811,18 +2454,16 @@ View Transform
 
 ### View Transform Is the Inverse of Camera Transform
 
-Camera를 World의 특정 위치와 방향에 배치할 때는 Camera의 Transform을 적용한다. 이번에는 반대로 World의 Point를 그 Camera 기준에서 읽어야 한다.
+“Camera를 World에 놓는 변환”의 출력은 World 기준이다. 이제 World의 Point를 Camera 기준 입력으로 되돌려 읽고 싶다. 이 입력·출력의 방향을 뒤집는 관계가 필요하며, 이를 **Inverse(역변환)**라고 부른다. 단순히 화면에서 반대로 보인다는 인상에 그치지 않고, 어느 변환을 되돌리는지 확인한다.
 
-따라서 Camera를 배치했던 변환을 **되돌리는 방향**의 변환이 필요하다. 이 관계를 **Inverse Transform**이라고 한다.
+Camera를 World의 특정 위치와 방향에 배치할 때는 Camera의 Transform을 적용한다. 이번에는 반대로 World의 Point를 그 Camera 기준에서 읽어야 한다. 따라서 Camera를 배치했던 변환을 **되돌리는 방향**의 변환이 필요하다. 이 관계를 **Inverse Transform**이라고 한다.
 
 ~~~text
 Camera Local → Camera World Transform → World
 World → Inverse Camera World Transform → Camera 기준 View Space
 ~~~
 
-Translation만 있는 경우에는 Camera의 이동량을 빼면 된다. Rotation까지 있다면 위치만 빼는 것으로는 부족하다. Camera의 방향으로 돌아간 축도 함께 되돌려야 한다.
-
-그래서 View Matrix는 일반적으로 Camera World Transform의 Inverse와 연결된다. Camera가 움직이는 대신 Scene을 반대 방향으로 변환한다고 생각했던 앞의 설명은 이 관계를 직관적으로 본 것이다.
+Translation만 있는 경우에는 Camera의 이동량을 빼면 된다. Rotation까지 있다면 위치만 빼는 것으로는 부족하다. Camera의 방향으로 돌아간 축도 함께 되돌려야 한다. 그래서 View Matrix는 일반적으로 Camera World Transform의 Inverse와 연결된다. Camera가 움직이는 대신 Scene을 반대 방향으로 변환한다고 생각했던 앞의 설명은 이 관계를 직관적으로 본 것이다.
 
 2.11–2.12에서는 행렬 적용 순서와 간단한 Camera Inverse 예제를 확인한다. 일반 행렬의 역행렬 계산 알고리즘 전체를 다루는 것은 아니다.
 
@@ -2830,11 +2471,7 @@ Translation만 있는 경우에는 Camera의 이동량을 빼면 된다. Rotatio
 
 ### A DCC Tool Example
 
-DCC Tool에서도 View Space와 비슷한 감각을 쉽게 확인할 수 있다.
-
-Scene에 Cube 하나를 배치하고 Camera View로 들어간다고 생각해보자.
-
-Camera를 오른쪽으로 이동시키면 화면에서는 Cube가 왼쪽으로 이동하는 것처럼 보인다.
+DCC Tool에서도 View Space와 비슷한 감각을 쉽게 확인할 수 있다. Scene에 Cube 하나를 배치하고 Camera View로 들어간다고 생각해보자. Camera를 오른쪽으로 이동시키면 화면에서는 Cube가 왼쪽으로 이동하는 것처럼 보인다.
 
 ~~~text id="5mw0vh"
 Camera → Right
@@ -2843,11 +2480,7 @@ Camera → Right
 → Left
 ~~~
 
-Camera를 앞으로 이동시키면 Object가 화면에서 커져 보이고,
-
-Camera를 뒤로 이동시키면 Object가 작아 보인다.
-
-DCC Tool에서는 Camera가 움직이는 것으로 조작하지만, Rendering 계산에서는 Scene을 Camera 기준으로 다시 표현한다고 생각할 수 있다.
+Camera를 앞으로 이동시키면 Object가 화면에서 커져 보이고, Camera를 뒤로 이동시키면 Object가 작아 보인다. DCC Tool에서는 Camera가 움직이는 것으로 조작하지만, Rendering 계산에서는 Scene을 Camera 기준으로 다시 표현한다고 생각할 수 있다.
 
 둘은 같은 상대적 관계를 다른 관점에서 보는 것이다.
 
@@ -2855,9 +2488,7 @@ DCC Tool에서는 Camera가 움직이는 것으로 조작하지만, Rendering �
 
 ### View Space Position Depends on the Camera
 
-World Space에서 Object가 움직이지 않아도 View Position은 달라질 수 있다.
-
-예를 들어 Cube의 World Position이 고정되어 있다고 하자.
+World Space에서 Object가 움직이지 않아도 View Position은 달라질 수 있다. 예를 들어 Cube의 World Position이 고정되어 있다고 하자.
 
 ~~~text id="j1jqr1"
 Cube World Position
@@ -2884,9 +2515,7 @@ Cube View Position 변경
 
 ### Same World Position, Different View Position
 
-같은 Object를 서로 다른 Camera에서 바라보는 경우를 생각해보자.
-
-Object의 World Position은 변하지 않는다.
+같은 Object를 서로 다른 Camera에서 바라보는 경우를 생각해보자. Object의 World Position은 변하지 않는다.
 
 ~~~text id="qt5dda"
 Object World Position
@@ -2915,11 +2544,7 @@ View Position B
 
 ### Position and Direction Can Both Be Transformed
 
-View Space로 변환되는 것은 Position만이 아니다.
-
-Direction 역시 Camera 기준으로 다시 표현할 수 있다.
-
-예를 들어 World Space의 Normal이 다음 방향을 가리킨다고 하자.
+View Space로 변환되는 것은 Position만이 아니다. Direction 역시 Camera 기준으로 다시 표현할 수 있다. 예를 들어 World Space의 Normal이 다음 방향을 가리킨다고 하자.
 
 ~~~text id="e6z7fg"
 World Normal
@@ -2936,21 +2561,13 @@ View Transform
 View Space Normal
 ~~~
 
-하지만 Chapter 2.2에서 살펴본 것처럼 Position과 Direction은 Translation의 영향을 다르게 받는다.
-
-따라서 같은 Transform을 사용하더라도 Position과 Direction은 수학적으로 구분해서 처리해야 한다.
-
-이 차이는 이후 Matrix Transformation에서 다시 다룬다.
+하지만 Chapter 2.2에서 살펴본 것처럼 Position과 Direction은 Translation의 영향을 다르게 받는다. 따라서 같은 Transform을 사용하더라도 Position과 Direction은 수학적으로 구분해서 처리해야 한다. 이 차이는 이후 Matrix Transformation에서 다시 다룬다.
 
 ---
 
 ### View Space and Camera Direction
 
-View Space에서는 Camera의 방향이 Coordinate System의 기준이 된다.
-
-그래서 Camera에서 바라보는 Object의 위치 관계를 계산하기 편리해진다.
-
-예를 들어 어떤 Point가
+View Space에서는 Camera의 방향이 Coordinate System의 기준이 된다. 그래서 Camera에서 바라보는 Object의 위치 관계를 계산하기 편리해진다. 예를 들어 어떤 Point가
 
 - Camera 왼쪽에 있는지
 - 오른쪽에 있는지
@@ -2959,11 +2576,7 @@ View Space에서는 Camera의 방향이 Coordinate System의 기준이 된다.
 - 앞에 있는지
 - 뒤에 있는지
 
-를 Camera 기준 Coordinate로 표현할 수 있다.
-
-이것이 이후 Projection으로 연결된다.
-
-Projection은 이러한 Camera 기준 3D Position을 이용해서
+를 Camera 기준 Coordinate로 표현할 수 있다. 이것이 이후 Projection으로 연결된다. Projection은 이러한 Camera 기준 3D Position을 이용해서
 
 > **Screen에서 어디에 나타나야 하는가**
 
@@ -2971,30 +2584,29 @@ Projection은 이러한 Camera 기준 3D Position을 이용해서
 
 ---
 
+<details>
+<summary>Implementation Note — View Axis Convention</summary>
+
 ### Axis Convention Can Differ
 
-View Space의 X, Y, Z Axis가 정확히 어느 방향을 의미하는지는 Graphics API나 Engine의 Convention에 따라 달라질 수 있다.
-
-예를 들어 Camera Forward가
+View Space의 X, Y, Z Axis가 정확히 어느 방향을 의미하는지는 Graphics API나 Engine의 Convention에 따라 달라질 수 있다. 예를 들어 Camera Forward가
 
 - `+Z`
 - `-Z`
 
-중 어느 방향으로 정의되는지는 시스템에 따라 다를 수 있다.
-
-따라서 특정 부호를 무조건 외우기보다 다음 개념을 이해하는 것이 중요하다.
+중 어느 방향으로 정의되는지는 시스템에 따라 다를 수 있다. 따라서 특정 부호를 무조건 외우기보다 다음 개념을 이해하는 것이 중요하다.
 
 > **View Space는 Camera의 위치와 방향을 기준으로 정의된 Coordinate System이다.**
 
 정확한 Axis Convention은 사용하는 Engine이나 API의 규칙을 확인하면 된다.
 
+</details>
+
 ---
 
 ### View Space Prepares for Projection
 
-View Space의 가장 중요한 다음 단계는 **Projection**이다.
-
-현재 Object들은 Camera 기준 3D Space 안에 있다.
+View Space의 가장 중요한 다음 단계는 **Projection**이다. 현재 Object들은 Camera 기준 3D Space 안에 있다.
 
 ~~~text id="fd69es"
 View Space
@@ -3009,17 +2621,11 @@ Depth Axis
 → Camera 기준 앞뒤
 ~~~
 
-이제 이 3D Position을 2D Screen에 표현해야 한다.
-
-여기서 한 가지 중요한 문제가 발생한다.
-
-현실의 Camera처럼
+이제 이 3D Position을 2D Screen에 표현해야 한다. 여기서 한 가지 중요한 문제가 발생한다. 현실의 Camera처럼
 
 > 가까운 Object는 크게 보이고, 먼 Object는 작게 보여야 한다.
 
-이 관계를 만들어주는 것이 **Perspective Projection**이다.
-
-따라서 전체 흐름은 다음과 같다.
+이 관계를 만들어주는 것이 **Perspective Projection**이다. 따라서 전체 흐름은 다음과 같다.
 
 ~~~text id="r8nxtx"
 World Space
@@ -3073,17 +2679,13 @@ View Position
 
 > **Camera를 Origin과 방향 기준으로 삼아 Scene 전체를 다시 표현한 3D Coordinate Space**
 
-라고 정리할 수 있다.
-
-다음 절에서는 View Space의 3D Position을 실제 Screen에 표현하기 위해 사용하는 **Projection**에 대해 살펴본다.
+라고 정리할 수 있다. 다음 절에서는 View Space의 3D Position을 실제 Screen에 표현하기 위해 사용하는 **Projection**에 대해 살펴본다.
 
 ---
 
 ## 2.6 Projection
 
-Camera 앞의 같은 크기 Cube 두 개를 서로 다른 Depth에 놓아보자. 가까운 Cube는 화면에서 크게 보이고 먼 Cube는 작게 보이기를 기대한다.
-
-View Space는 두 Cube의 3D 위치를 Camera 기준으로 알려준다. 하지만 X/Y 값을 그대로 화면에 옮기면 Depth에 따른 크기 차이를 만들 수 없다. **3D 위치가 화면에서 차지할 위치와 크기를 결정하는 규칙**이 더 필요하다.
+Camera 앞의 같은 크기 Cube 두 개를 서로 다른 Depth에 놓아보자. 가까운 Cube는 화면에서 크게 보이고 먼 Cube는 작게 보이기를 기대한다. View Space는 두 Cube의 3D 위치를 Camera 기준으로 알려준다. 하지만 X/Y 값을 그대로 화면에 옮기면 Depth에 따른 크기 차이를 만들 수 없다. **3D 위치가 화면에서 차지할 위치와 크기를 결정하는 규칙**이 더 필요하다.
 
 그 규칙을 적용하는 과정을 **Projection**이라고 한다. Perspective Projection은 View Depth를 이용해 원근감을 만들고, Orthographic Projection은 Depth에 따른 원근 축소 없이 화면에 표현한다.
 
@@ -3107,9 +2709,7 @@ Figure 2-6은 같은 크기 Object의 화면 크기가 View Depth에 따라 달�
 
 ### Why Projection Is Needed
 
-View Space는 Camera를 기준으로 정리된 3D Space다.
-
-예를 들어 두 Object가 있다고 하자.
+View Space는 Camera를 기준으로 정리된 3D Space다. 예를 들어 두 Object가 있다고 하자.
 
 ~~~text
 Object A
@@ -3119,23 +2719,17 @@ Object B
 → Camera에서 멂
 ~~~
 
-두 Object 모두 View Space 안에서는 여전히 3D Position을 가진다.
+두 Object 모두 View Space 안에서는 여전히 3D Position을 가진다. 하지만 실제 Screen에서는 멀리 있는 Object가 더 작게 보이고, 가까운 Object가 더 크게 보인다. 즉, 단순히 X와 Y Position만 가져와서 Screen에 찍는 것으로는 현실적인 Camera View를 만들 수 없다.
 
-하지만 실제 Screen에서는 멀리 있는 Object가 더 작게 보이고, 가까운 Object가 더 크게 보인다.
-
-즉, 단순히 X와 Y Position만 가져와서 Screen에 찍는 것으로는 현실적인 Camera View를 만들 수 없다.
-
-Camera와의 거리, 즉 Depth를 이용해서 화면상의 위치와 크기를 조정해야 한다.
-
-이 역할을 하는 것이 Projection이다.
+Camera와의 거리, 즉 Depth를 이용해서 화면상의 위치와 크기를 조정해야 한다. 이 역할을 하는 것이 Projection이다.
 
 ---
 
 ### Perspective Projection
 
-**Perspective Projection**은 현실의 Camera나 사람의 시각과 비슷한 원근감을 만드는 Projection 방식이다.
+손을 Camera 앞에서 가까이 가져오면 화면에서 차지하는 폭이 커지고 멀리 밀면 폭이 줄어든다. 원본 손의 크기는 그대로다. **Perspective Projection(원근 투영)**은 이 깊이 관계를 화면의 간격으로 바꾸는 규칙이다. 같은 Camera 설정과 같은 크기·방향의 Object를 비교하는 조건에서 읽는다.
 
-가장 중요한 특징은 다음과 같다.
+**Perspective Projection**은 현실의 Camera나 사람의 시각과 비슷한 원근감을 만드는 Projection 방식이다. 가장 중요한 특징은 다음과 같다.
 
 > **Camera에서 가까운 Object는 크게 보이고, 멀리 있는 Object는 작게 보인다.**
 
@@ -3149,19 +2743,13 @@ Far Object
 → 작게 보임
 ~~~
 
-실제 Cube의 크기가 달라진 것은 아니다.
-
-Camera와의 Depth 차이가 Screen에 투영될 때 크기 차이로 나타난 것이다.
-
-이것이 Perspective Projection의 핵심이다.
+실제 Cube의 크기가 달라진 것은 아니다. Camera와의 Depth 차이가 Screen에 투영될 때 크기 차이로 나타난 것이다. 이것이 Perspective Projection의 핵심이다.
 
 ---
 
 ### Perspective Is Based on Depth
 
-Perspective Projection에서 Object가 Screen에 얼마나 크게 보이는지는 Camera와의 Depth에 영향을 받는다.
-
-개념적으로는 다음과 같이 생각할 수 있다.
+Perspective Projection에서 Object가 Screen에 얼마나 크게 보이는지는 Camera와의 Depth에 영향을 받는다. 개념적으로는 다음과 같이 생각할 수 있다.
 
 ~~~text
 같은 크기의 Object
@@ -3177,19 +2765,13 @@ Camera와 멂
 
 > **Perspective Projection은 View Space의 Depth 정보를 이용해서 Screen에서의 크기와 위치를 조정한다.**
 
-이 Depth 관계 때문에 View Space가 아직 3D Space여야 한다.
-
-Projection 전에 Depth 정보를 잃어버리면 Perspective Effect를 만들 수 없다.
+이 Depth 관계 때문에 View Space가 아직 3D Space여야 한다. Projection 전에 Depth 정보를 잃어버리면 Perspective Effect를 만들 수 없다.
 
 ---
 
 ### A Simple Camera Analogy
 
-Perspective Projection은 실제 Camera를 생각하면 이해하기 쉽다.
-
-Camera 앞에 손을 가까이 가져가면 화면 대부분을 가릴 정도로 크게 보일 수 있다.
-
-같은 손을 멀리 떨어뜨리면 훨씬 작게 보인다.
+Perspective Projection은 실제 Camera를 생각하면 이해하기 쉽다. Camera 앞에 손을 가까이 가져가면 화면 대부분을 가릴 정도로 크게 보일 수 있다. 같은 손을 멀리 떨어뜨리면 훨씬 작게 보인다.
 
 ~~~text
 같은 Object
@@ -3201,19 +2783,15 @@ Far
 → Small on Screen
 ~~~
 
-Object 자체가 변한 것이 아니라 Camera와의 거리 관계가 달라진 것이다.
-
-3D Rendering에서도 동일한 원리를 수학적으로 구현한다.
+Object 자체가 변한 것이 아니라 Camera와의 거리 관계가 달라진 것이다. 3D Rendering에서도 동일한 원리를 수학적으로 구현한다.
 
 ---
 
 ### View Frustum
 
-Perspective Camera가 볼 수 있는 3D 영역은 일반적으로 **View Frustum** 형태로 표현된다.
+Camera의 화면에는 세상의 모든 방향이 들어오지 않는다. “얼마나 넓게 보며, 얼마나 가까운 곳부터 얼마나 먼 곳까지 사용할 것인가”를 정하면 보일 수 있는 3D 영역이 생긴다. Perspective Camera에서 이 잘린 피라미드 모양의 영역을 **View Frustum**이라고 한다.
 
-Frustum은 Camera 앞쪽으로 멀어질수록 넓어지는 형태다.
-
-개념적으로는 다음과 같다.
+Perspective Camera가 볼 수 있는 3D 영역은 일반적으로 **View Frustum** 형태로 표현된다. Frustum은 Camera 앞쪽으로 멀어질수록 넓어지는 형태다. 개념적으로는 다음과 같다.
 
 ~~~text
         Far Plane
@@ -3227,19 +2805,13 @@ Frustum은 Camera 앞쪽으로 멀어질수록 넓어지는 형태다.
          Camera
 ~~~
 
-Camera에 가까운 영역은 좁고, 멀어질수록 보이는 범위가 넓어진다.
-
-이 형태가 Perspective Projection의 원근감과 연결된다.
+Camera에 가까운 영역은 좁고, 멀어질수록 보이는 범위가 넓어진다. 이 형태가 Perspective Projection의 원근감과 연결된다.
 
 ---
 
 ### Near Plane
 
-**Near Plane**은 Camera에서 너무 가까운 영역을 잘라내는 기준 Plane이다.
-
-Camera보다 앞에 있다고 해서 모든 Geometry를 무조건 Rendering하는 것은 아니다.
-
-Near Plane보다 Camera에 더 가까운 Geometry는 일반적으로 Rendering 영역에서 제외된다.
+**Near Plane**은 Camera에서 너무 가까운 영역을 잘라내는 기준 Plane이다. Camera보다 앞에 있다고 해서 모든 Geometry를 무조건 Rendering하는 것은 아니다. Near Plane보다 Camera에 더 가까운 Geometry는 일반적으로 Rendering 영역에서 제외된다.
 
 ~~~text
 Camera
@@ -3251,19 +2823,13 @@ X  너무 가까움
 O  Rendering 가능 영역
 ~~~
 
-Near Plane은 단순한 Optimization 설정이 아니다.
-
-Perspective Projection의 수학적 구조와 Depth Precision에도 영향을 준다.
-
-Depth 값의 비선형성과 Near/Far 선택의 기본 의미는 2.9 Perspective Divide and NDC에서 연결한다. Chapter 09는 일반적인 측정·진단 관점을 다루며 Depth Precision의 상세 유도는 이 Foundation의 범위 밖이다.
+Near Plane은 단순한 Optimization 설정이 아니다. Perspective Projection의 수학적 구조와 Depth Precision에도 영향을 준다. Depth 값의 비선형성과 Near/Far 선택의 기본 의미는 2.9 Perspective Divide and NDC에서 연결한다. Chapter 09는 일반적인 측정·진단 관점을 다루며 Depth Precision의 상세 유도는 이 Foundation의 범위 밖이다.
 
 ---
 
 ### Far Plane
 
-**Far Plane**은 Camera에서 너무 멀리 떨어진 영역을 제한하는 기준 Plane이다.
-
-Near Plane과 Far Plane 사이의 영역이 Camera가 볼 수 있는 기본적인 Depth 범위를 만든다.
+**Far Plane**은 Camera에서 너무 멀리 떨어진 영역을 제한하는 기준 Plane이다. Near Plane과 Far Plane 사이의 영역이 Camera가 볼 수 있는 기본적인 Depth 범위를 만든다.
 
 ~~~text
 Camera
@@ -3275,11 +2841,7 @@ Visible Range
 Far Plane
 ~~~
 
-Far Plane보다 멀리 있는 Geometry는 일반적인 Projection 범위 밖에 놓인다.
-
-다만 실제 Engine에서는 Infinite Far Plane이나 Reversed-Z 같은 기법을 사용하면서 전통적인 Far Plane의 역할이 달라질 수도 있다.
-
-Chapter 02에서는 우선
+Far Plane보다 멀리 있는 Geometry는 일반적인 Projection 범위 밖에 놓인다. 다만 실제 Engine에서는 Infinite Far Plane이나 Reversed-Z 같은 기법을 사용하면서 전통적인 Far Plane의 역할이 달라질 수도 있다. Chapter 02에서는 우선
 
 > **Near Plane과 Far Plane이 Camera가 사용하는 Depth 범위를 정의한다.**
 
@@ -3289,17 +2851,11 @@ Chapter 02에서는 우선
 
 ### Field of View
 
-Perspective Camera에서 중요한 또 하나의 값이 **Field of View**, 줄여서 **FOV**다.
-
-FOV는 Camera가 얼마나 넓은 범위를 바라보는지를 결정한다.
-
-쉽게 말하면,
+Perspective Camera에서 중요한 또 하나의 값이 **Field of View**, 줄여서 **FOV**다. FOV는 Camera가 얼마나 넓은 범위를 바라보는지를 결정한다. 쉽게 말하면,
 
 > **Camera의 시야각**
 
-이다.
-
-FOV가 작으면 좁은 영역을 확대해서 보는 느낌이 난다.
+이다. FOV가 작으면 좁은 영역을 확대해서 보는 느낌이 난다.
 
 ~~~text
 Small FOV
@@ -3323,9 +2879,7 @@ Large FOV
 
 ### FOV and Perspective Distortion
 
-Camera 위치를 유지한 채 FOV를 넓히면 더 넓은 영역이 화면에 들어온다. 화면 가장자리에서는 Object가 늘어나 보이는 Wide Angle의 느낌도 강해질 수 있다.
-
-반대로 같은 Camera 위치에서 FOV를 줄이면 좁은 범위를 더 크게 보여준다. 이때 바뀐 것은 화면에 포함되는 범위와 배율이다.
+Camera 위치를 유지한 채 FOV를 넓히면 더 넓은 영역이 화면에 들어온다. 화면 가장자리에서는 Object가 늘어나 보이는 Wide Angle의 느낌도 강해질 수 있다. 반대로 같은 Camera 위치에서 FOV를 줄이면 좁은 범위를 더 크게 보여준다. 이때 바뀐 것은 화면에 포함되는 범위와 배율이다.
 
 ~~~text
 Small FOV → 같은 Camera 위치에서 좁은 범위를 확대
@@ -3343,9 +2897,7 @@ Large FOV → 같은 Camera 위치에서 더 넓은 범위를 포함
 
 ### Aspect Ratio
 
-**Aspect Ratio**는 Screen의 가로와 세로 비율이다.
-
-예를 들어 다음과 같은 비율이 있다.
+**Aspect Ratio**는 Screen의 가로와 세로 비율이다. 예를 들어 다음과 같은 비율이 있다.
 
 ~~~text
 16 : 9
@@ -3355,9 +2907,7 @@ Large FOV → 같은 Camera 위치에서 더 넓은 범위를 포함
 4 : 3
 ~~~
 
-같은 FOV를 사용하더라도 Screen의 Aspect Ratio가 달라지면 실제 화면에 보이는 영역도 달라질 수 있다.
-
-따라서 Projection은 단순히 Camera의 Depth만 보는 것이 아니라
+같은 FOV를 사용하더라도 Screen의 Aspect Ratio가 달라지면 실제 화면에 보이는 영역도 달라질 수 있다. 따라서 Projection은 단순히 Camera의 Depth만 보는 것이 아니라
 
 - FOV
 - Aspect Ratio
@@ -3385,9 +2935,9 @@ Perspective Projection을 구성하는 대표적인 Parameter를 정리하면 �
 
 ### What Is a Matrix?
 
-앞에서는 Local Position과 Object Transform을 함께 사용하면 World Position을 얻는다고 설명했다. 이제 같은 변환을 Mesh의 모든 Vertex에 일관되게 적용해야 한다고 생각해보자.
+이제 Camera의 설정과 Vertex의 위치를 같은 규칙으로 처리해야 한다. 규칙을 Vertex마다 다르게 적으면 같은 Triangle 안에서도 결과가 일관되지 않을 수 있다. Matrix는 앞에서 말한 Transform 규칙을 행과 열의 값으로 표현하는 형식이다. 행은 Row, 열은 Column이라고 부르며, 곱을 통해 입력 성분을 출력 성분으로 연결한다.
 
-Vertex마다 Translation, Rotation, Scale을 별도의 규칙으로 적으면 적용 순서를 잘못 섞거나 일부 Data만 다르게 처리하기 쉽다. Camera 기준 변환과 Projection까지 연결하려면 변환을 공통된 계산 구조로 표현하는 편이 편리하다.
+앞에서는 Local Position과 Object Transform을 함께 사용하면 World Position을 얻는다고 설명했다. 이제 같은 변환을 Mesh의 모든 Vertex에 일관되게 적용해야 한다고 생각해보자. Vertex마다 Translation, Rotation, Scale을 별도의 규칙으로 적으면 적용 순서를 잘못 섞거나 일부 Data만 다르게 처리하기 쉽다. Camera 기준 변환과 Projection까지 연결하려면 변환을 공통된 계산 구조로 표현하는 편이 편리하다.
 
 이때 사용하는 도구가 **Matrix**다. Rendering에서는 적용할 Transform 규칙을 Matrix에 담고, 입력 Coordinate에 같은 규칙을 반복 적용한다.
 
@@ -3395,17 +2945,13 @@ Vertex마다 Translation, Rotation, Scale을 별도의 규칙으로 적으면 �
 Local Position → Object / Model Matrix → World Position
 ~~~
 
-Matrix에는 Scale, Rotation, Translation 같은 변환을 표현하거나 결합할 수 있다. View Matrix와 Projection Matrix도 같은 계산 구조를 사용하지만 해결하는 문제는 서로 다르다.
-
-수학적으로 Matrix는 행과 열로 배열된 값이다. 여기서 먼저 이해해야 할 것은 숫자의 모양보다 **어떤 입력을 받아 어떤 관계의 출력으로 바꾸는가**다. Matrix가 항상 Space Conversion만을 뜻하는 것은 아니며, 같은 Space 안의 변환에도 사용할 수 있다(2.11).
+Matrix에는 Scale, Rotation, Translation 같은 변환을 표현하거나 결합할 수 있다. View Matrix와 Projection Matrix도 같은 계산 구조를 사용하지만 해결하는 문제는 서로 다르다. 수학적으로 Matrix는 행과 열로 배열된 값이다. 여기서 먼저 이해해야 할 것은 숫자의 모양보다 **어떤 입력을 받아 어떤 관계의 출력으로 바꾸는가**다. Matrix가 항상 Space Conversion만을 뜻하는 것은 아니며, 같은 Space 안의 변환에도 사용할 수 있다(2.11).
 
 ---
 
 ### Matrix as a Transformation Rule
 
-Matrix를 처음 보면 여러 숫자가 행과 열로 배치된 복잡한 표처럼 보인다.
-
-하지만 Chapter 02에서는 Matrix를 다음과 같이 이해하면 충분하다.
+Matrix를 처음 보면 여러 숫자가 행과 열로 배치된 복잡한 표처럼 보인다. 하지만 Chapter 02에서는 Matrix를 다음과 같이 이해하면 충분하다.
 
 ~~~text
 Input Coordinate
@@ -3451,11 +2997,7 @@ Clip Position
 
 ### What Is the Projection Matrix?
 
-**Projection Matrix**는 View Space의 3D Position에 Projection 규칙을 적용하기 위한 Matrix다.
-
-Perspective Projection에서는 단순히 Position을 다른 위치로 옮기는 것만으로는 부족하다.
-
-다음과 같은 조건을 함께 반영해야 한다.
+**Projection Matrix**는 View Space의 3D Position에 Projection 규칙을 적용하기 위한 Matrix다. Perspective Projection에서는 단순히 Position을 다른 위치로 옮기는 것만으로는 부족하다. 다음과 같은 조건을 함께 반영해야 한다.
 
 - FOV
 - Aspect Ratio
@@ -3464,9 +3006,7 @@ Perspective Projection에서는 단순히 Position을 다른 위치로 옮기는
 - Camera와의 Depth
 - Perspective Effect
 
-이러한 규칙들을 하나의 변환 구조로 정리한 것이 Projection Matrix다.
-
-따라서 개념적인 관계는 다음과 같다.
+이러한 규칙들을 하나의 변환 구조로 정리한 것이 Projection Matrix다. 따라서 개념적인 관계는 다음과 같다.
 
 ~~~text
 View Position
@@ -3484,18 +3024,14 @@ Clip Position
 
 ### Why Use a Projection Matrix?
 
-Perspective Projection에는 여러 계산이 필요하다.
-
-예를 들어
+Perspective Projection에는 여러 계산이 필요하다. 예를 들어
 
 - 화면의 가로/세로 비율을 고려해야 하고
 - FOV에 맞게 시야 범위를 조절해야 하며
 - Near / Far 범위를 반영해야 하고
 - Depth에 따라 X와 Y가 다르게 보이도록 만들어야 한다.
 
-이 모든 규칙을 Vertex마다 각각 따로 처리하는 대신, Rendering에서는 이 규칙들을 Projection Matrix에 담아 적용한다.
-
-개념적으로는 다음과 같다.
+이 모든 규칙을 Vertex마다 각각 따로 처리하는 대신, Rendering에서는 이 규칙들을 Projection Matrix에 담아 적용한다. 개념적으로는 다음과 같다.
 
 ~~~text
 FOV
@@ -3529,11 +3065,7 @@ View Position을 Clip Position으로 변환
 
 ### Projection Does Not Directly Produce Final Pixels
 
-Projection이라는 말을 들으면 3D Position이 바로 Screen Pixel Coordinate로 변환된다고 생각하기 쉽다.
-
-하지만 실제 Rendering Pipeline에서는 Projection 이후에도 여러 단계가 남아 있다.
-
-전체 흐름은 다음과 같다.
+Projection이라는 말을 들으면 3D Position이 바로 Screen Pixel Coordinate로 변환된다고 생각하기 쉽다. 하지만 실제 Rendering Pipeline에서는 Projection 이후에도 여러 단계가 남아 있다. 전체 흐름은 다음과 같다.
 
 ~~~text
 View Space
@@ -3561,11 +3093,7 @@ Projection의 결과는 우선 **Clip Space**로 이어진다.
 
 ### Why Clip Space Exists
 
-Projection 다음에 바로 Screen Space로 가지 않고 Clip Space를 거치는 이유는 Camera가 볼 수 있는 영역과 그렇지 않은 영역을 구분하기 위해서다.
-
-View Frustum 안에 들어오는 Geometry만 Screen에 나타날 수 있다.
-
-따라서 Projection Matrix는 View Position을 Clipping과 이후 Perspective Divide에 적합한 형태로 변환한다.
+Projection 다음에 바로 Screen Space로 가지 않고 Clip Space를 거치는 이유는 Camera가 볼 수 있는 영역과 그렇지 않은 영역을 구분하기 위해서다. View Frustum 안에 들어오는 Geometry만 Screen에 나타날 수 있다. 따라서 Projection Matrix는 View Position을 Clipping과 이후 Perspective Divide에 적합한 형태로 변환한다.
 
 개념적인 흐름은 다음과 같다.
 
@@ -3585,9 +3113,7 @@ Clip Space는 다음 절에서 자세히 다룬다.
 
 ### Perspective Projection Changes X and Y Based on Depth
 
-Perspective Projection의 핵심을 조금 더 구체적으로 보면 X와 Y의 Screen 위치가 Depth와 무관하지 않다는 점이 중요하다.
-
-예를 들어 View Space에서 두 Point가 있다고 하자.
+Perspective Projection의 핵심을 조금 더 구체적으로 보면 X와 Y의 Screen 위치가 Depth와 무관하지 않다는 점이 중요하다. 예를 들어 View Space에서 두 Point가 있다고 하자.
 
 ~~~text
 Point A
@@ -3597,11 +3123,7 @@ Point B
 → Camera에서 멂
 ~~~
 
-여기서는 두 Point가 같은 View Space X/Y Offset을 가지며 View Depth만 다르다고 가정한다. Camera에서 출발하는 동일 ray 위의 Point라면 X/Depth와 Y/Depth 비율이 같아서 같은 화면 위치로 투영된다. 같은 ray와 같은 횡방향 Offset은 다른 조건이다.
-
-Camera에서 멀어질수록 같은 공간상의 X/Y Offset이 Screen에서는 더 작게 나타난다.
-
-즉,
+여기서는 두 Point가 같은 View Space X/Y Offset을 가지며 View Depth만 다르다고 가정한다. Camera에서 출발하는 동일 ray 위의 Point라면 X/Depth와 Y/Depth 비율이 같아서 같은 화면 위치로 투영된다. 같은 ray와 같은 횡방향 Offset은 다른 조건이다. Camera에서 멀어질수록 같은 공간상의 X/Y Offset이 Screen에서는 더 작게 나타난다. 즉,
 
 > **Perspective Projection에서는 X와 Y의 표현이 Depth의 영향을 받는다.**
 
@@ -3611,11 +3133,9 @@ Camera에서 멀어질수록 같은 공간상의 X/Y Offset이 Screen에서는 �
 
 ### Orthographic Projection
 
-Projection에는 Perspective Projection 외에도 **Orthographic Projection**이 있다.
+설계도의 정면도에서는 가까운 부품을 무조건 더 크게 그리지 않는다. 같은 방향과 크기의 형상을 깊이와 별도로 비교하는 편이 목적에 맞기 때문이다. **Orthographic Projection(정투영)**은 이렇게 깊이에 따른 원근 크기 변화를 사용하지 않는 Projection이다. Depth Data 자체를 버리는 방식이라는 뜻은 아니다.
 
-Orthographic Projection에서는 Camera와의 거리에 따라 Object 크기가 줄어들지 않는다.
-
-즉,
+Projection에는 Perspective Projection 외에도 **Orthographic Projection**이 있다. Orthographic Projection에서는 Camera와의 거리에 따라 Object 크기가 줄어들지 않는다. 즉,
 
 ~~~text
 Near Object
@@ -3625,11 +3145,7 @@ Far Object
 → 같은 크기
 ~~~
 
-로 보인다.
-
-Depth는 존재하지만 Perspective에 의한 Size Reduction이 없다.
-
-쉽게 말하면,
+로 보인다. Depth는 존재하지만 Perspective에 의한 Size Reduction이 없다. 쉽게 말하면,
 
 > **Orthographic Projection은 원근감에 따른 크기 변화를 제거한 Projection 방식이다.**
 
@@ -3652,9 +3168,7 @@ DCC Tool 사용자라면 Perspective View와 Orthographic View의 차이를 이�
 
 ### Perspective and Orthographic Views in DCC Tools
 
-Blender 같은 DCC Tool에서는 Viewport를 Perspective와 Orthographic 사이에서 전환할 수 있다.
-
-Perspective View에서는 멀리 있는 Object가 작게 보인다.
+Blender 같은 DCC Tool에서는 Viewport를 Perspective와 Orthographic 사이에서 전환할 수 있다. Perspective View에서는 멀리 있는 Object가 작게 보인다.
 
 ~~~text
 Perspective
@@ -3678,9 +3192,7 @@ Far Cube
 → 같은 크기
 ~~~
 
-따라서 Projection이라는 개념 자체는 DCC Tool 사용자에게 매우 익숙하다.
-
-Chapter 02에서는 이 익숙한 결과가 Rendering Pipeline 안에서 어떤 Coordinate Transformation으로 만들어지는지를 연결해서 이해하는 것이 중요하다.
+따라서 Projection이라는 개념 자체는 DCC Tool 사용자에게 매우 익숙하다. Chapter 02에서는 이 익숙한 결과가 Rendering Pipeline 안에서 어떤 Coordinate Transformation으로 만들어지는지를 연결해서 이해하는 것이 중요하다.
 
 ---
 
@@ -3733,11 +3245,7 @@ Projection Matrix
 
 ### Projection and Depth
 
-Projection 이후에도 Depth 정보가 완전히 사라지는 것은 아니다.
-
-최종 Screen은 2D지만 Rendering에서는 어떤 Surface가 Camera 앞에 있고 어떤 Surface가 뒤에 있는지를 계속 판단해야 한다.
-
-따라서 Position을 Screen 방향으로 Projection하는 과정에서도 Depth 정보를 이후 계산에 사용할 수 있도록 유지한다.
+Projection 이후에도 Depth 정보가 완전히 사라지는 것은 아니다. 최종 Screen은 2D지만 Rendering에서는 어떤 Surface가 Camera 앞에 있고 어떤 Surface가 뒤에 있는지를 계속 판단해야 한다. 따라서 Position을 Screen 방향으로 Projection하는 과정에서도 Depth 정보를 이후 계산에 사용할 수 있도록 유지한다.
 
 이 정보는 이후
 
@@ -3745,9 +3253,7 @@ Projection 이후에도 Depth 정보가 완전히 사라지는 것은 아니다.
 - Depth Test
 - Perspective-Correct Interpolation
 
-같은 Rendering 과정에 사용된다.
-
-즉,
+같은 Rendering 과정에 사용된다. 즉,
 
 > **3D Position을 2D 화면에 투영한다고 해서 Depth 정보 자체가 바로 없어지는 것은 아니다.**
 
@@ -3801,9 +3307,7 @@ Matrix는 다음처럼 이해하면 된다.
 
 > **View Space의 3D Position에 Perspective Projection 규칙을 적용해 Clip Space Position으로 변환하는 Matrix**
 
-다.
-
-따라서 전체 흐름은 다음과 같다.
+다. 따라서 전체 흐름은 다음과 같다.
 
 ~~~text
 View Position
@@ -3819,11 +3323,7 @@ Clip Position
 
 ## 2.7 Clip Space
 
-Projection 이후의 Point를 화면에 바로 표시한다고 생각해보자. Triangle의 일부가 Camera 뒤에 있거나 View Frustum의 경계를 가로지르면, 어떤 부분을 남겨야 할지 먼저 판단해야 한다.
-
-Triangle 전체를 버리면 화면에 들어오는 부분까지 사라질 수 있다. 반대로 경계 밖의 부분까지 그대로 가져가면 이후 화면 변환에서 올바른 결과를 만들기 어렵다.
-
-그래서 GPU는 **Camera가 볼 수 있는 Geometry를 정리하기 위한 중간 표현**을 사용한다. Projection Matrix가 만드는 **Clip Space**가 그 표현이다.
+Projection 이후의 Point를 화면에 바로 표시한다고 생각해보자. Triangle의 일부가 Camera 뒤에 있거나 View Frustum의 경계를 가로지르면, 어떤 부분을 남겨야 할지 먼저 판단해야 한다. Triangle 전체를 버리면 화면에 들어오는 부분까지 사라질 수 있다. 반대로 경계 밖의 부분까지 그대로 가져가면 이후 화면 변환에서 올바른 결과를 만들기 어렵다. 그래서 GPU는 **Camera가 볼 수 있는 Geometry를 정리하기 위한 중간 표현**을 사용한다. Projection Matrix가 만드는 **Clip Space**가 그 표현이다.
 
 Local, World, View Space처럼 Modeling할 때 사용하는 일반적인 3D 위치와는 역할이 다르다. Clip Position은 Projection 설정이 반영된 (x_clip, y_clip, z_clip, w_clip) 형태로 전달되고, Clipping과 Perspective Divide가 이 Data를 사용한다.
 
@@ -3841,15 +3341,9 @@ Viewport Transform → Screen Space
 
 ### Why Do We Need Clip Space?
 
-Perspective Projection의 최종 목적은 3D Scene을 2D Screen에 표현하는 것이다.
+Perspective Projection의 최종 목적은 3D Scene을 2D Screen에 표현하는 것이다. 그렇다면 Projection Matrix를 적용한 뒤 바로 Screen Position을 계산하면 더 간단해 보일 수 있다. 하지만 그 전에 해결해야 할 문제가 있다.
 
-그렇다면 Projection Matrix를 적용한 뒤 바로 Screen Position을 계산하면 더 간단해 보일 수 있다.
-
-하지만 그 전에 해결해야 할 문제가 있다.
-
-Camera가 바라보는 영역 밖에 있는 Geometry까지 모두 Screen에 그릴 필요는 없다.
-
-예를 들어 다음 Object들이 있다고 하자.
+Camera가 바라보는 영역 밖에 있는 Geometry까지 모두 Screen에 그릴 필요는 없다. 예를 들어 다음 Object들이 있다고 하자.
 
 ~~~text
 Camera View Frustum 내부
@@ -3865,15 +3359,13 @@ Near / Far 범위 밖
 → 보이지 않음
 ~~~
 
-GPU는 이러한 Geometry를 Screen Coordinate로 완전히 변환하기 전에 **Camera가 볼 수 있는 범위 안에 있는지 판단**할 필요가 있다.
-
-이 과정이 **Clipping**과 연결된다.
-
-그리고 Clipping을 하기 좋은 형태로 Projection 결과를 표현한 공간이 Clip Space다.
+GPU는 이러한 Geometry를 Screen Coordinate로 완전히 변환하기 전에 **Camera가 볼 수 있는 범위 안에 있는지 판단**할 필요가 있다. 이 과정이 **Clipping**과 연결된다. 그리고 Clipping을 하기 좋은 형태로 Projection 결과를 표현한 공간이 Clip Space다.
 
 ---
 
 ### Clip Space Is the Result of the Projection Matrix
+
+Projection을 했다는 것은 “화면 좌표가 이미 완성됐다”는 뜻이 아니다. 현재 Camera 설정으로 만든 결과를 먼저 남겨야 GPU가 같은 설정의 경계를 검사할 수 있다. 아래의 Projection Matrix 출력이 바로 그 검사용 Clip Position이다.
 
 View Space Position에 Projection Matrix를 적용하면 Clip Space Position을 얻는다.
 
@@ -3889,9 +3381,7 @@ Clip Position
 
 > **Projection Matrix는 View Space Position을 Clip Space Position으로 변환한다.**
 
-이때 중요한 변화가 하나 있다.
-
-View Space에서는 Position을 일반적으로 다음처럼 생각했다.
+이때 중요한 변화가 하나 있다. View Space에서는 Position을 일반적으로 다음처럼 생각했다.
 
 ~~~text
 (x, y, z)
@@ -3909,9 +3399,7 @@ View Space에서는 Position을 일반적으로 다음처럼 생각했다.
 
 ### Clip Position Has Four Components
 
-멀리 있는 같은 X/Y Offset은 화면에서 더 작은 Offset으로 표현되어야 한다. 하지만 Projection Matrix 출력에서 Depth와 연결된 정보를 바로 버리면 다음 단계가 이 관계를 적용할 수 없다.
-
-따라서 Clip Position에는 X/Y/Z와 함께 **이후 Divide에 사용할 w**가 남아 있다.
+멀리 있는 같은 X/Y Offset은 화면에서 더 작은 Offset으로 표현되어야 한다. 하지만 Projection Matrix 출력에서 Depth와 연결된 정보를 바로 버리면 다음 단계가 이 관계를 적용할 수 없다. 따라서 Clip Position에는 X/Y/Z와 함께 **이후 Divide에 사용할 w**가 남아 있다.
 
 ~~~text
 Clip Position = (x_clip, y_clip, z_clip, w_clip)
@@ -3925,19 +3413,13 @@ y_ndc = y_clip / w_clip
 z_ndc = z_clip / w_clip
 ~~~
 
-고정된 Perspective Projection에서 두 Point의 View X/Y Offset이 같다면, 큰 양의 View Depth와 연결된 분모는 더 작은 화면 Offset을 만든다. Object의 Vertex 사이 화면 간격이 줄어들면서 멀리 있는 Object가 작게 보인다.
-
-지금은 **Clip Space가 다음 단계에 필요한 w를 보존한다**는 관계를 이해하면 된다. 2.8에서는 네 성분으로 표현하는 이유를, 2.9에서는 이 Divide의 구체적인 수치를 살펴본다.
+고정된 Perspective Projection에서 두 Point의 View X/Y Offset이 같다면, 큰 양의 View Depth와 연결된 분모는 더 작은 화면 Offset을 만든다. Object의 Vertex 사이 화면 간격이 줄어들면서 멀리 있는 Object가 작게 보인다. 지금은 **Clip Space가 다음 단계에 필요한 w를 보존한다**는 관계를 이해하면 된다. 2.8에서는 네 성분으로 표현하는 이유를, 2.9에서는 이 Divide의 구체적인 수치를 살펴본다.
 
 ---
 
 ### Clip Space Is Not Screen Space
 
-Clip Space라는 이름 때문에 이미 화면에 맞게 잘린 2D Coordinate처럼 느껴질 수 있다.
-
-하지만 그렇지 않다.
-
-Clip Space는 아직 실제 Pixel Position이 아니다.
+Clip Space라는 이름 때문에 이미 화면에 맞게 잘린 2D Coordinate처럼 느껴질 수 있다. 하지만 그렇지 않다. Clip Space는 아직 실제 Pixel Position이 아니다.
 
 ~~~text
 Clip Space
@@ -3979,17 +3461,13 @@ View Position
 → Camera 기준 3D 위치
 ~~~
 
-하지만 Clip Space는 같은 방식으로 상상하기 어렵다.
-
-Clip Position은
+하지만 Clip Space는 같은 방식으로 상상하기 어렵다. Clip Position은
 
 ~~~text
 (x, y, z, w)
 ~~~
 
-형태의 **Homogeneous Coordinate**로 표현되기 때문이다.
-
-따라서 Clip Space를 단순한 또 하나의 일반적인 3D 공간으로 이해하기보다는
+형태의 **Homogeneous Coordinate**로 표현되기 때문이다. 따라서 Clip Space를 단순한 또 하나의 일반적인 3D 공간으로 이해하기보다는
 
 > **Projection 이후 Clipping과 Perspective Divide를 위해 만들어진 수학적인 중간 표현**
 
@@ -4013,11 +3491,7 @@ View Space에서 Perspective Camera가 볼 수 있는 영역은 **View Frustum**
          Camera
 ~~~
 
-이 형태는 Camera에서 멀어질수록 넓어진다.
-
-즉, 직관적으로는 이해하기 쉽지만 계산하기에는 일정한 크기의 Box보다 복잡하다.
-
-Projection Matrix는 이 Perspective Frustum을 이후 단계에서 다루기 쉬운 형태로 바꾸는 역할도 한다.
+이 형태는 Camera에서 멀어질수록 넓어진다. 즉, 직관적으로는 이해하기 쉽지만 계산하기에는 일정한 크기의 Box보다 복잡하다. Projection Matrix는 이 Perspective Frustum을 이후 단계에서 다루기 쉬운 형태로 바꾸는 역할도 한다.
 
 개념적으로는 다음처럼 생각할 수 있다.
 
@@ -4041,9 +3515,7 @@ Clipping하기 쉬운 형태
 
 ### What Does Clipping Mean?
 
-**Clipping**은 Camera가 볼 수 있는 영역을 벗어난 Geometry를 잘라내는 과정이다.
-
-예를 들어 Triangle 하나가 View Frustum의 경계에 걸쳐 있다고 하자.
+**Clipping**은 Camera가 볼 수 있는 영역을 벗어난 Geometry를 잘라내는 과정이다. 예를 들어 Triangle 하나가 View Frustum의 경계에 걸쳐 있다고 하자.
 
 ~~~text
 View Frustum 내부
@@ -4055,11 +3527,7 @@ View Frustum 내부
            외부
 ~~~
 
-Triangle 전체를 단순히 제거하면 안 된다.
-
-일부분은 Camera에 보이기 때문이다.
-
-따라서 경계와 교차하는 Geometry는 필요한 경우 새로운 Vertex를 만들어 **보이는 부분만 남기도록 잘라낼 수 있다.**
+Triangle 전체를 단순히 제거하면 안 된다. 일부분은 Camera에 보이기 때문이다. 따라서 경계와 교차하는 Geometry는 필요한 경우 새로운 Vertex를 만들어 **보이는 부분만 남기도록 잘라낼 수 있다.**
 
 ~~~text
 Before Clipping
@@ -4077,9 +3545,7 @@ Frustum 외부 부분
 → 제거
 ~~~
 
-이것이 Chapter 01에서 살펴본 Clipping과 같은 개념이다.
-
-Chapter 01에서는 Rendering Pipeline의 Stage로 보았다면, 여기서는 그 과정에서 **Coordinate가 왜 Clip Space 형태로 준비되는지**를 살펴보는 것이다.
+이것이 Chapter 01에서 살펴본 Clipping과 같은 개념이다. Chapter 01에서는 Rendering Pipeline의 Stage로 보았다면, 여기서는 그 과정에서 **Coordinate가 왜 Clip Space 형태로 준비되는지**를 살펴보는 것이다.
 
 ---
 
@@ -4105,26 +3571,22 @@ Space
 
 ### The Role of w in the Clip Range
 
-Perspective Frustum은 Camera에서 멀어질수록 넓어진다. 따라서 가깝든 멀든 X/Y 값만 하나의 고정된 폭과 비교해서는 이 경계를 표현하기 어렵다.
+깊은 곳에서 넓어지는 Frustum을 검사하려면 “X가 어느 숫자보다 작은가”만으로는 부족하다. 같은 횡방향 Offset도 Camera에 가까우면 바깥일 수 있고 깊은 곳에서는 안쪽일 수 있다. Clip의 w를 함께 사용하면 X/Y와 깊이 관계를 같은 경계 조건에서 비교할 수 있다. 아래 식의 x/y/w는 모두 Clip 성분이고, Figure의 유효한 양의 w 조건을 함께 읽는다.
 
-Clip Space에서는 Depth와 연결된 w를 함께 비교 기준으로 사용한다. X/Y의 허용 범위도 그 w에 따라 달라진다.
+Perspective Frustum은 Camera에서 멀어질수록 넓어진다. 따라서 가깝든 멀든 X/Y 값만 하나의 고정된 폭과 비교해서는 이 경계를 표현하기 어렵다. Clip Space에서는 Depth와 연결된 w를 함께 비교 기준으로 사용한다. X/Y의 허용 범위도 그 w에 따라 달라진다.
 
 ~~~text
 -w ≤ x ≤ +w
 -w ≤ y ≤ +w
 ~~~
 
-양의 w가 커지면 허용되는 X/Y의 폭도 커진다. Perspective Camera의 Frustum이 먼 영역에서 넓어지는 관계를 이 조건으로 다룰 수 있다.
-
-여기서 x/y/w는 모두 **Projection 이후 Clip 성분**이다. World Position의 X/Y를 Depth에 직접 비교하는 식으로 혼용하지 않는다. w는 Perspective Divide뿐 아니라 Clipping 경계를 표현하는 데에도 사용된다.
+양의 w가 커지면 허용되는 X/Y의 폭도 커진다. Perspective Camera의 Frustum이 먼 영역에서 넓어지는 관계를 이 조건으로 다룰 수 있다. 여기서 x/y/w는 모두 **Projection 이후 Clip 성분**이다. World Position의 X/Y를 Depth에 직접 비교하는 식으로 혼용하지 않는다. w는 Perspective Divide뿐 아니라 Clipping 경계를 표현하는 데에도 사용된다.
 
 ---
 
 ### What About the Z Range?
 
-좌우와 상하 범위 외에도 Camera에 너무 가깝거나 너무 먼 Geometry를 구분해야 한다. 이 앞뒤 경계는 Clip의 Z 성분과 w를 비교해 표현한다.
-
-Depth의 정확한 범위는 API와 Projection Convention에 따라 다르다. Figure 2-7은 Clip에서 0 ≤ z ≤ w, Divide 뒤 NDC에서 0 ≤ z_ndc ≤ 1을 사용하는 예다. 다른 Convention에서는 Clip의 -w ≤ z ≤ w와 NDC의 -1 ≤ z_ndc ≤ 1이 대응한다.
+좌우와 상하 범위 외에도 Camera에 너무 가깝거나 너무 먼 Geometry를 구분해야 한다. 이 앞뒤 경계는 Clip의 Z 성분과 w를 비교해 표현한다. Depth의 정확한 범위는 API와 Projection Convention에 따라 다르다. Figure 2-7은 Clip에서 0 ≤ z ≤ w, Divide 뒤 NDC에서 0 ≤ z_ndc ≤ 1을 사용하는 예다. 다른 Convention에서는 Clip의 -w ≤ z ≤ w와 NDC의 -1 ≤ z_ndc ≤ 1이 대응한다.
 
 Figure의 Clip 패널은 고정 크기 Cube를 그린 것이 아니라 **w에 의존하는 Homogeneous Clip 조건**을 적고 있다. 고정된 NDC 범위와 Divide 전 Clip 범위를 구분해서 읽는다.
 
@@ -4139,17 +3601,13 @@ Figure의 Clip 패널은 고정 크기 Cube를 그린 것이 아니라 **w에 �
 
 ### Inside and Outside
 
-Clip Space에서는 Position이 허용 범위 안에 있는지 판정할 수 있다.
-
-예를 들어 개념적으로 X가 다음 범위를 만족한다면
+Clip Space에서는 Position이 허용 범위 안에 있는지 판정할 수 있다. 예를 들어 개념적으로 X가 다음 범위를 만족한다면
 
 ~~~text
 -w ≤ x ≤ +w
 ~~~
 
-좌우 범위 안에 있는 것으로 볼 수 있다.
-
-반대로
+좌우 범위 안에 있는 것으로 볼 수 있다. 반대로
 
 ~~~text
 x > +w
@@ -4161,11 +3619,7 @@ x > +w
 x < -w
 ~~~
 
-라면 왼쪽 범위를 벗어난 것이다.
-
-Y 역시 비슷한 방식으로 상하 범위를 판단할 수 있다.
-
-즉,
+라면 왼쪽 범위를 벗어난 것이다. Y 역시 비슷한 방식으로 상하 범위를 판단할 수 있다. 즉,
 
 > **복잡한 Perspective Frustum의 내부/외부 관계를 일정한 Coordinate 조건으로 검사할 수 있게 된다.**
 
@@ -4175,11 +3629,7 @@ Y 역시 비슷한 방식으로 상하 범위를 판단할 수 있다.
 
 ### Vertex Outside Does Not Always Mean the Whole Triangle Is Removed
 
-여기서 주의할 점이 있다.
-
-Triangle을 구성하는 Vertex 하나가 Clip Range 밖에 있다고 해서 Triangle 전체를 무조건 버리는 것은 아니다.
-
-예를 들어 다음처럼 Triangle이 경계에 걸쳐 있을 수 있다.
+여기서 주의할 점이 있다. Triangle을 구성하는 Vertex 하나가 Clip Range 밖에 있다고 해서 Triangle 전체를 무조건 버리는 것은 아니다. 예를 들어 다음처럼 Triangle이 경계에 걸쳐 있을 수 있다.
 
 ~~~text
 Vertex A
@@ -4192,9 +3642,7 @@ Vertex C
 → Outside
 ~~~
 
-이 경우 Triangle 일부가 여전히 화면에 보일 수 있다.
-
-따라서 GPU는 Triangle과 Clip Boundary의 교차 관계를 계산하고 필요한 경우 Geometry를 잘라낸다.
+이 경우 Triangle 일부가 여전히 화면에 보일 수 있다. 따라서 GPU는 Triangle과 Clip Boundary의 교차 관계를 계산하고 필요한 경우 Geometry를 잘라낸다.
 
 ~~~text
 Original Triangle
@@ -4204,19 +3652,13 @@ Clipping
 Visible Portion
 ~~~
 
-이 점이 **Culling**과 **Clipping**의 차이이기도 하다.
-
-Culling은 Primitive 전체를 제거할 수 있지만,
-
-Clipping은 경계에 걸친 Primitive의 일부를 잘라낼 수 있다.
+이 점이 **Culling**과 **Clipping**의 차이이기도 하다. Culling은 Primitive 전체를 제거할 수 있지만, Clipping은 경계에 걸친 Primitive의 일부를 잘라낼 수 있다.
 
 ---
 
 ### Clipping Happens Before Perspective Divide
 
-Coordinate 흐름에서 순서도 중요하다.
-
-개념적인 순서는 다음과 같다.
+Coordinate 흐름에서 순서도 중요하다. 개념적인 순서는 다음과 같다.
 
 ~~~text
 Projection Matrix
@@ -4230,9 +3672,7 @@ Perspective Divide
 NDC
 ~~~
 
-즉, 일반적인 Pipeline 설명에서는 **Perspective Divide 전에 Clip Space에서 Clipping을 수행한다.**
-
-이름이 Clip Space인 이유가 바로 여기에 있다.
+즉, 일반적인 Pipeline 설명에서는 **Perspective Divide 전에 Clip Space에서 Clipping을 수행한다.** 이름이 Clip Space인 이유가 바로 여기에 있다.
 
 ---
 
@@ -4242,11 +3682,7 @@ NDC
 
 > 어차피 `w`로 나눌 것이라면 Perspective Divide부터 하고 나중에 Clipping하면 되지 않을까?
 
-하지만 Perspective Divide 이전의 Clip Coordinate는 Frustum Boundary를 다루기에 유용한 구조를 가지고 있다.
-
-특히 Triangle이 Near Plane과 같은 경계를 가로지를 때 Perspective Divide 전에 Geometry를 올바르게 잘라내는 것이 중요하다.
-
-따라서 개념적인 Rendering Pipeline에서는
+하지만 Perspective Divide 이전의 Clip Coordinate는 Frustum Boundary를 다루기에 유용한 구조를 가지고 있다. 특히 Triangle이 Near Plane과 같은 경계를 가로지를 때 Perspective Divide 전에 Geometry를 올바르게 잘라내는 것이 중요하다. 따라서 개념적인 Rendering Pipeline에서는
 
 ~~~text
 Clip Space
@@ -4262,9 +3698,7 @@ Perspective Divide
 
 ### Clip Space and Perspective Are Connected
 
-Projection Matrix를 적용하면서 Perspective와 Clipping을 위한 정보가 함께 만들어진다.
-
-따라서 다음 두 과정은 서로 완전히 독립된 것이 아니다.
+Projection Matrix를 적용하면서 Perspective와 Clipping을 위한 정보가 함께 만들어진다. 따라서 다음 두 과정은 서로 완전히 독립된 것이 아니다.
 
 ~~~text
 Perspective Projection
@@ -4299,9 +3733,7 @@ Perspective Divide
 
 ### Perspective Divide
 
-Clipping으로 남길 Geometry가 정해지면 다음 문제는 Clip Position을 화면 Mapping에 사용할 일정한 범위의 좌표로 읽는 것이다.
-
-Clip에서 w는 아직 각 Point의 Projection 관계를 담고 있다. X/Y/Z를 그 w에 대한 비율로 읽으면 Divide 뒤의 공통 좌표인 NDC를 얻는다.
+Clipping으로 남길 Geometry가 정해지면 다음 문제는 Clip Position을 화면 Mapping에 사용할 일정한 범위의 좌표로 읽는 것이다. Clip에서 w는 아직 각 Point의 Projection 관계를 담고 있다. X/Y/Z를 그 w에 대한 비율로 읽으면 Divide 뒤의 공통 좌표인 NDC를 얻는다.
 
 ~~~text
 x_ndc = x_clip / w_clip
@@ -4321,11 +3753,7 @@ NDC (x_ndc, y_ndc, z_ndc)
 
 ### NDC Preview
 
-Perspective Divide 이후 Coordinate는 일정한 범위로 정리된다.
-
-이 공간을 **NDC**, 즉 **Normalized Device Coordinates**라고 한다.
-
-NDC의 중요한 특징은 실제 Screen Resolution과 직접적인 관계가 없다는 점이다.
+Perspective Divide 이후 Coordinate는 일정한 범위로 정리된다. 이 공간을 **NDC**, 즉 **Normalized Device Coordinates**라고 한다. NDC의 중요한 특징은 실제 Screen Resolution과 직접적인 관계가 없다는 점이다.
 
 예를 들어
 
@@ -4337,23 +3765,17 @@ NDC의 중요한 특징은 실제 Screen Resolution과 직접적인 관계가 �
 3840 × 2160
 ~~~
 
-처럼 Screen Resolution이 달라도 NDC는 일정한 정규화 범위를 사용할 수 있다.
-
-따라서
+처럼 Screen Resolution이 달라도 NDC는 일정한 정규화 범위를 사용할 수 있다. 따라서
 
 > **NDC는 실제 Pixel Coordinate로 변환되기 전의 표준화된 Coordinate Space**
 
-라고 생각할 수 있다.
-
-NDC는 이후 절에서 자세히 다룬다.
+라고 생각할 수 있다. NDC는 이후 절에서 자세히 다룬다.
 
 ---
 
 ### Clip Space Is Resolution Independent
 
-Clip Space 역시 특정 Screen Resolution을 직접 사용하지 않는다.
-
-아직 다음과 같은 실제 Pixel Coordinate를 다루는 단계가 아니다.
+Clip Space 역시 특정 Screen Resolution을 직접 사용하지 않는다. 아직 다음과 같은 실제 Pixel Coordinate를 다루는 단계가 아니다.
 
 ~~~text
 Pixel X = 1260
@@ -4361,9 +3783,7 @@ Pixel X = 1260
 Pixel Y = 540
 ~~~
 
-이런 Screen Position은 훨씬 뒤의 Viewport Transform에서 결정된다.
-
-현재 단계에서는
+이런 Screen Position은 훨씬 뒤의 Viewport Transform에서 결정된다. 현재 단계에서는
 
 ~~~text
 Camera
@@ -4373,9 +3793,7 @@ Clipping
 Perspective
 ~~~
 
-같은 Camera 기반 Geometry 관계를 처리하고 있다.
-
-즉,
+같은 Camera 기반 Geometry 관계를 처리하고 있다. 즉,
 
 > **Clip Space는 Screen Resolution과 독립적인 Rendering 중간 Coordinate Space다.**
 
@@ -4430,13 +3848,20 @@ Clip Space는 Projection 설정을 반영한 뒤 **Clipping을 수행하고 Pers
 
 ---
 
-Figure 2-7에서는 왼쪽부터 **Clip의 Homogeneous 조건 → Divide → NDC 범위 → Viewport Mapping**을 따라 읽는다. (2, 1, 3, 4)를 w=4로 나누면 (0.5, 0.25, 0.75)가 된다. Z는 이 Figure의 0~w / 0~1 Convention을 따른다.
-
-오른쪽 패널은 뒤의 2.10에서 다룰 화면 연결을 함께 요약한다. 먼저 상대적 위치의 범위를 Viewport Width/Height로 늘리고, 가운데와 경계가 맞도록 옮긴다고 읽는다. 식은 시작점이 (0, 0), Origin이 Top-left, +Y가 Down인 Viewport의 연속 좌표 예이며 Pixel index와는 다르다.
+Figure 2-7의 핵심 경로는 경계 검사에 사용할 Clip 값 → w로 나눈 상대 위치 → 실제 Viewport 위치다. 한 단계씩 읽고, Clip의 경계 조건과 NDC의 고정 범위를 구분한다.
 
 <img src="Figures/Chapter02/Fig2_07.png" width="90%">
 
 **Figure 2-7. Clip Space, NDC and Screen Space**
+
+<details>
+<summary>Figure Reading Note — Example Conditions and Scope</summary>
+
+Figure 2-7에서는 왼쪽부터 **Clip의 Homogeneous 조건 → Divide → NDC 범위 → Viewport Mapping**을 따라 읽는다. (2, 1, 3, 4)를 w=4로 나누면 (0.5, 0.25, 0.75)가 된다. Z는 이 Figure의 0~w / 0~1 Convention을 따른다.
+
+오른쪽 패널은 뒤의 2.10에서 다룰 화면 연결을 함께 요약한다. 먼저 상대적 위치의 범위를 Viewport Width/Height로 늘리고, 가운데와 경계가 맞도록 옮긴다고 읽는다. 식은 시작점이 (0, 0), Origin이 Top-left, +Y가 Down인 Viewport의 연속 좌표 예이며 Pixel index와는 다르다.
+
+</details>
 
 ---
 
@@ -4486,9 +3911,7 @@ Clip Space에서 가장 먼저 기억해야 할 것은 세 가지다.
 
 그리고 여기서 처음 본 `w`는 단순한 추가 숫자가 아니다.
 
-Perspective Projection과 Coordinate Transformation을 이해하는 핵심 요소다.
-
-다음 절에서는
+Perspective Projection과 Coordinate Transformation을 이해하는 핵심 요소다. 다음 절에서는
 
 > **왜 3D Position에 네 번째 값인 w가 필요한가?**
 
@@ -4498,9 +3921,7 @@ Perspective Projection과 Coordinate Transformation을 이해하는 핵심 요�
 
 ## 2.8 Homogeneous Coordinate and W
 
-앞에서 Object를 이동할 때 Position은 바뀌고 Direction은 바뀌지 않아야 한다는 점을 확인했다. Matrix 하나에 이동량을 담으면서도 이 두 Data를 다르게 처리하려면 어떻게 해야 할까?
-
-또 Projection 뒤에는 Depth와 연결된 값을 남겨두고 다음 단계에서 Divide해야 했다. 세 개의 XYZ만으로 모든 과정을 같은 Matrix 체계에 연결하려면 Translation과 Perspective를 따로 처리해야 한다.
+앞에서 Object를 이동할 때 Position은 바뀌고 Direction은 바뀌지 않아야 한다는 점을 확인했다. Matrix 하나에 이동량을 담으면서도 이 두 Data를 다르게 처리하려면 어떻게 해야 할까? 또 Projection 뒤에는 Depth와 연결된 값을 남겨두고 다음 단계에서 Divide해야 했다. 세 개의 XYZ만으로 모든 과정을 같은 Matrix 체계에 연결하려면 Translation과 Perspective를 따로 처리해야 한다.
 
 3D Graphics에서는 **w를 포함한 네 성분의 표현**을 사용해 이 변환들을 이어준다. 이 표현이 **Homogeneous Coordinate**다.
 
@@ -4528,11 +3949,7 @@ Perspective Projection과 Coordinate Transformation을 이해하는 핵심 요�
 Position = (1, 2, 3)
 ~~~
 
-이라고 하면 어떤 Coordinate System 안에서 X, Y, Z 방향으로 각각 1, 2, 3의 위치를 가진다는 의미다.
-
-그런데 Rendering에서는 Position뿐 아니라 Direction도 함께 다뤄야 한다.
-
-예를 들어
+이라고 하면 어떤 Coordinate System 안에서 X, Y, Z 방향으로 각각 1, 2, 3의 위치를 가진다는 의미다. 그런데 Rendering에서는 Position뿐 아니라 Direction도 함께 다뤄야 한다. 예를 들어
 
 ~~~text
 Position  = (1, 2, 3)
@@ -4540,11 +3957,7 @@ Position  = (1, 2, 3)
 Direction = (1, 0, 0)
 ~~~
 
-둘 다 XYZ 값으로 표현된다.
-
-하지만 Chapter 2.2에서 살펴본 것처럼 Position과 Direction은 Transform에서 서로 다르게 처리되어야 한다.
-
-특히 Translation에서 차이가 발생한다.
+둘 다 XYZ 값으로 표현된다. 하지만 Chapter 2.2에서 살펴본 것처럼 Position과 Direction은 Transform에서 서로 다르게 처리되어야 한다. 특히 Translation에서 차이가 발생한다.
 
 ~~~text
 Position
@@ -4554,9 +3967,7 @@ Direction
 → Translation의 영향을 받지 않음
 ~~~
 
-문제는 XYZ 값만 보면 이 Data가 Position인지 Direction인지 알 수 없다는 것이다.
-
-그래서 하나의 값을 추가한다.
+문제는 XYZ 값만 보면 이 Data가 Position인지 Direction인지 알 수 없다는 것이다. 그래서 하나의 값을 추가한다.
 
 ~~~text
 (x, y, z)
@@ -4580,17 +3991,13 @@ Position (x, y, z)
 (x, y, z, 1)
 ~~~
 
-예를 들어 (1, 2, 3)이라는 Position은 (1, 2, 3, 1)로 입력할 수 있다. 이 표현을 사용하면 Matrix의 Translation 항이 1을 곱한 채 결과에 더해진다.
-
-따라서 **일반적인 Cartesian Position을 Affine Matrix에 입력할 때 w = 1을 사용한다.** 이 관계는 입력을 설명한 것이다. Projection을 통과한 뒤의 w까지 계속 1이어야 한다는 뜻은 아니다.
+예를 들어 (1, 2, 3)이라는 Position은 (1, 2, 3, 1)로 입력할 수 있다. 이 표현을 사용하면 Matrix의 Translation 항이 1을 곱한 채 결과에 더해진다. 따라서 **일반적인 Cartesian Position을 Affine Matrix에 입력할 때 w = 1을 사용한다.** 이 관계는 입력을 설명한 것이다. Projection을 통과한 뒤의 w까지 계속 1이어야 한다는 뜻은 아니다.
 
 ---
 
 ### Direction Uses w = 0
 
-반대로 오른쪽을 향하는 Direction은 Object를 이동한 뒤에도 여전히 오른쪽을 향해야 한다. 방향 계산에는 Translation 항이 들어가지 않아야 한다.
-
-Matrix 안의 Translation은 w와 곱해지므로 Direction 입력의 w를 0으로 두면 그 항을 제외할 수 있다.
+반대로 오른쪽을 향하는 Direction은 Object를 이동한 뒤에도 여전히 오른쪽을 향해야 한다. 방향 계산에는 Translation 항이 들어가지 않아야 한다. Matrix 안의 Translation은 w와 곱해지므로 Direction 입력의 w를 0으로 두면 그 항을 제외할 수 있다.
 
 ~~~text
 Direction (x, y, z)
@@ -4598,25 +4005,21 @@ Direction (x, y, z)
 (x, y, z, 0)
 ~~~
 
-예를 들어 (1, 0, 0) 방향은 (1, 0, 0, 0)으로 입력한다. 같은 Matrix를 사용해도 Position의 w=1과 다른 결과를 얻는다.
-
-이렇게 **일반적인 Direction / Displacement의 Affine 입력에는 w = 0**을 사용한다. Rotation과 Scale은 여전히 방향 성분에 적용된다. Normal을 일반 Direction과 똑같이 변환해도 되는지는 별개의 문제로 2.13에서 다룬다.
+예를 들어 (1, 0, 0) 방향은 (1, 0, 0, 0)으로 입력한다. 같은 Matrix를 사용해도 Position의 w=1과 다른 결과를 얻는다. 이렇게 **일반적인 Direction / Displacement의 Affine 입력에는 w = 0**을 사용한다. Rotation과 Scale은 여전히 방향 성분에 적용된다. Normal을 일반 Direction과 똑같이 변환해도 되는지는 별개의 문제로 2.13에서 다룬다.
 
 ---
 
 ### Why Translation Treats Position and Direction Differently
 
-이 차이는 Translation Matrix를 생각하면 더 명확해진다.
+2.2의 화살표 예를 네 성분 입력으로 다시 보자. Matrix에는 이동량이 있지만, Position의 입력은 그 이동량을 받아야 하고 Direction의 입력은 받지 않아야 한다. w=1/0은 같은 Matrix에서 Translation 항이 계산에 참여하는지 다르게 만드는 입력 표현이다.
 
-Position이 다음과 같다고 하자.
+이 차이는 Translation Matrix를 생각하면 더 명확해진다. Position이 다음과 같다고 하자.
 
 ~~~text
 Position = (1, 2, 3, 1)
 ~~~
 
-그리고 X 방향으로 5만큼 이동하는 Translation을 적용한다고 하자.
-
-결과는 개념적으로 다음과 같다.
+그리고 X 방향으로 5만큼 이동하는 Translation을 적용한다고 하자. 결과는 개념적으로 다음과 같다.
 
 ~~~text
 Before
@@ -4634,9 +4037,7 @@ After
 (6, 2, 3, 1)
 ~~~
 
-Position은 이동했다.
-
-반면 Direction이 다음과 같다고 하자.
+Position은 이동했다. 반면 Direction이 다음과 같다고 하자.
 
 ~~~text
 Direction = (1, 0, 0, 0)
@@ -4660,9 +4061,7 @@ After
 (1, 0, 0, 0)
 ~~~
 
-왜냐하면 Direction은 어디에 있는지를 나타내는 Data가 아니기 때문이다.
-
-즉,
+왜냐하면 Direction은 어디에 있는지를 나타내는 Data가 아니기 때문이다. 즉,
 
 > **w를 이용하면 하나의 Matrix Transform 안에서도 Position에는 Translation을 적용하고, Direction에는 Translation을 적용하지 않을 수 있다.**
 
@@ -4670,11 +4069,7 @@ After
 
 ### Why Is w = 0 Enough to Ignore Translation?
 
-이 부분은 Matrix의 구조를 보면 완전히 이해할 수 있지만, 아직 Matrix 계산을 본격적으로 다루기 전이므로 개념만 살펴본다.
-
-Translation Matrix에는 이동량이 포함되어 있다.
-
-개념적으로 다음과 같은 정보가 들어 있다고 생각할 수 있다.
+이 부분은 Matrix의 구조를 보면 완전히 이해할 수 있지만, 아직 Matrix 계산을 본격적으로 다루기 전이므로 개념만 살펴본다. Translation Matrix에는 이동량이 포함되어 있다. 개념적으로 다음과 같은 정보가 들어 있다고 생각할 수 있다.
 
 ~~~text
 Translation X
@@ -4702,9 +4097,7 @@ Translation × 0
 → Translation 제거
 ~~~
 
-가 된다.
-
-즉,
+가 된다. 즉,
 
 > **w는 Translation을 적용할지 말지를 구분하는 역할을 할 수 있다.**
 
@@ -4714,18 +4107,16 @@ Translation × 0
 
 ### Homogeneous Coordinate Is More Than Position vs Direction
 
-여기까지 보면 w가 Position과 Direction을 선택하는 Flag처럼 보일 수 있다. 하지만 Homogeneous Coordinate는 Projection 뒤의 Point를 다시 3D 좌표로 읽는 관계도 표현한다.
+입력의 1/0 규칙만 기억하면 Projection 출력의 w를 다시 Flag로 오해하기 쉽다. 여기서는 네 숫자의 비율이 어떤 Point를 나타내는지 본다. **Cartesian Coordinate**는 우리가 앞에서 사용한 XYZ 좌표 표현이고, **Projective Point**는 투영을 다루는 관계에서 읽는 Point다. 아래에서는 w가 0이 아닌 표현을 XYZ/w로 읽어 같은 XYZ Point를 얻는다.
 
-w가 0이 아닌 Point는 XYZ를 w로 나누어 Cartesian Coordinate로 읽을 수 있다. 그래서 네 성분의 값이 서로 달라도 같은 비율을 가지고 있다면 같은 Point를 나타낼 수 있다.
+여기까지 보면 w가 Position과 Direction을 선택하는 Flag처럼 보일 수 있다. 하지만 Homogeneous Coordinate는 Projection 뒤의 Point를 다시 3D 좌표로 읽는 관계도 표현한다. w가 0이 아닌 Point는 XYZ를 w로 나누어 Cartesian Coordinate로 읽을 수 있다. 그래서 네 성분의 값이 서로 달라도 같은 비율을 가지고 있다면 같은 Point를 나타낼 수 있다.
 
 ~~~text
 (2, 4, 6, 2) → XYZ ÷ 2 → (1, 2, 3)
 (1, 2, 3, 1) → XYZ ÷ 1 → (1, 2, 3)
 ~~~
 
-이 관계를 Projective Point의 Homogeneous 표현에서의 동치라고 한다. 0이 아닌 같은 값으로 모든 성분을 곱해도 Divide 뒤 같은 Cartesian Point를 읽을 수 있다.
-
-이제 Perspective Projection도 연결할 수 있다. Projection Matrix가 View Position을 Clip Position으로 바꾼 뒤, 다음 단계가 X/Y/Z를 출력 w로 나눈다.
+이 관계를 Projective Point의 Homogeneous 표현에서의 동치라고 한다. 0이 아닌 같은 값으로 모든 성분을 곱해도 Divide 뒤 같은 Cartesian Point를 읽을 수 있다. 이제 Perspective Projection도 연결할 수 있다. Projection Matrix가 View Position을 Clip Position으로 바꾼 뒤, 다음 단계가 X/Y/Z를 출력 w로 나눈다.
 
 ~~~text
 View Position → Projection Matrix
@@ -4748,9 +4139,7 @@ NDC
 
 ### Input w and Clip Space w Are Not the Same Role
 
-여기서 반드시 구분해야 할 것이 있다.
-
-앞에서 Position과 Direction을 표현할 때 다음과 같이 사용했다.
+여기서 반드시 구분해야 할 것이 있다. 앞에서 Position과 Direction을 표현할 때 다음과 같이 사용했다.
 
 ~~~text
 Position
@@ -4760,9 +4149,7 @@ Direction
 → w = 0
 ~~~
 
-하지만 이것은 **Matrix Transform에 들어가는 입력 Data를 표현할 때의 w**다.
-
-Projection Matrix를 통과한 뒤 Clip Space에 도착하면 상황이 달라진다.
+하지만 이것은 **Matrix Transform에 들어가는 입력 Data를 표현할 때의 w**다. Projection Matrix를 통과한 뒤 Clip Space에 도착하면 상황이 달라진다.
 
 ~~~text
 View Position
@@ -4780,9 +4167,7 @@ Clip Position
 
 여기서 Clip Position의 `w`는 더 이상 단순히 1이 아니다.
 
-Perspective Projection 과정에서 Camera와의 Depth에 관계된 값으로 변환될 수 있다.
-
-즉,
+Perspective Projection 과정에서 Camera와의 Depth에 관계된 값으로 변환될 수 있다. 즉,
 
 > **입력 Coordinate에서의 w = 1 / 0과 Clip Space에서의 w는 역할이 다르다.**
 
@@ -4815,9 +4200,7 @@ Position
 → w는 항상 1
 ~~~
 
-이라고 이해하면 안 된다.
-
-더 정확하게는
+이라고 이해하면 안 된다. 더 정확하게는
 
 > **Position을 Homogeneous Coordinate로 입력할 때 일반적으로 w = 1을 사용한다.**
 
@@ -4827,19 +4210,13 @@ Position
 
 ### Direction w = 0 Does Not Mean Every Vector Always Uses w = 0
 
-Direction도 마찬가지다.
-
-Transformation을 위한 Direction Data를 Homogeneous Coordinate로 표현할 때는 일반적으로
+Direction도 마찬가지다. Transformation을 위한 Direction Data를 Homogeneous Coordinate로 표현할 때는 일반적으로
 
 ~~~text
 Direction = (x, y, z, 0)
 ~~~
 
-으로 사용한다.
-
-이것은 Direction이 Translation의 영향을 받지 않도록 하기 위한 표현이다.
-
-하지만 Rendering Pipeline에서 등장하는 모든 네 번째 값이 단순히 Position / Direction 구분만을 의미하는 것은 아니다.
+으로 사용한다. 이것은 Direction이 Translation의 영향을 받지 않도록 하기 위한 표현이다. 하지만 Rendering Pipeline에서 등장하는 모든 네 번째 값이 단순히 Position / Direction 구분만을 의미하는 것은 아니다.
 
 특히 Clip Space의 `w`는 Perspective와 연결된다.
 
@@ -4853,17 +4230,13 @@ Direction = (x, y, z, 0)
 
 ### w in Projection
 
-Projection 뒤의 w는 View Depth와 Perspective Divide를 연결한다. 같은 x_clip을 가진 두 Point에서 양의 w가 더 크면 x_clip/w는 더 작아진다. 같은 Camera ray처럼 x_clip과 w가 함께 비례하는 경우는 화면 위치가 유지된다.
-
-이 절에서는 affine 입력의 w=1/0과 Projection 뒤 w의 역할 차이를 기억한다. 구체 수치와 Clip/NDC 표기를 갖춘 계산 예제는 바로 다음 2.9 Perspective Divide and NDC에서 이어서 확인한다.
+Projection 뒤의 w는 View Depth와 Perspective Divide를 연결한다. 같은 x_clip을 가진 두 Point에서 양의 w가 더 크면 x_clip/w는 더 작아진다. 같은 Camera ray처럼 x_clip과 w가 함께 비례하는 경우는 화면 위치가 유지된다. 이 절에서는 affine 입력의 w=1/0과 Projection 뒤 w의 역할 차이를 기억한다. 구체 수치와 Clip/NDC 표기를 갖춘 계산 예제는 바로 다음 2.9 Perspective Divide and NDC에서 이어서 확인한다.
 
 ---
 
 ### How This Makes Objects Look Smaller
 
-Object 하나를 구성하는 여러 Vertex를 생각해보자.
-
-가까운 Cube의 왼쪽과 오른쪽 Vertex가 Perspective Divide 이후 다음과 같은 값을 가진다고 하자.
+Object 하나를 구성하는 여러 Vertex를 생각해보자. 가까운 Cube의 왼쪽과 오른쪽 Vertex가 Perspective Divide 이후 다음과 같은 값을 가진다고 하자.
 
 ~~~text
 Left  = -1
@@ -4871,9 +4244,7 @@ Left  = -1
 Right = +1
 ~~~
 
-두 Vertex 사이의 Screen Width는 크다.
-
-반면 같은 Cube가 Camera에서 멀어지면 다음처럼 될 수 있다.
+두 Vertex 사이의 Screen Width는 크다. 반면 같은 Cube가 Camera에서 멀어지면 다음처럼 될 수 있다.
 
 ~~~text
 Left  = -0.2
@@ -4881,11 +4252,7 @@ Left  = -0.2
 Right = +0.2
 ~~~
 
-두 Vertex가 화면 중심 쪽으로 더 가까워졌다.
-
-따라서 Screen에서 Cube가 차지하는 폭도 줄어든다.
-
-즉,
+두 Vertex가 화면 중심 쪽으로 더 가까워졌다. 따라서 Screen에서 Cube가 차지하는 폭도 줄어든다. 즉,
 
 > **Perspective Divide를 거치면 Camera에서 멀리 있는 Point일수록 같은 X/Y Offset이 더 작은 Screen Offset으로 변환된다.**
 
@@ -4897,11 +4264,7 @@ Right = +0.2
 
 ### Perspective Divide Does Not Move Everything to the Center
 
-여기서 표현을 조심해야 한다.
-
-Camera에서 먼 Object가 모두 화면 중앙으로 이동한다는 뜻은 아니다.
-
-예를 들어 Object가 Camera의 오른쪽 방향에 있다면 Perspective Projection 이후에도 일반적으로 화면 오른쪽에 나타난다.
+여기서 표현을 조심해야 한다. Camera에서 먼 Object가 모두 화면 중앙으로 이동한다는 뜻은 아니다. 예를 들어 Object가 Camera의 오른쪽 방향에 있다면 Perspective Projection 이후에도 일반적으로 화면 오른쪽에 나타난다.
 
 다만 같은 3D X/Y Offset이
 
@@ -4913,9 +4276,7 @@ Far
 → 작은 Screen Offset
 ~~~
 
-으로 표현되는 것이다.
-
-즉,
+으로 표현되는 것이다. 즉,
 
 > **같은 View Space X/Y Offset에서 View Depth만 커지는 경우, Perspective Divide 뒤의 화면 중심 Offset은 작아진다. 동일 Camera ray의 두 Point는 같은 투영 위치를 가진다.**
 
@@ -4947,9 +4308,7 @@ Perspective Projection
 (x, y, z, w)
 ~~~
 
-형태 안에서 이 Transform들을 일관된 Matrix 계산으로 연결할 수 있다.
-
-즉,
+형태 안에서 이 Transform들을 일관된 Matrix 계산으로 연결할 수 있다. 즉,
 
 > **Homogeneous Coordinate는 서로 다른 종류의 Transform을 하나의 Matrix System 안에서 표현할 수 있게 해주는 방법이다.**
 
@@ -4959,15 +4318,11 @@ Perspective Projection
 
 `Homogeneous`라는 단어 자체는 처음 보면 이해하기 어렵다.
 
-Chapter 02에서는 수학적인 정의를 깊게 다루지 않는다.
-
-Rendering 관점에서는 우선
+Chapter 02에서는 수학적인 정의를 깊게 다루지 않는다. Rendering 관점에서는 우선
 
 > **3D Coordinate를 w가 포함된 4개의 값으로 확장한 Coordinate 표현**
 
-이라고 이해하면 충분하다.
-
-즉,
+이라고 이해하면 충분하다. 즉,
 
 ~~~text
 3D Coordinate
@@ -4981,19 +4336,13 @@ Homogeneous Coordinate
 (x, y, z, w)
 ~~~
 
-다만 Homogeneous Coordinate에는 중요한 특징이 하나 있다.
-
-Perspective Divide를 통해 여러 4D 표현을 하나의 3D Coordinate로 다시 변환할 수 있다는 점이다.
-
-이 관계는 다음 절에서 Perspective Divide를 자세히 다룰 때 다시 살펴본다.
+다만 Homogeneous Coordinate에는 중요한 특징이 하나 있다. Perspective Divide를 통해 여러 4D 표현을 하나의 3D Coordinate로 다시 변환할 수 있다는 점이다. 이 관계는 다음 절에서 Perspective Divide를 자세히 다룰 때 다시 살펴본다.
 
 ---
 
 ### Homogeneous Coordinate and Matrix
 
-Homogeneous Coordinate가 중요한 이유는 Matrix와 함께 사용할 때 더욱 명확해진다.
-
-Rendering Pipeline에서 지금까지 등장한 Transform을 다시 보면 다음과 같다.
+Homogeneous Coordinate가 중요한 이유는 Matrix와 함께 사용할 때 더욱 명확해진다. Rendering Pipeline에서 지금까지 등장한 Transform을 다시 보면 다음과 같다.
 
 ~~~text
 Local Position
@@ -5011,9 +4360,7 @@ Projection Matrix
 Clip Position
 ~~~
 
-이러한 Transform을 하나의 Matrix 기반 계산 구조로 연결하기 위해 Position을 Homogeneous Coordinate 형태로 사용한다.
-
-개념적으로는 다음과 같다.
+이러한 Transform을 하나의 Matrix 기반 계산 구조로 연결하기 위해 Position을 Homogeneous Coordinate 형태로 사용한다. 개념적으로는 다음과 같다.
 
 ~~~text
 Position
@@ -5049,19 +4396,24 @@ Homogeneous Coordinate
 Matrix Transform
 ~~~
 
-형태로 처리할 수 있다.
-
-즉,
+형태로 처리할 수 있다. 즉,
 
 > **Homogeneous Coordinate는 3D Geometry Data를 Matrix Transformation에 적합한 형태로 확장한 표현이라고 생각할 수 있다.**
 
 ---
 
-Figure 2-8의 위쪽은 Affine 입력의 w=1/0으로 Translation 참여를 구분한다. 아래 오른쪽은 Projection 이후의 양의 w가 다른 Clip 좌표를 비교한 Divide 예다. Near / Far 표기는 두 예의 Depth 차이를 가리키며 Near Plane / Far Plane 그 자체를 뜻하지 않는다. 두 역할을 나누어 읽는다.
+Figure 2-8에서는 w를 두 단계로 나누어 읽는다. 위쪽 입력은 Position과 Direction에 이동량을 다르게 적용하고, 아래쪽 투영 출력은 좌표를 w에 대한 비율로 읽는다.
 
 <img src="Figures/Chapter02/Fig2_08.png" width="90%">
 
 **Figure 2-8. Homogeneous Coordinate and W**
+
+<details>
+<summary>Figure Reading Note — Example Conditions and Scope</summary>
+
+Figure 2-8의 위쪽은 Affine 입력의 w=1/0으로 Translation 참여를 구분한다. 아래 오른쪽은 Projection 이후의 양의 w가 다른 Clip 좌표를 비교한 Divide 예다. Near / Far 표기는 두 예의 Depth 차이를 가리키며 Near Plane / Far Plane 그 자체를 뜻하지 않는다. 두 역할을 나누어 읽는다.
+
+</details>
 
 ---
 
@@ -5201,9 +4553,7 @@ z / w
 
 ## 2.9 Perspective Divide and NDC
 
-같은 크기의 Object가 멀리 있으면 화면에서 더 작게 보인다. 앞 절에서는 Projection Matrix가 그 관계를 계산할 w를 Clip Position에 남겨둔다고 설명했다.
-
-이제 그 정보를 실제 화면 Offset으로 읽을 차례다. **같은 X/Y Offset을 가진 Point라도 View Depth가 다르면 화면에서 다른 Offset을 가져야 한다.** Clip의 X/Y/Z를 w에 대한 비율로 읽는 Perspective Divide가 이 관계를 만든다.
+같은 크기의 Object가 멀리 있으면 화면에서 더 작게 보인다. 앞 절에서는 Projection Matrix가 그 관계를 계산할 w를 Clip Position에 남겨둔다고 설명했다. 이제 그 정보를 실제 화면 Offset으로 읽을 차례다. **같은 X/Y Offset을 가진 Point라도 View Depth가 다르면 화면에서 다른 Offset을 가져야 한다.** Clip의 X/Y/Z를 w에 대한 비율로 읽는 Perspective Divide가 이 관계를 만든다.
 
 먼저 Projection 앞뒤의 값을 구분하자. Affine 입력의 Position은 일반적으로 w=1이고 Direction은 w=0이다. 하지만 여기서 나누는 분모는 그 입력값이 아니라 **Projection Matrix가 출력한 w_clip**이다.
 
@@ -5219,63 +4569,7 @@ NDC → Viewport Transform → Screen Space
 
 ---
 
-### Coordinate Notation Convention
-
-Chapter 02에서는 같은 `x`, `y`, `z` 값이 여러 Coordinate Space를 거치면서 서로 다른 의미를 가지기 때문에, 혼동을 줄이기 위해 Space를 이름에 함께 표기한다.
-
-예를 들어 다음과 같이 사용한다.
-
-~~~text
-x_view
-→ View Space의 X Coordinate
-
-x_clip
-→ Clip Space의 X Coordinate
-
-x_ndc
-→ NDC의 X Coordinate
-~~~
-
-`x_clip`, `w_clip`과 같은 표기는 특정 Graphics API에서 반드시 사용하는 고정된 변수명이 아니다.
-
-교재, Shader Code, Graphics API에 따라 다음처럼 서로 다른 이름을 사용할 수 있다.
-
-~~~text
-x_clip
-
-clipPos.x
-
-positionCS.x
-
-x_c
-~~~
-
-이 문서에서는 Coordinate가 어느 Space의 값인지 명확하게 구분하기 위해 다음 표기 규칙을 사용한다.
-
-~~~text
-_view
-→ View Space
-
-_clip
-→ Clip Space
-
-_ndc
-→ NDC
-~~~
-
-따라서 이후 등장하는
-
-~~~text
-x_ndc = x_clip / w_clip
-~~~
-
-이라는 표현은
-
-> **Clip Space의 X 값을 Clip Space의 W로 나눈 결과가 NDC의 X가 된다.**
-
-는 의미다.
-
-즉, `_clip`, `_ndc`는 새로운 수학 개념이 아니라 **Coordinate Space를 구분하기 위해 이 문서에서 사용하는 표기 규칙**이다.
+이 절의 변수 이름에서 `_view`, `_clip`, `_ndc`는 각각 View, Clip, NDC의 성분을 뜻한다. 예를 들어 x_clip은 Projection 출력 X이고 x_ndc는 Divide 결과 X다. 어떤 값을 나누는지 본문에서 구분하며, 다른 Code의 변수명과 연결하는 자세한 표기 비교는 뒤의 Implementation Note에 둔다.
 
 ---
 
@@ -5283,9 +4577,7 @@ x_ndc = x_clip / w_clip
 
 Perspective Divide에서 사용하는 `x`, `y`, `z`는 원래 View Space Coordinate를 그대로 사용하는 것이 아니다.
 
-정확히는 **Projection Matrix를 통과한 뒤 만들어진 Clip Space Coordinate**다.
-
-흐름을 정확히 쓰면 다음과 같다.
+정확히는 **Projection Matrix를 통과한 뒤 만들어진 Clip Space Coordinate**다. 흐름을 정확히 쓰면 다음과 같다.
 
 ~~~text
 View Position
@@ -5373,6 +4665,8 @@ Clip Space Vertex Position
 
 ### Perspective Divide
 
+지금 필요한 결과는 실제 Pixel 번호가 아니라 “이 Point가 화면 중심에서 어느 정도 떨어져 있는가”라는 상대적 위치다. Clip의 성분을 w에 대한 비율로 읽으면 서로 다른 Depth의 결과를 같은 기준에서 비교할 수 있다. **Divide**는 나눗셈을 뜻하며, 여기서는 World나 View XYZ가 아니라 Clipping 뒤 남은 Clip XYZ를 나눈다.
+
 Clip Space에서는 Position이 다음과 같은 형태로 존재한다.
 
 ~~~text
@@ -5451,11 +4745,7 @@ Clip Position
 
 > **w_clip은 Vertex가 Camera Forward 방향으로 얼마나 깊이 위치하는가와 관련된 값**
 
-이라고 생각할 수 있다.
-
-다만 Camera에서 Vertex까지의 실제 직선거리 자체와 완전히 같은 값은 아니다.
-
-보다 정확하게는
+이라고 생각할 수 있다. 다만 Camera에서 Vertex까지의 실제 직선거리 자체와 완전히 같은 값은 아니다. 보다 정확하게는
 
 > **Camera Forward 방향의 Depth와 연결된 값**
 
@@ -5465,138 +4755,13 @@ Clip Position
 
 ---
 
-#### View Depth and Camera Distance Are Different
-
-`w_clip`을 이해할 때 Camera와 Vertex 사이의 **실제 직선거리**와 Camera Forward 방향의 **View Depth**를 구분할 필요가 있다.
-
-처음에는 두 값이 같은 것처럼 느껴질 수 있다.
-
-예를 들어 Camera가 Origin에 있고 Forward 방향을 Z축이라고 단순화해보자.
-
-~~~text
-Camera
-= (0, 0, 0)
-
-Vertex A
-= (0, 0, 10)
-~~~
-
-Vertex A는 Camera 정면에 있다.
-
-이 경우 Camera Forward 방향으로의 View Depth는 다음과 같다.
-
-~~~text
-View Depth = 10
-~~~
-
-Camera에서 Vertex A까지의 실제 직선거리 역시 10이다.
-
-~~~text
-Camera Distance = 10
-~~~
-
-따라서 Camera 정면에 있는 Point에서는 두 값이 같아 보일 수 있다.
-
-하지만 Vertex가 Camera 정면에서 옆으로 이동하면 두 값의 차이가 나타난다.
-
-예를 들어 다음 Vertex가 있다고 하자.
-
-~~~text
-Vertex B
-= (6, 0, 10)
-~~~
-
-Vertex B는 Camera Forward 방향으로는 여전히 10만큼 떨어져 있다.
-
-~~~text
-View Depth = 10
-~~~
-
-하지만 Camera에서 Vertex까지의 실제 직선거리는 대각선 거리다.
-
-~~~text
-Camera Distance
-
-= sqrt(6² + 10²)
-
-≈ 11.66
-~~~
-
-즉,
-
-~~~text
-View Depth
-= 10
-
-Camera Distance
-≈ 11.66
-~~~
-
-처럼 서로 다른 값이 된다.
-
-개념적으로 보면 다음과 같다.
-
-~~~text
-          Vertex B
-             ●
-            /|
-           / |
-          /  |  View Depth = 10
-         /   |
-Camera ●-----+
-        6
-
-대각선
-→ 실제 Camera Distance
-~~~
-
-여기서 중요한 차이는 다음과 같다.
-
-> **Camera Distance는 Camera와 Vertex 사이의 실제 공간상 직선거리다.**
-
-반면,
-
-> **View Depth는 Camera가 바라보는 Forward 방향을 기준으로 Vertex가 얼마나 깊이 위치하는지를 나타낸다.**
-
-따라서 Camera 정면에서 옆으로 떨어진 Vertex들은 실제 Camera Distance가 서로 다르더라도 같은 View Depth를 가질 수 있다.
-
-예를 들어 다음 세 Vertex를 생각해보자.
-
-~~~text
-Vertex A = (0, 0, 10)
-
-Vertex B = (6, 0, 10)
-
-Vertex C = (-8, 3, 10)
-~~~
-
-세 Vertex 모두 Camera Forward 방향으로는 같은 위치에 있다.
-
-~~~text
-View Depth = 10
-~~~
-
-하지만 Camera와의 실제 직선거리는 각각 다르다.
-
-즉,
-
-> **Perspective Projection에서 중요한 것은 Camera와 Vertex 사이의 실제 직선거리 자체가 아니라 Camera Forward 방향의 View Depth다.**
-
-그래서 `w_clip`을 처음 이해할 때는
-
-> **Camera에서 얼마나 멀리 떨어져 있는가**
-
-라고 단순하게 생각할 수도 있지만,
-
-보다 정확하게는
-
-> **Camera Forward 방향으로 얼마나 깊이 있는가와 연결된 값**
-
-이라고 이해하는 것이 좋다.
+**View Depth**는 Camera Forward 방향으로의 깊이이고, **Camera Distance**는 Camera와 Point 사이의 실제 직선거리다. 정면의 Point에서는 같아 보일 수 있지만 옆으로 떨어진 Point에서는 다르다. Perspective의 w를 직선거리로 대체하지 않는다. 이 차이의 좌표와 거리 계산 전체는 뒤의 Numerical Note에서 확인한다.
 
 ---
 
 ### How Depth Affects Perspective Divide
+
+화면의 크기 변화가 식에서 어떻게 만들어지는지 한 성분만 먼저 비교하자. 두 Point의 View X/Y Offset과 Projection 설정을 같게 두고, Camera Forward 방향으로의 깊이만 바꾼다. **Offset**은 기준 위치에서 얼마나 벗어났는지 나타내는 변화량이다. 이 조건에서 w가 다른 두 출력의 X 비율을 비교하면 된다.
 
 이제 Camera 앞에 두 Vertex가 있다고 하자.
 
@@ -5668,6 +4833,8 @@ x_ndc
 
 ### What Does "Closer to the Center" Mean?
 
+앞의 나눗셈은 “Depth를 X로 바꿨다”는 계산이 아니다. Depth와 연결된 분모로 횡방향 성분을 나누어 그 성분의 화면 비율을 조절했다. 따라서 비교할 것은 Depth 숫자 자체가 아니라 Divide 뒤 두 X 결과가 중심 0에서 떨어진 정도다.
+
 앞의 예에서 Perspective Divide 결과는 다음과 같았다.
 
 ~~~text
@@ -5704,11 +4871,7 @@ Center        Vertex B        Vertex A
 
 > **멀리 있는 Position의 Screen Offset이 더 작아진다**
 
-는 의미다.
-
-Object 자체가 무조건 화면 중앙으로 이동한다는 뜻은 아니다.
-
-보다 정확하게는,
+는 의미다. Object 자체가 무조건 화면 중앙으로 이동한다는 뜻은 아니다. 보다 정확하게는,
 
 > **같은 3D X/Y 방향 Offset이라도 Camera에서 멀수록 Screen에서는 더 작은 Offset으로 표현된다.**
 
@@ -5718,9 +4881,7 @@ Object 자체가 무조건 화면 중앙으로 이동한다는 뜻은 아니다.
 
 ### Perspective Makes Objects Look Smaller
 
-Object 하나는 여러 Vertex로 구성되어 있다.
-
-예를 들어 Camera와 가까운 Cube의 좌우 Vertex가 Perspective Divide 이후 다음과 같은 값을 가진다고 하자.
+Object 하나는 여러 Vertex로 구성되어 있다. 예를 들어 Camera와 가까운 Cube의 좌우 Vertex가 Perspective Divide 이후 다음과 같은 값을 가진다고 하자.
 
 ~~~text
 Left Vertex
@@ -5730,9 +4891,7 @@ Right Vertex
 x_ndc = +1
 ~~~
 
-두 Vertex 사이의 화면상 간격은 크다.
-
-같은 Cube가 Camera에서 더 멀리 위치하면 다음처럼 표현될 수 있다.
+두 Vertex 사이의 화면상 간격은 크다. 같은 Cube가 Camera에서 더 멀리 위치하면 다음처럼 표현될 수 있다.
 
 ~~~text
 Left Vertex
@@ -5765,9 +4924,7 @@ Farther Cube
 
 ### Perspective Divide Applies to Y as Well
 
-앞의 X 예제는 좌우 위치를 비교했다. 같은 원리는 상하 위치에도 필요하다. 같은 높이의 Offset을 가진 Point가 더 깊이 놓이면 화면에서의 상하 Offset도 작아져야 한다.
-
-Y도 같은 Clip w를 분모로 사용한다.
+앞의 X 예제는 좌우 위치를 비교했다. 같은 원리는 상하 위치에도 필요하다. 같은 높이의 Offset을 가진 Point가 더 깊이 놓이면 화면에서의 상하 Offset도 작아져야 한다. Y도 같은 Clip w를 분모로 사용한다.
 
 ~~~text
 y_ndc = y_clip / w_clip
@@ -5780,21 +4937,28 @@ Vertex A: y_clip = 2, w_clip = 2  → y_ndc = 1.0
 Vertex B: y_clip = 2, w_clip = 10 → y_ndc = 0.2
 ~~~
 
-X와 Y는 각자 다른 분모를 사용하는 것이 아니다. 같은 Point의 w_clip을 함께 사용해 좌우와 상하의 Perspective 관계를 만든다.
-
-이 예는 **View X/Y Offset을 고정하고 Depth만 바꾼 조건**이다. Camera에서 출발하는 같은 ray 위의 Point들은 X/Y Offset과 Depth가 함께 비례하므로 같은 화면 위치로 투영될 수 있다. Figure 2-9의 두 Vertex는 그 ray 조건과 구분한다.
+X와 Y는 각자 다른 분모를 사용하는 것이 아니다. 같은 Point의 w_clip을 함께 사용해 좌우와 상하의 Perspective 관계를 만든다. 이 예는 **View X/Y Offset을 고정하고 Depth만 바꾼 조건**이다. Camera에서 출발하는 같은 ray 위의 Point들은 X/Y Offset과 Depth가 함께 비례하므로 같은 화면 위치로 투영될 수 있다. Figure 2-9의 두 Vertex는 그 ray 조건과 구분한다.
 
 ---
 
-Figure 2-9는 View Forward=+Z, x_clip=x_view, w_clip=z_view인 단순화한 X/Y 예다. 동일한 X Offset 2에서 Depth가 2와 10으로 다르면 x_ndc는 1과 0.2다. Clip Z는 이 비교에서 생략되어 있으므로 전체 Depth 판정 예제나 고정 Projection Matrix의 완전한 출력으로 읽지 않는다.
+Figure 2-9에서 두 Point의 횡방향 Offset은 같고 깊이만 다르다. 같은 X를 더 큰 w로 나누면 화면의 상대적인 X 간격이 줄어드는 것을 비교한다.
 
 <img src="Figures/Chapter02/Fig2_09.png" width="90%">
 
 **Figure 2-9. Perspective Divide and NDC**
 
+<details>
+<summary>Figure Reading Note — Example Conditions and Scope</summary>
+
+Figure 2-9는 View Forward=+Z, x_clip=x_view, w_clip=z_view인 단순화한 X/Y 예다. 동일한 X Offset 2에서 Depth가 2와 10으로 다르면 x_ndc는 1과 0.2다. Clip Z는 이 비교에서 생략되어 있으므로 전체 Depth 판정 예제나 고정 Projection Matrix의 완전한 출력으로 읽지 않는다.
+
+</details>
+
 ---
 
 ### What About z_ndc?
+
+Point의 화면 좌우·상하가 정해져도 어느 Surface가 앞에 있는지는 별도의 질문이다. X/Y는 화면 위치와 연결하고, Z는 이후 앞뒤 관계를 비교할 값으로 남긴다. 같은 w를 사용해 나누지만 출력의 사용 목적은 서로 다르다.
 
 Perspective Divide에서는 X와 Y뿐 아니라 Z도 `w_clip`으로 나눈다.
 
@@ -5802,11 +4966,7 @@ Perspective Divide에서는 X와 Y뿐 아니라 Z도 `w_clip`으로 나눈다.
 z_ndc = z_clip / w_clip
 ~~~
 
-하지만 Z의 역할은 X/Y와 조금 다르다.
-
-X와 Y는 주로 Screen에서의 위치와 크기 변화에 직접 연결된다.
-
-반면 Z는 이후 **Depth**를 표현하는 데 사용된다.
+하지만 Z의 역할은 X/Y와 조금 다르다. X와 Y는 주로 Screen에서의 위치와 크기 변화에 직접 연결된다. 반면 Z는 이후 **Depth**를 표현하는 데 사용된다.
 
 정리하면 다음과 같다.
 
@@ -5829,9 +4989,7 @@ z_ndc
 
 ### Perspective Divide Happens After Clipping
 
-Chapter 2.7에서는 Clipping이 Perspective Divide보다 먼저 수행된다고 설명했다.
-
-순서는 다음과 같다.
+Chapter 2.7에서는 Clipping이 Perspective Divide보다 먼저 수행된다고 설명했다. 순서는 다음과 같다.
 
 ~~~text
 Projection Matrix
@@ -5857,9 +5015,7 @@ x_clip / very small w_clip
 매우 큰 값
 ~~~
 
-따라서 GPU는 먼저 Clip Space에서 View Frustum Boundary를 기준으로 Geometry를 정리한 뒤, 남은 Geometry에 Perspective Divide를 적용한다.
-
-즉,
+따라서 GPU는 먼저 Clip Space에서 View Frustum Boundary를 기준으로 Geometry를 정리한 뒤, 남은 Geometry에 Perspective Divide를 적용한다. 즉,
 
 > **먼저 Camera가 볼 수 있는 Geometry를 확정하고, 그다음 Perspective Divide를 수행한다.**
 
@@ -5867,227 +5023,17 @@ x_clip / very small w_clip
 
 ---
 
-#### FOV and Aspect Ratio Are Applied Before Clipping
-
-여기서 한 가지 의문이 생길 수 있다.
-
-> **FOV가 바뀌면 View Frustum도 달라지는데, Clipping과 Perspective Divide의 순서는 어떻게 되는가?**
-
-Perspective Projection에서 **FOV**와 **Aspect Ratio**는 Perspective Divide 이후에 별도로 적용되는 값이 아니다.
-
-이 값들은 먼저 **Projection Matrix를 구성하는 데 사용된다.**
-
-Camera의 Projection 설정에는 대표적으로 다음 정보가 포함된다.
-
-~~~text
-FOV
-
-Aspect Ratio
-
-Near Plane
-
-Far Plane
-~~~
-
-이 정보가 먼저 Projection Matrix에 반영된다.
-
-전체 흐름은 다음과 같다.
-
-~~~text
-View Position
-
-↓
-
-FOV / Aspect Ratio / Near / Far를 반영한
-Projection Matrix
-
-↓
-
-Clip Position
-
-↓
-
-Clipping
-
-↓
-
-Perspective Divide
-
-↓
-
-NDC
-~~~
-
-즉, FOV가 변경되면 먼저 Projection Matrix가 달라진다.
-
-예를 들어 FOV를 좁게 만들면 Camera가 볼 수 있는 View Frustum도 좁아진다.
-
-~~~text
-Small FOV
-
-→ 좁은 View Frustum
-
-→ 좌우 / 상하 경계 밖의 Geometry가 증가할 수 있음
-~~~
-
-반대로 FOV를 넓게 만들면 View Frustum도 넓어진다.
-
-~~~text
-Large FOV
-
-→ 넓은 View Frustum
-
-→ 더 많은 Geometry가 Frustum 내부에 들어올 수 있음
-~~~
-
-즉, FOV가 변경되면 기존 Clip Space에 나중에 FOV를 추가로 적용하는 것이 아니다.
-
-> **변경된 FOV를 반영한 Projection Matrix가 새로운 Clip Space Coordinate를 만든다.**
-
-그리고 GPU는 그 결과를 기준으로 Clipping을 수행한다.
-
----
-
-#### Aspect Ratio Also Changes the Frustum
-
-**Aspect Ratio** 역시 Projection Matrix에 포함된다.
-
-예를 들어 같은 FOV를 사용하더라도
-
-~~~text
-16 : 9
-
-4 : 3
-
-21 : 9
-~~~
-
-처럼 화면 비율이 달라지면 Camera가 표현해야 하는 가로와 세로 범위도 달라질 수 있다.
-
-따라서 View Frustum의 좌우 / 상하 경계는
-
-> **FOV와 Aspect Ratio를 함께 고려한 Projection Matrix**
-
-에 의해 결정된다.
-
-개념적으로는 다음과 같다.
-
-~~~text
-Camera Setting
-
-FOV
-+
-Aspect Ratio
-+
-Near Plane
-+
-Far Plane
-
-↓
-
-Projection Matrix
-
-↓
-
-Clip Space
-
-↓
-
-Frustum Boundary 기준 Clipping
-~~~
-
-즉, Near Plane과 Far Plane만 Clipping 기준이 되는 것이 아니다.
-
-Camera의
-
-- Left
-- Right
-- Top
-- Bottom
-- Near
-- Far
-
-경계 전체가 View Frustum을 구성한다.
-
----
-
-#### Clipping Happens Using the Current Projection
-
-Camera Setting이 변경되면 Projection Matrix도 변경된다.
-
-예를 들어 FOV를 `60°`에서 `90°`로 변경했다고 하자.
-
-~~~text
-FOV 60°
-↓
-Projection Matrix A
-↓
-Clip Space A
-↓
-Clipping
-
-
-FOV 90°
-↓
-Projection Matrix B
-↓
-Clip Space B
-↓
-Clipping
-~~~
-
-같은 Vertex라도 두 Projection Matrix를 통과한 결과인
-
-~~~text
-x_clip
-y_clip
-z_clip
-w_clip
-~~~
-
-값이 달라질 수 있다.
-
-따라서 Frustum 내부 / 외부 판정 결과 역시 달라질 수 있다.
-
-즉,
-
-> **Clipping은 현재 FOV와 Aspect Ratio가 이미 반영된 Clip Space를 기준으로 수행된다.**
-
-그 이후에 남은 Geometry에 Perspective Divide가 적용된다.
-
-~~~text
-Current Camera Setting
-↓
-Projection Matrix
-↓
-Clip Space
-↓
-Clipping
-↓
-Perspective Divide
-↓
-NDC
-~~~
-
-따라서 Perspective Projection의 연산 순서를 이해할 때는 다음 관계가 중요하다.
-
-> **FOV와 Aspect Ratio가 Projection Matrix를 결정하고, Projection Matrix가 Clip Space를 만들며, 그 Clip Space에서 Clipping을 수행한 뒤 Perspective Divide가 이루어진다.**
+FOV와 Aspect Ratio, Near/Far는 먼저 Projection Matrix에 반영된다. GPU는 그 **현재 설정으로 만든 Clip Position**을 Clipping한 뒤 Divide한다. Divide 이후에 FOV를 덧붙이는 순서가 아니다. Camera 설정을 바꿀 때의 세부 경계 비교와 FOV 60°/90° 예제는 아래 Technical Note에 보존한다.
 
 ---
 
 ### From Clip Space to NDC
 
-Perspective Divide가 끝나면 Coordinate는 **NDC**로 들어간다.
-
-NDC는 **Normalized Device Coordinates**의 약자다.
-
-쉽게 말하면,
+Perspective Divide가 끝나면 Coordinate는 **NDC**로 들어간다. NDC는 **Normalized Device Coordinates**의 약자다. 쉽게 말하면,
 
 > **실제 Screen Resolution에 관계없이 일정한 범위로 정리된 Coordinate Space**
 
-다.
-
-예를 들어 Screen Resolution이 다음처럼 서로 달라도
+다. 예를 들어 Screen Resolution이 다음처럼 서로 달라도
 
 ~~~text
 1920 × 1080
@@ -6103,9 +5049,7 @@ NDC에서는 같은 정규화된 Coordinate Range를 사용할 수 있다.
 
 ### Why Normalize Coordinates?
 
-Screen마다 Resolution이 다르다.
-
-예를 들어 동일한 화면 중앙이라도 Resolution에 따라 실제 Pixel Coordinate는 다르다.
+Screen마다 Resolution이 다르다. 예를 들어 동일한 화면 중앙이라도 Resolution에 따라 실제 Pixel Coordinate는 다르다.
 
 ~~~text
 1920 × 1080
@@ -6121,11 +5065,7 @@ Center
 → (1920, 1080)
 ~~~
 
-Rendering Pipeline이 처음부터 실제 Pixel Coordinate를 기준으로 모든 Projection 계산을 한다면 Resolution에 따라 처리 방식이 달라져야 한다.
-
-그래서 먼저 Resolution과 무관한 공통 Coordinate Space로 정리한다.
-
-이것이 NDC다.
+Rendering Pipeline이 처음부터 실제 Pixel Coordinate를 기준으로 모든 Projection 계산을 한다면 Resolution에 따라 처리 방식이 달라져야 한다. 그래서 먼저 Resolution과 무관한 공통 Coordinate Space로 정리한다. 이것이 NDC다.
 
 즉,
 
@@ -6171,9 +5111,7 @@ y_ndc = 0
 
 ### NDC Is Still Not Screen Space
 
-NDC는 화면과 매우 비슷한 Coordinate Range를 가지고 있기 때문에 이미 Screen Space처럼 느껴질 수 있다.
-
-하지만 둘은 다르다.
+NDC는 화면과 매우 비슷한 Coordinate Range를 가지고 있기 때문에 이미 Screen Space처럼 느껴질 수 있다. 하지만 둘은 다르다.
 
 ~~~text
 NDC
@@ -6190,9 +5128,7 @@ x_ndc = 0
 y_ndc = 0
 ~~~
 
-이 값은 정규화된 화면의 중앙을 의미한다.
-
-하지만 실제 Screen Space에서는 Resolution에 따라 구체적인 Pixel Position이 달라진다.
+이 값은 정규화된 화면의 중앙을 의미한다. 하지만 실제 Screen Space에서는 Resolution에 따라 구체적인 Pixel Position이 달라진다.
 
 ~~~text
 1920 × 1080
@@ -6207,9 +5143,7 @@ Center
 
 ### NDC Is Resolution Independent
 
-NDC의 중요한 특징은 Resolution과 독립적이라는 것이다.
-
-예를 들어 다음 NDC Coordinate가 있다고 하자.
+NDC의 중요한 특징은 Resolution과 독립적이라는 것이다. 예를 들어 다음 NDC Coordinate가 있다고 하자.
 
 ~~~text
 NDC
@@ -6217,11 +5151,7 @@ NDC
 (0.5, 0.5)
 ~~~
 
-1920 × 1080 Screen과 3840 × 2160 Screen에서는 실제 Pixel Position이 서로 다르다.
-
-하지만 NDC 값 자체는 동일하다.
-
-즉,
+1920 × 1080 Screen과 3840 × 2160 Screen에서는 실제 Pixel Position이 서로 다르다. 하지만 NDC 값 자체는 동일하다. 즉,
 
 > **NDC는 Screen Size가 달라도 동일한 상대적 위치를 표현할 수 있다.**
 
@@ -6229,9 +5159,7 @@ NDC
 
 ### Why NDC Is Useful
 
-NDC를 사용하면 Projection 결과와 실제 Display Resolution을 분리할 수 있다.
-
-개념적으로는 다음과 같다.
+NDC를 사용하면 Projection 결과와 실제 Display Resolution을 분리할 수 있다. 개념적으로는 다음과 같다.
 
 ~~~text
 3D Scene
@@ -6263,25 +5191,19 @@ Viewport Transform
 
 X와 Y의 NDC Range는 일반적으로 `-1 ~ +1` 범위로 설명할 수 있다.
 
-하지만 Z, 즉 Depth Range는 Graphics API에 따라 다를 수 있다.
-
-예를 들어 어떤 API에서는
+하지만 Z, 즉 Depth Range는 Graphics API에 따라 다를 수 있다. 예를 들어 어떤 API에서는
 
 ~~~text
 z_ndc = -1 ~ +1
 ~~~
 
-을 사용하고,
-
-다른 API에서는
+을 사용하고, 다른 API에서는
 
 ~~~text
 z_ndc = 0 ~ 1
 ~~~
 
-을 사용할 수 있다.
-
-따라서
+을 사용할 수 있다. 따라서
 
 > **NDC의 정확한 Z Range는 Graphics API와 Rendering Convention에 따라 달라질 수 있다.**
 
@@ -6291,9 +5213,7 @@ Chapter 02에서는 특정 API의 숫자 범위를 외우기보다 NDC의 역할
 
 ### NDC Is Still 3D
 
-NDC를 Screen과 연결해서 생각하다 보면 완전한 2D Coordinate라고 생각하기 쉽다.
-
-하지만 NDC에는 여전히 Z 값이 존재한다.
+NDC를 Screen과 연결해서 생각하다 보면 완전한 2D Coordinate라고 생각하기 쉽다. 하지만 NDC에는 여전히 Z 값이 존재한다.
 
 ~~~text
 NDC
@@ -6301,25 +5221,17 @@ NDC
 (x_ndc, y_ndc, z_ndc)
 ~~~
 
-X와 Y는 Screen Position과 연결되고,
-
-Z는 Depth와 연결된다.
-
-따라서 NDC는
+X와 Y는 Screen Position과 연결되고, Z는 Depth와 연결된다. 따라서 NDC는
 
 > **Screen Mapping을 준비한 정규화된 3D Coordinate Space**
 
-라고 생각할 수 있다.
-
-실제 Screen의 2D Pixel Coordinate로 변환되는 것은 이후 Viewport Transform에서다.
+라고 생각할 수 있다. 실제 Screen의 2D Pixel Coordinate로 변환되는 것은 이후 Viewport Transform에서다.
 
 ---
 
 ### Perspective Divide and Depth
 
-NDC에서 X/Y는 화면 위치와 연결되고 Z는 Surface의 앞뒤를 판단하는 Data로 남는다. 하지만 이 Z 값을 World Distance나 Camera까지의 직선거리로 그대로 읽어서는 안 된다.
-
-일반적인 Perspective Projection의 Depth는 View Depth와 단순한 1:1 비례 관계가 아니다. 같은 거리만큼 멀어져도 저장하는 Depth 값의 차이는 일정하지 않을 수 있다.
+NDC에서 X/Y는 화면 위치와 연결되고 Z는 Surface의 앞뒤를 판단하는 Data로 남는다. 하지만 이 Z 값을 World Distance나 Camera까지의 직선거리로 그대로 읽어서는 안 된다. 일반적인 Perspective Projection의 Depth는 View Depth와 단순한 1:1 비례 관계가 아니다. 같은 거리만큼 멀어져도 저장하는 Depth 값의 차이는 일정하지 않을 수 있다.
 
 ~~~text
 View Depth의 일정한 변화
@@ -6340,9 +5252,7 @@ Near Plane을 불필요하게 Camera에 가깝게 두거나 넓은 Depth 범위�
 
 ### Projection Matrix and Perspective Divide Work Together
 
-Perspective Projection을 이해할 때 Projection Matrix와 Perspective Divide를 하나의 과정으로 보는 것이 중요하다.
-
-Projection Matrix가 먼저 다음 값을 만든다.
+Perspective Projection을 이해할 때 Projection Matrix와 Perspective Divide를 하나의 과정으로 보는 것이 중요하다. Projection Matrix가 먼저 다음 값을 만든다.
 
 ~~~text
 Clip Position
@@ -6372,11 +5282,7 @@ z_ndc = z_clip / w_clip
 
 ### A Simple Numerical Example
 
-전체 과정을 단순화해서 다시 보자.
-
-Camera 기준으로 같은 X 방향 Offset을 가진 두 Vertex가 있다고 하자.
-
-여기서 A와 B는 **Near Plane / Far Plane을 의미하지 않는다.**
+전체 과정을 단순화해서 다시 보자. Camera 기준으로 같은 X 방향 Offset을 가진 두 Vertex가 있다고 하자. 여기서 A와 B는 **Near Plane / Far Plane을 의미하지 않는다.**
 
 단순히 Camera와의 View Depth가 서로 다른 두 Vertex다.
 
@@ -6442,9 +5348,7 @@ x_ndc
 → Perspective Divide 이후 좌우 위치
 ~~~
 
-라는 점을 구분해야 한다.
-
-즉,
+라는 점을 구분해야 한다. 즉,
 
 > **Depth가 X Coordinate로 바뀐 것이 아니다.**
 
@@ -6458,17 +5362,11 @@ View Depth와 연결된 `w_clip`이 `x_clip`의 분모로 사용되기 때문에
 
 > Camera에서 멀어지면 모든 Object가 화면 중앙으로 이동한다.
 
-정확하지 않다.
-
-더 정확한 표현은 다음과 같다.
+정확하지 않다. 더 정확한 표현은 다음과 같다.
 
 > **Camera에서 멀어질수록 동일한 3D X/Y Offset이 Screen에서는 더 작은 Offset으로 표현된다.**
 
-따라서 Object가 화면 오른쪽에 있다면 여전히 오른쪽에 나타난다.
-
-다만 화면 중심으로부터 떨어진 정도가 Perspective에 따라 줄어드는 것이다.
-
-Object를 구성하는 여러 Vertex에서 이 현상이 발생하기 때문에 결과적으로 Object의 Screen Size도 작아진다.
+따라서 Object가 화면 오른쪽에 있다면 여전히 오른쪽에 나타난다. 다만 화면 중심으로부터 떨어진 정도가 Perspective에 따라 줄어드는 것이다. Object를 구성하는 여러 Vertex에서 이 현상이 발생하기 때문에 결과적으로 Object의 Screen Size도 작아진다.
 
 ---
 
@@ -6516,6 +5414,384 @@ Screen Space
 ### A Useful Mental Model
 
 고정된 Perspective Projection과 같은 View X/Y Offset을 비교할 때, 양의 View Depth가 커지면 화면 중심선으로부터의 Offset은 작아진다. 분모인 `w_clip`은 View Depth와 연결되며 Camera까지의 직선거리 자체가 아니다. 같은 Camera ray 위의 점을 비교하는 경우와는 구분한다.
+
+---
+
+<details>
+<summary>Implementation Note — Space Suffixes and Variable Names</summary>
+
+### Coordinate Notation Convention
+
+Chapter 02에서는 같은 `x`, `y`, `z` 값이 여러 Coordinate Space를 거치면서 서로 다른 의미를 가지기 때문에, 혼동을 줄이기 위해 Space를 이름에 함께 표기한다.
+
+예를 들어 다음과 같이 사용한다.
+
+~~~text
+x_view
+→ View Space의 X Coordinate
+
+x_clip
+→ Clip Space의 X Coordinate
+
+x_ndc
+→ NDC의 X Coordinate
+~~~
+
+`x_clip`, `w_clip`과 같은 표기는 특정 Graphics API에서 반드시 사용하는 고정된 변수명이 아니다.
+
+교재, Shader Code, Graphics API에 따라 다음처럼 서로 다른 이름을 사용할 수 있다.
+
+~~~text
+x_clip
+
+clipPos.x
+
+positionCS.x
+
+x_c
+~~~
+
+이 문서에서는 Coordinate가 어느 Space의 값인지 명확하게 구분하기 위해 다음 표기 규칙을 사용한다.
+
+~~~text
+_view
+→ View Space
+
+_clip
+→ Clip Space
+
+_ndc
+→ NDC
+~~~
+
+따라서 이후 등장하는
+
+~~~text
+x_ndc = x_clip / w_clip
+~~~
+
+이라는 표현은
+
+> **Clip Space의 X 값을 Clip Space의 W로 나눈 결과가 NDC의 X가 된다.**
+
+는 의미다.
+
+즉, `_clip`, `_ndc`는 새로운 수학 개념이 아니라 **Coordinate Space를 구분하기 위해 이 문서에서 사용하는 표기 규칙**이다.
+
+</details>
+
+---
+
+<details>
+<summary>Numerical Note — View Depth versus Straight-line Camera Distance</summary>
+
+#### View Depth and Camera Distance Are Different
+
+`w_clip`을 이해할 때 Camera와 Vertex 사이의 **실제 직선거리**와 Camera Forward 방향의 **View Depth**를 구분할 필요가 있다.
+
+처음에는 두 값이 같은 것처럼 느껴질 수 있다. 예를 들어 Camera가 Origin에 있고 Forward 방향을 Z축이라고 단순화해보자.
+
+~~~text
+Camera
+= (0, 0, 0)
+
+Vertex A
+= (0, 0, 10)
+~~~
+
+Vertex A는 Camera 정면에 있다. 이 경우 Camera Forward 방향으로의 View Depth는 다음과 같다.
+
+~~~text
+View Depth = 10
+~~~
+
+Camera에서 Vertex A까지의 실제 직선거리 역시 10이다.
+
+~~~text
+Camera Distance = 10
+~~~
+
+따라서 Camera 정면에 있는 Point에서는 두 값이 같아 보일 수 있다. 하지만 Vertex가 Camera 정면에서 옆으로 이동하면 두 값의 차이가 나타난다. 예를 들어 다음 Vertex가 있다고 하자.
+
+~~~text
+Vertex B
+= (6, 0, 10)
+~~~
+
+Vertex B는 Camera Forward 방향으로는 여전히 10만큼 떨어져 있다.
+
+~~~text
+View Depth = 10
+~~~
+
+하지만 Camera에서 Vertex까지의 실제 직선거리는 대각선 거리다.
+
+~~~text
+Camera Distance
+
+= sqrt(6² + 10²)
+
+≈ 11.66
+~~~
+
+즉,
+
+~~~text
+View Depth
+= 10
+
+Camera Distance
+≈ 11.66
+~~~
+
+처럼 서로 다른 값이 된다. 개념적으로 보면 다음과 같다.
+
+~~~text
+          Vertex B
+             ●
+            /|
+           / |
+          /  |  View Depth = 10
+         /   |
+Camera ●-----+
+        6
+
+대각선
+→ 실제 Camera Distance
+~~~
+
+여기서 중요한 차이는 다음과 같다.
+
+> **Camera Distance는 Camera와 Vertex 사이의 실제 공간상 직선거리다.**
+
+반면,
+
+> **View Depth는 Camera가 바라보는 Forward 방향을 기준으로 Vertex가 얼마나 깊이 위치하는지를 나타낸다.**
+
+따라서 Camera 정면에서 옆으로 떨어진 Vertex들은 실제 Camera Distance가 서로 다르더라도 같은 View Depth를 가질 수 있다. 예를 들어 다음 세 Vertex를 생각해보자.
+
+~~~text
+Vertex A = (0, 0, 10)
+
+Vertex B = (6, 0, 10)
+
+Vertex C = (-8, 3, 10)
+~~~
+
+세 Vertex 모두 Camera Forward 방향으로는 같은 위치에 있다.
+
+~~~text
+View Depth = 10
+~~~
+
+하지만 Camera와의 실제 직선거리는 각각 다르다. 즉,
+
+> **Perspective Projection에서 중요한 것은 Camera와 Vertex 사이의 실제 직선거리 자체가 아니라 Camera Forward 방향의 View Depth다.**
+
+그래서 `w_clip`을 처음 이해할 때는
+
+> **Camera에서 얼마나 멀리 떨어져 있는가**
+
+라고 단순하게 생각할 수도 있지만, 보다 정확하게는
+
+> **Camera Forward 방향으로 얼마나 깊이 있는가와 연결된 값**
+
+이라고 이해하는 것이 좋다.
+
+</details>
+
+---
+
+<details>
+<summary>Technical Note — Current Projection Settings and Clipping</summary>
+
+#### FOV and Aspect Ratio Are Applied Before Clipping
+
+여기서 한 가지 의문이 생길 수 있다.
+
+> **FOV가 바뀌면 View Frustum도 달라지는데, Clipping과 Perspective Divide의 순서는 어떻게 되는가?**
+
+Perspective Projection에서 **FOV**와 **Aspect Ratio**는 Perspective Divide 이후에 별도로 적용되는 값이 아니다. 이 값들은 먼저 **Projection Matrix를 구성하는 데 사용된다.** Camera의 Projection 설정에는 대표적으로 다음 정보가 포함된다.
+
+~~~text
+FOV
+
+Aspect Ratio
+
+Near Plane
+
+Far Plane
+~~~
+
+이 정보가 먼저 Projection Matrix에 반영된다. 전체 흐름은 다음과 같다.
+
+~~~text
+View Position
+
+↓
+
+FOV / Aspect Ratio / Near / Far를 반영한
+Projection Matrix
+
+↓
+
+Clip Position
+
+↓
+
+Clipping
+
+↓
+
+Perspective Divide
+
+↓
+
+NDC
+~~~
+
+즉, FOV가 변경되면 먼저 Projection Matrix가 달라진다. 예를 들어 FOV를 좁게 만들면 Camera가 볼 수 있는 View Frustum도 좁아진다.
+
+~~~text
+Small FOV
+
+→ 좁은 View Frustum
+
+→ 좌우 / 상하 경계 밖의 Geometry가 증가할 수 있음
+~~~
+
+반대로 FOV를 넓게 만들면 View Frustum도 넓어진다.
+
+~~~text
+Large FOV
+
+→ 넓은 View Frustum
+
+→ 더 많은 Geometry가 Frustum 내부에 들어올 수 있음
+~~~
+
+즉, FOV가 변경되면 기존 Clip Space에 나중에 FOV를 추가로 적용하는 것이 아니다.
+
+> **변경된 FOV를 반영한 Projection Matrix가 새로운 Clip Space Coordinate를 만든다.**
+
+그리고 GPU는 그 결과를 기준으로 Clipping을 수행한다.
+
+---
+
+#### Aspect Ratio Also Changes the Frustum
+
+**Aspect Ratio** 역시 Projection Matrix에 포함된다. 예를 들어 같은 FOV를 사용하더라도
+
+~~~text
+16 : 9
+
+4 : 3
+
+21 : 9
+~~~
+
+처럼 화면 비율이 달라지면 Camera가 표현해야 하는 가로와 세로 범위도 달라질 수 있다. 따라서 View Frustum의 좌우 / 상하 경계는
+
+> **FOV와 Aspect Ratio를 함께 고려한 Projection Matrix**
+
+에 의해 결정된다. 개념적으로는 다음과 같다.
+
+~~~text
+Camera Setting
+
+FOV
++
+Aspect Ratio
++
+Near Plane
++
+Far Plane
+
+↓
+
+Projection Matrix
+
+↓
+
+Clip Space
+
+↓
+
+Frustum Boundary 기준 Clipping
+~~~
+
+즉, Near Plane과 Far Plane만 Clipping 기준이 되는 것이 아니다. Camera의
+
+- Left
+- Right
+- Top
+- Bottom
+- Near
+- Far
+
+경계 전체가 View Frustum을 구성한다.
+
+---
+
+#### Clipping Happens Using the Current Projection
+
+Camera Setting이 변경되면 Projection Matrix도 변경된다.
+
+예를 들어 FOV를 `60°`에서 `90°`로 변경했다고 하자.
+
+~~~text
+FOV 60°
+↓
+Projection Matrix A
+↓
+Clip Space A
+↓
+Clipping
+
+
+FOV 90°
+↓
+Projection Matrix B
+↓
+Clip Space B
+↓
+Clipping
+~~~
+
+같은 Vertex라도 두 Projection Matrix를 통과한 결과인
+
+~~~text
+x_clip
+y_clip
+z_clip
+w_clip
+~~~
+
+값이 달라질 수 있다. 따라서 Frustum 내부 / 외부 판정 결과 역시 달라질 수 있다. 즉,
+
+> **Clipping은 현재 FOV와 Aspect Ratio가 이미 반영된 Clip Space를 기준으로 수행된다.**
+
+그 이후에 남은 Geometry에 Perspective Divide가 적용된다.
+
+~~~text
+Current Camera Setting
+↓
+Projection Matrix
+↓
+Clip Space
+↓
+Clipping
+↓
+Perspective Divide
+↓
+NDC
+~~~
+
+따라서 Perspective Projection의 연산 순서를 이해할 때는 다음 관계가 중요하다.
+
+> **FOV와 Aspect Ratio가 Projection Matrix를 결정하고, Projection Matrix가 Clip Space를 만들며, 그 Clip Space에서 Clipping을 수행한 뒤 Perspective Divide가 이루어진다.**
+
+</details>
 
 ---
 
@@ -6574,17 +5850,13 @@ NDC
 
 > **실제 Screen Resolution과 무관한 정규화된 Coordinate Space인 NDC**
 
-로 들어간다.
-
-다음 절에서는 이 NDC Coordinate를 실제 Screen의 Pixel Coordinate로 변환하는 **Viewport Transform and Screen Space**를 살펴본다.
+로 들어간다. 다음 절에서는 이 NDC Coordinate를 실제 Screen의 Pixel Coordinate로 변환하는 **Viewport Transform and Screen Space**를 살펴본다.
 
 ---
 
 ## 2.10 Viewport Transform and Screen Space
 
-NDC에서 (0, 0)은 화면 영역의 가운데를 나타낸다. 하지만 가로 1920 Pixel의 Viewport와 가로 3840 Pixel의 Viewport에서는 가운데의 실제 좌표가 다르다.
-
-Projection 결과를 다시 계산하지 않고도 같은 상대적 위치를 각 화면 크기에 표시할 수 있어야 한다. 그래서 NDC를 **현재 Viewport의 크기와 시작 위치에 맞춰 옮기는 단계**가 필요하다.
+NDC에서 (0, 0)은 화면 영역의 가운데를 나타낸다. 하지만 가로 1920 Pixel의 Viewport와 가로 3840 Pixel의 Viewport에서는 가운데의 실제 좌표가 다르다. Projection 결과를 다시 계산하지 않고도 같은 상대적 위치를 각 화면 크기에 표시할 수 있어야 한다. 그래서 NDC를 **현재 Viewport의 크기와 시작 위치에 맞춰 옮기는 단계**가 필요하다.
 
 이 단계가 **Viewport Transform**이다. 정규화된 X/Y의 간격을 Width/Height에 맞게 Scale하고, Viewport의 위치에 맞게 Offset한다. 결과는 **Screen Space**의 위치와 연결된다.
 
@@ -6598,9 +5870,9 @@ NDC → 현재 Viewport의 Size + Position → Screen Space
 
 ### From NDC to Screen Space
 
-NDC에서는 Screen의 위치가 실제 Pixel Number가 아니라 정규화된 값으로 표현된다.
+NDC의 0은 화면 영역의 중앙이라는 상대적인 정보다. 실제 화면에 표시하려면 이 중앙이 현재 Viewport의 어느 좌표인지 알아야 한다. **Viewport**는 Rendering 결과를 표시할 화면 영역이며, 전체 Monitor일 수도 있고 그 일부일 수도 있다. 아래 숫자는 먼저 Viewport 시작점이 0인 연속 경계 좌표로 읽는다.
 
-예를 들어 NDC의 중심은 다음과 같다.
+NDC에서는 Screen의 위치가 실제 Pixel Number가 아니라 정규화된 값으로 표현된다. 예를 들어 NDC의 중심은 다음과 같다.
 
 ~~~text
 NDC Center
@@ -6652,13 +5924,13 @@ Screen
 0 -------- 960 -------- 1920
 ~~~
 
-처럼 Coordinate Range가 변환된다.
-
-이것이 Viewport Transform의 기본적인 역할이다.
+처럼 Coordinate Range가 변환된다. 이것이 Viewport Transform의 기본적인 역할이다.
 
 ---
 
 ### Viewport Transform Is Scale + Offset
+
+NDC의 왼쪽·중앙·오른쪽 간격을 유지한 채 그 간격만 화면 폭에 맞춰 늘린다. 그다음 현재 Viewport의 위치에 맞게 전체 범위를 옮긴다. **Scale**은 간격의 크기를 바꾸는 일이고, **Offset**은 기준에 맞춰 위치를 더하거나 빼는 변화량이다. 이 순서를 숫자의 범위 변환으로 읽으면 된다.
 
 Viewport Transform을 개념적으로 보면 크게 두 가지 작업으로 이해할 수 있다.
 
@@ -6672,15 +5944,11 @@ Offset
 
 먼저 NDC의 `-1 ~ +1` 범위를 Viewport의 실제 크기에 맞게 확대한다.
 
-그리고 Viewport가 Screen의 어디에 위치하는지에 따라 Coordinate를 이동시킨다.
-
-즉,
+그리고 Viewport가 Screen의 어디에 위치하는지에 따라 Coordinate를 이동시킨다. 즉,
 
 > **정규화된 Coordinate를 Viewport 크기에 맞게 Scale하고, Viewport 위치에 맞게 Offset하는 과정**
 
-이라고 이해할 수 있다.
-
-개념적으로 다음과 같다.
+이라고 이해할 수 있다. 개념적으로 다음과 같다.
 
 ~~~text
 NDC
@@ -6706,6 +5974,8 @@ Screen Space
 ---
 
 ### A Simple X Coordinate Example
+
+먼저 가로축 하나에서 변환을 확인하자. 왼쪽은 0, 중앙은 폭의 절반, 오른쪽 경계는 전체 폭이 되어야 한다. NDC 0.5는 중앙 0과 오른쪽 경계 1 사이의 절반이므로 화면에서도 중앙과 오른쪽 경계 사이의 절반으로 옮긴다. 아래 예의 Viewport 시작 위치는 0이다.
 
 가로 크기가 `1920 Pixel`인 Viewport가 있다고 하자.
 
@@ -6734,9 +6004,7 @@ x_ndc = +1
 x_ndc = 0.5
 ~~~
 
-인 Position이 있다고 하자.
-
-이 값은 NDC 중심에서 오른쪽으로 절반 정도 이동한 위치다.
+인 Position이 있다고 하자. 이 값은 NDC 중심에서 오른쪽으로 절반 정도 이동한 위치다.
 
 `1920 Pixel` Width의 Viewport에서는 개념적으로 다음 위치에 대응한다.
 
@@ -6766,6 +6034,8 @@ x = 1440
 
 ### A Simple Y Coordinate Example
 
+세로축에서도 간격을 화면 높이에 맞추는 원리는 같다. 다만 “위쪽으로 갈수록 값이 큰가, 아래쪽으로 갈수록 값이 큰가”를 먼저 정해야 한다. 같은 화면의 위쪽을 NDC에서는 +1, Top-left 기준 화면 좌표에서는 0으로 표현하는 예를 아래에서 비교한다.
+
 세로 크기가 `1080 Pixel`인 Viewport를 생각해보자.
 
 NDC의 Y Range 역시 일반적으로 다음처럼 정규화되어 있다.
@@ -6774,11 +6044,7 @@ NDC의 Y Range 역시 일반적으로 다음처럼 정규화되어 있다.
 -1 ~ +1
 ~~~
 
-하지만 여기서는 한 가지 주의해야 할 점이 있다.
-
-NDC와 Screen Space에서는 **Y Axis가 증가하는 방향이 서로 다를 수 있다.**
-
-예를 들어 설명을 위해 NDC에서
+하지만 여기서는 한 가지 주의해야 할 점이 있다. NDC와 Screen Space에서는 **Y Axis가 증가하는 방향이 서로 다를 수 있다.** 예를 들어 설명을 위해 NDC에서
 
 ~~~text
 Top
@@ -6791,9 +6057,7 @@ Bottom
 → y_ndc = -1
 ~~~
 
-이라고 생각할 수 있다.
-
-반면 많은 Screen Coordinate System에서는 화면의 왼쪽 위를 Origin으로 사용하고 Y가 아래쪽으로 증가한다.
+이라고 생각할 수 있다. 반면 많은 Screen Coordinate System에서는 화면의 왼쪽 위를 Origin으로 사용하고 Y가 아래쪽으로 증가한다.
 
 ~~~text
 Top
@@ -6818,11 +6082,12 @@ Figure 2-10은 NDC (0.5, 0.5)를 시작 위치 (0, 0)인 1920×1080 Viewport에 
 
 ---
 
+<details>
+<summary>Implementation Note — Screen Origin and Y Direction</summary>
+
 ### Screen Space Y Direction Can Differ
 
-Screen Space의 Y Axis 방향은 Graphics API, Engine, Window System 등의 Convention에 따라 달라질 수 있다.
-
-예를 들어 다음 두 방식이 모두 가능하다.
+Screen Space의 Y Axis 방향은 Graphics API, Engine, Window System 등의 Convention에 따라 달라질 수 있다. 예를 들어 다음 두 방식이 모두 가능하다.
 
 ~~~text
 Convention A
@@ -6854,23 +6119,19 @@ Chapter 02에서는 특정 API의 Convention을 외우는 것보다
 
 는 구조를 이해하는 것이 더 중요하다.
 
+</details>
+
 ---
 
 ### Screen Space Is Resolution Dependent
 
-NDC와 Screen Space의 가장 중요한 차이 중 하나는 Resolution 의존성이다.
-
-NDC에서는 화면 중앙이 항상 다음과 같이 표현될 수 있다.
+NDC와 Screen Space의 가장 중요한 차이 중 하나는 Resolution 의존성이다. NDC에서는 화면 중앙이 항상 다음과 같이 표현될 수 있다.
 
 ~~~text
 (0, 0)
 ~~~
 
-Screen Resolution이 바뀌어도 이 값은 변하지 않는다.
-
-하지만 Screen Space에서는 실제 Pixel Coordinate가 달라진다.
-
-예를 들어
+Screen Resolution이 바뀌어도 이 값은 변하지 않는다. 하지만 Screen Space에서는 실제 Pixel Coordinate가 달라진다. 예를 들어
 
 ~~~text
 1920 × 1080
@@ -6888,9 +6149,7 @@ Center
 → (1920, 1080)
 ~~~
 
-이다.
-
-즉,
+이다. 즉,
 
 > **NDC는 Resolution Independent하지만, Screen Space는 Resolution Dependent하다.**
 
@@ -6900,11 +6159,7 @@ Center
 
 ### Why Not Use Pixel Coordinates from the Beginning?
 
-처음부터 모든 Position을 Pixel Coordinate로 계산하면 더 간단해 보일 수도 있다.
-
-하지만 Display와 Viewport의 크기는 상황에 따라 달라질 수 있다.
-
-예를 들어 같은 Scene을 다음 Resolution에서 Rendering할 수 있다.
+처음부터 모든 Position을 Pixel Coordinate로 계산하면 더 간단해 보일 수도 있다. 하지만 Display와 Viewport의 크기는 상황에 따라 달라질 수 있다. 예를 들어 같은 Scene을 다음 Resolution에서 Rendering할 수 있다.
 
 ~~~text
 1280 × 720
@@ -6916,27 +6171,21 @@ Center
 3840 × 2160
 ~~~
 
-만약 Projection 단계부터 실제 Pixel Coordinate를 직접 사용한다면 Screen Resolution이 달라질 때마다 Projection 계산 역시 Resolution에 강하게 의존하게 된다.
-
-대신 Rendering Pipeline은 먼저
+만약 Projection 단계부터 실제 Pixel Coordinate를 직접 사용한다면 Screen Resolution이 달라질 때마다 Projection 계산 역시 Resolution에 강하게 의존하게 된다. 대신 Rendering Pipeline은 먼저
 
 ~~~text
 NDC
 → Resolution과 독립적인 Coordinate
 ~~~
 
-를 만들고,
-
-마지막 단계에서
+를 만들고, 마지막 단계에서
 
 ~~~text
 Viewport Transform
 → 현재 Viewport 크기에 맞게 변환
 ~~~
 
-한다.
-
-따라서
+한다. 따라서
 
 > **3D Scene의 Projection과 실제 Output Resolution을 서로 분리할 수 있다.**
 
@@ -6944,17 +6193,11 @@ Viewport Transform
 
 ### Viewport Is Not Always the Entire Screen
 
-Viewport라는 말을 처음 들으면 Monitor 전체나 Game Window 전체를 의미한다고 생각하기 쉽다.
-
-하지만 Viewport는
+Viewport라는 말을 처음 들으면 Monitor 전체나 Game Window 전체를 의미한다고 생각하기 쉽다. 하지만 Viewport는
 
 > **Rendering 결과를 표시할 Screen 내부의 특정 영역**
 
-을 의미한다.
-
-따라서 Viewport가 Screen 전체를 사용할 수도 있지만 반드시 그런 것은 아니다.
-
-예를 들어 다음과 같은 상황을 생각할 수 있다.
+을 의미한다. 따라서 Viewport가 Screen 전체를 사용할 수도 있지만 반드시 그런 것은 아니다. 예를 들어 다음과 같은 상황을 생각할 수 있다.
 
 #### Full Screen Viewport
 
@@ -6999,11 +6242,7 @@ Unreal Engine 같은 Editor에서는 전체 Application Window 안에
 - Outliner
 - Editor Viewport
 
-등 여러 UI 영역이 존재한다.
-
-이 경우 실제 3D Scene이 Rendering되는 것은 전체 Application Screen이 아니라 **Editor Viewport 영역**이다.
-
-즉,
+등 여러 UI 영역이 존재한다. 이 경우 실제 3D Scene이 Rendering되는 것은 전체 Application Screen이 아니라 **Editor Viewport 영역**이다. 즉,
 
 ~~~text
 Application Window
@@ -7017,11 +6256,7 @@ Rendering Viewport
 
 ### Viewport Has Both Size and Position
 
-Viewport Transform에는 단순히 Width와 Height만 필요한 것이 아니다.
-
-Viewport가 Screen의 어디에 위치하는지도 중요하다.
-
-개념적으로 Viewport는 다음 정보를 가질 수 있다.
+Viewport Transform에는 단순히 Width와 Height만 필요한 것이 아니다. Viewport가 Screen의 어디에 위치하는지도 중요하다. 개념적으로 Viewport는 다음 정보를 가질 수 있다.
 
 ~~~text
 Viewport X
@@ -7051,9 +6286,7 @@ NDC의 중심
 (0, 0)
 ~~~
 
-은 Screen 전체의 중심으로 이동하는 것이 아니라 이 **Viewport 영역의 중심**으로 이동한다.
-
-즉,
+은 Screen 전체의 중심으로 이동하는 것이 아니라 이 **Viewport 영역의 중심**으로 이동한다. 즉,
 
 > **Viewport Transform은 NDC를 Monitor 전체가 아니라 현재 지정된 Viewport Rectangle에 Mapping한다.**
 
@@ -7069,9 +6302,7 @@ Scale + Offset
 
 ### Screen Space and Pixel Coordinates
 
-Screen Space에서는 Coordinate가 실제 Screen 또는 Viewport 위치와 직접 연결된다.
-
-예를 들어
+Screen Space에서는 Coordinate가 실제 Screen 또는 Viewport 위치와 직접 연결된다. 예를 들어
 
 ~~~text
 (100, 200)
@@ -7081,9 +6312,7 @@ Screen Space에서는 Coordinate가 실제 Screen 또는 Viewport 위치와 직�
 
 > **Viewport Origin을 기준으로 가로 100, 세로 200에 해당하는 위치**
 
-를 의미할 수 있다.
-
-이 때문에 Screen Space는
+를 의미할 수 있다. 이 때문에 Screen Space는
 
 - UI Placement
 - Mouse Position
@@ -7092,9 +6321,7 @@ Screen Space에서는 Coordinate가 실제 Screen 또는 Viewport 위치와 직�
 - Screen-space Texture
 - Screen-space Shader Effect
 
-등과 직접적으로 연결된다.
-
-이후 Unreal이나 Shader를 다룰 때
+등과 직접적으로 연결된다. 이후 Unreal이나 Shader를 다룰 때
 
 ~~~text
 Screen Position
@@ -7104,17 +6331,16 @@ Screen UV
 Viewport UV
 ~~~
 
-같은 용어들이 반복해서 등장하게 되는데, 기본적으로 모두 현재 화면 영역을 기준으로 Position을 표현한다는 공통점을 가진다.
-
-다만 각각의 정확한 Range와 Convention은 사용하는 Engine이나 Shader Context에 따라 다를 수 있다.
+같은 용어들이 반복해서 등장하게 되는데, 기본적으로 모두 현재 화면 영역을 기준으로 Position을 표현한다는 공통점을 가진다. 다만 각각의 정확한 Range와 Convention은 사용하는 Engine이나 Shader Context에 따라 다를 수 있다.
 
 ---
 
+<details>
+<summary>Technical Note — Continuous Coordinates, Pixel Index and Pixel Center</summary>
+
 ### Pixel Coordinate and Pixel Center
 
-앞의 예에서 가로 1920 Viewport의 오른쪽 경계는 X=1920에 대응했다. 그렇다고 마지막 Pixel의 index가 1920이라는 뜻은 아니다.
-
-Viewport Transform은 먼저 **연속적인 화면 영역의 위치**를 표현한다. 그 영역 안에 가로 1920개의 Pixel이 있다면 0부터 세는 Pixel index는 0~1919다. 같은 방식으로 세로 1080개의 index는 0~1079다.
+앞의 예에서 가로 1920 Viewport의 오른쪽 경계는 X=1920에 대응했다. 그렇다고 마지막 Pixel의 index가 1920이라는 뜻은 아니다. Viewport Transform은 먼저 **연속적인 화면 영역의 위치**를 표현한다. 그 영역 안에 가로 1920개의 Pixel이 있다면 0부터 세는 Pixel index는 0~1919다. 같은 방식으로 세로 1080개의 index는 0~1079다.
 
 ~~~text
 1920 × 1080 Viewport의 경계 예
@@ -7126,25 +6352,21 @@ X → 0 ~ 1919
 Y → 0 ~ 1079
 ~~~
 
-실제 Rasterization에서는 Pixel이 면적을 가지고 Pixel Center와 Sampling Convention도 존재한다. 따라서 경계 좌표, Pixel index, Pixel Center를 같은 값으로 취급하지 않는다.
+실제 Rasterization에서는 Pixel이 면적을 가지고 Pixel Center와 Sampling Convention도 존재한다. 따라서 경계 좌표, Pixel index, Pixel Center를 같은 값으로 취급하지 않는다. 이 구분은 Rasterization과 Sampling, Texture Coordinate를 더 깊게 다룰 때 중요하다. 여기서는 **Viewport Transform이 연속적인 화면 위치를 Pixel Grid와 연결한다**는 관계를 유지하고, 정확한 Center와 Sample 위치는 대상 API의 Convention을 확인한다.
 
-이 구분은 Rasterization과 Sampling, Texture Coordinate를 더 깊게 다룰 때 중요하다. 여기서는 **Viewport Transform이 연속적인 화면 위치를 Pixel Grid와 연결한다**는 관계를 유지하고, 정확한 Center와 Sample 위치는 대상 API의 Convention을 확인한다.
+</details>
 
 ---
 
 ### What Happens to z_ndc?
 
-Viewport Transform을 설명할 때 X와 Y가 가장 눈에 띄지만 Z도 사라지는 것은 아니다.
-
-Perspective Divide 이후에는
+Viewport Transform을 설명할 때 X와 Y가 가장 눈에 띄지만 Z도 사라지는 것은 아니다. Perspective Divide 이후에는
 
 ~~~text
 (x_ndc, y_ndc, z_ndc)
 ~~~
 
-가 존재한다.
-
-여기서
+가 존재한다. 여기서
 
 ~~~text
 x_ndc
@@ -7157,11 +6379,7 @@ z_ndc
 → Depth로 연결
 ~~~
 
-된다.
-
-X와 Y는 실제 Screen Position을 만드는 데 사용되고,
-
-Z는 이후 Depth Buffer에서 Surface의 앞뒤 관계를 판단하는 데 사용된다.
+된다. X와 Y는 실제 Screen Position을 만드는 데 사용되고, Z는 이후 Depth Buffer에서 Surface의 앞뒤 관계를 판단하는 데 사용된다.
 
 즉,
 
@@ -7171,17 +6389,11 @@ Z는 이후 Depth Buffer에서 Surface의 앞뒤 관계를 판단하는 데 사�
 
 ### Screen Space Does Not Mean Final Pixel Color
 
-Screen Space까지 왔다고 해서 최종 Pixel Color가 완성된 것은 아니다.
-
-여기서 만들어진 것은 기본적으로
+Screen Space까지 왔다고 해서 최종 Pixel Color가 완성된 것은 아니다. 여기서 만들어진 것은 기본적으로
 
 > **어느 Screen 위치에 Geometry가 Mapping되는가**
 
-에 대한 Coordinate 관계다.
-
-Rendering Pipeline에서는 이후 Rasterization을 통해 Triangle 내부의 Fragment가 만들어지고,
-
-각 Fragment에서 Material, Lighting, Texture 등의 계산이 수행된다.
+에 대한 Coordinate 관계다. Rendering Pipeline에서는 이후 Rasterization을 통해 Triangle 내부의 Fragment가 만들어지고, 각 Fragment에서 Material, Lighting, Texture 등의 계산이 수행된다.
 
 즉,
 
@@ -7191,15 +6403,11 @@ Screen Position
 Final Pixel Color
 ~~~
 
-다.
-
-Chapter 01에서 살펴본 전체 Rendering Pipeline과 연결하면 Coordinate Transform은
+다. Chapter 01에서 살펴본 전체 Rendering Pipeline과 연결하면 Coordinate Transform은
 
 > **Vertex가 Screen의 어느 위치에 나타날 것인가를 결정하는 과정**
 
-이라고 볼 수 있다.
-
-그 이후 실제 Surface의 색을 계산하는 과정은 별도의 Rendering 단계에서 이어진다.
+이라고 볼 수 있다. 그 이후 실제 Surface의 색을 계산하는 과정은 별도의 Rendering 단계에서 이어진다.
 
 ---
 
@@ -7300,9 +6508,7 @@ NDC 값은 같지만 Screen Space 값은 Output Resolution에 따라 달라진�
 
 ### Viewport Transform Data Flow
 
-Perspective Divide 이후의 NDC는 실제 Resolution과 독립적인 정규화 Coordinate다. Viewport Transform은 이 값을 현재 Viewport의 Width, Height, Position에 맞게 Scale하고 Offset해 실제 화면 영역과 연결되는 Screen Space Coordinate를 만든다.
-
-전체 흐름은 다음과 같다.
+Perspective Divide 이후의 NDC는 실제 Resolution과 독립적인 정규화 Coordinate다. Viewport Transform은 이 값을 현재 Viewport의 Width, Height, Position에 맞게 Scale하고 Offset해 실제 화면 영역과 연결되는 Screen Space Coordinate를 만든다. 전체 흐름은 다음과 같다.
 
 ~~~text
 NDC
@@ -7338,9 +6544,7 @@ Editor Viewport
 UI 내부 Viewport
 ~~~
 
-처럼 Screen의 일부 영역만 사용할 수도 있다.
-
-이로써
+처럼 Screen의 일부 영역만 사용할 수도 있다. 이로써
 
 ~~~text
 Local
@@ -7356,17 +6560,13 @@ NDC
 Screen
 ~~~
 
-으로 이어지는 Coordinate Space의 기본 흐름이 완성된다.
-
-다음 절에서는 이러한 Coordinate Transform을 실제로 수행하는 핵심 구조인 **Matrix Transform Basics**를 살펴본다.
+으로 이어지는 Coordinate Space의 기본 흐름이 완성된다. 다음 절에서는 이러한 Coordinate Transform을 실제로 수행하는 핵심 구조인 **Matrix Transform Basics**를 살펴본다.
 
 ---
 
 ## 2.11 Matrix Transform Basics
 
-지금까지는 “어떤 Space로 옮겨야 하는가”를 따라왔다. 이제 그 변환을 Vertex마다 어떻게 일관되게 계산할지 살펴보자.
-
-Cube 전체를 늘리고 회전한 뒤 World에 배치한다고 생각해보자. 모든 Vertex에 같은 규칙이 적용되어야 Cube의 형태가 의도대로 변한다. Direction은 그 과정에서 Translation을 제외해야 하고, 여러 Transform의 적용 순서도 같아야 한다.
+지금까지는 “어떤 Space로 옮겨야 하는가”를 따라왔다. 이제 그 변환을 Vertex마다 어떻게 일관되게 계산할지 살펴보자. Cube 전체를 늘리고 회전한 뒤 World에 배치한다고 생각해보자. 모든 Vertex에 같은 규칙이 적용되어야 Cube의 형태가 의도대로 변한다. Direction은 그 과정에서 Translation을 제외해야 하고, 여러 Transform의 적용 순서도 같아야 한다.
 
 이 규칙을 계산 가능한 형태로 묶는 도구가 **Matrix**다. 먼저 Scale, Rotation, Translation이 입력에 어떤 결과를 만드는지 이해한 뒤, 이 규칙을 Matrix와 Vector의 곱으로 표현한다.
 
@@ -7384,15 +6584,15 @@ Matrix를 이해하는 목표는 숫자 배열을 외우는 것이 아니다. **
 
 ### Matrix as a Transform Rule
 
+장난감의 모든 꼭짓점에 같은 확대·회전·이동 규칙을 적용한다고 생각해보자. 하나의 Vertex만 다른 규칙을 받으면 전체 형태가 의도와 달라진다. Matrix는 각 입력이 같은 변환을 받게 하는 계산 구조다. 배열을 읽을 때도 먼저 “현재 어떤 규칙을 표현했는가”를 확인한다.
+
 먼저 Matrix가 담을 규칙을 결과로 생각해보자. Object를 크게 만들려면 Origin에서 Vertex까지의 간격을 늘리고, 돌리려면 축을 기준으로 위치와 방향을 회전시키며, 옮기려면 Position에 이동량을 적용해야 한다.
 
 - Scale: 기준점으로부터의 간격을 키우거나 줄인다.
 - Rotation: 특정 Axis를 기준으로 위치와 방향을 회전시킨다.
 - Translation: Position을 지정한 이동량만큼 옮긴다.
 
-Matrix는 이 규칙을 숫자로 표현해 입력 Coordinate에 적용할 수 있게 한다. 여러 Vertex가 같은 Matrix를 사용하면 같은 규칙으로 변환된다.
-
-숫자 배열은 그 규칙을 담는 형식이다. 4×4 Matrix의 표기를 먼저 살펴보면 다음과 같다.
+Matrix는 이 규칙을 숫자로 표현해 입력 Coordinate에 적용할 수 있게 한다. 여러 Vertex가 같은 Matrix를 사용하면 같은 규칙으로 변환된다. 숫자 배열은 그 규칙을 담는 형식이다. 4×4 Matrix의 표기를 먼저 살펴보면 다음과 같다.
 
 ~~~text
 [ m00 m01 m02 m03 ]
@@ -7407,9 +6607,7 @@ Matrix는 이 규칙을 숫자로 표현해 입력 Coordinate에 적용할 수 �
 
 ### Input and Output
 
-Matrix Transform은 기본적으로 하나의 Coordinate를 입력으로 받아 다른 Coordinate를 출력한다.
-
-개념적으로는 다음과 같다.
+Matrix Transform은 기본적으로 하나의 Coordinate를 입력으로 받아 다른 Coordinate를 출력한다. 개념적으로는 다음과 같다.
 
 ~~~text
 Input
@@ -7431,17 +6629,13 @@ Output
 
 > **같은 Position이라도 어떤 Matrix를 적용하느냐에 따라 결과 Coordinate가 달라진다.**
 
-는 것이다.
-
-예를 들어 같은 Vertex Position에
+는 것이다. 예를 들어 같은 Vertex Position에
 
 - Scale Matrix
 - Rotation Matrix
 - Translation Matrix
 
-를 각각 적용하면 결과는 모두 달라진다.
-
-즉, Matrix는 단순한 계산 도구가 아니라
+를 각각 적용하면 결과는 모두 달라진다. 즉, Matrix는 단순한 계산 도구가 아니라
 
 > **Coordinate에 어떤 변화를 줄 것인지 정의하는 Transform 규칙**
 
@@ -7451,9 +6645,7 @@ Output
 
 ### Scale Transform
 
-Scale은 Object의 크기를 변경한다.
-
-예를 들어 다음 Position이 있다고 하자.
+Scale은 Object의 크기를 변경한다. 예를 들어 다음 Position이 있다고 하자.
 
 ~~~text
 Position
@@ -7483,9 +6675,7 @@ After
 
 > **Scale Matrix는 Origin을 기준으로 Coordinate의 크기를 확대하거나 축소한다.**
 
-라고 이해할 수 있다.
-
-Scale은 각 Axis마다 서로 다른 값을 사용할 수도 있다.
+라고 이해할 수 있다. Scale은 각 Axis마다 서로 다른 값을 사용할 수도 있다.
 
 ~~~text
 Scale X = 2
@@ -7499,11 +6689,7 @@ Scale Z = 0.5
 
 ### Rotation Transform
 
-Rotation은 Coordinate의 방향을 바꾼다.
-
-예를 들어 X축 방향을 바라보던 Position이나 Direction이 Z축을 기준으로 회전하면 새로운 X/Y Coordinate를 가지게 된다.
-
-개념적으로는 다음과 같다.
+Rotation은 Coordinate의 방향을 바꾼다. 예를 들어 X축 방향을 바라보던 Position이나 Direction이 Z축을 기준으로 회전하면 새로운 X/Y Coordinate를 가지게 된다. 개념적으로는 다음과 같다.
 
 ~~~text
 Before
@@ -7523,9 +6709,7 @@ Rotation Matrix는
 
 > **Coordinate를 특정 Axis를 기준으로 회전된 위치나 방향으로 변환한다.**
 
-는 역할을 한다.
-
-여기서 중요한 점은 Rotation이 단순히 Object의 외형만 돌리는 것이 아니라
+는 역할을 한다. 여기서 중요한 점은 Rotation이 단순히 Object의 외형만 돌리는 것이 아니라
 
 > **Object를 구성하는 각 Vertex Position의 Coordinate를 새로운 방향으로 다시 계산하는 과정**
 
@@ -7535,9 +6719,7 @@ Rotation Matrix는
 
 ### Translation Transform
 
-Translation은 Position을 특정 Direction으로 이동시킨다.
-
-예를 들어
+Translation은 Position을 특정 Direction으로 이동시킨다. 예를 들어
 
 ~~~text
 Position
@@ -7559,15 +6741,11 @@ Translate X +5
 (6, 2, 3)
 ~~~
 
-가 된다.
-
-즉,
+가 된다. 즉,
 
 > **Translation은 Position의 위치 자체를 바꾸는 Transform이다.**
 
-Scale과 Rotation은 Origin을 기준으로 Coordinate의 크기나 방향을 바꾸고,
-
-Translation은 Position을 다른 위치로 이동시킨다.
+Scale과 Rotation은 Origin을 기준으로 Coordinate의 크기나 방향을 바꾸고, Translation은 Position을 다른 위치로 이동시킨다.
 
 ---
 
@@ -7579,11 +6757,7 @@ Translation은 Position을 다른 위치로 이동시킨다.
 (x, y, z)
 ~~~
 
-그런데 3D Graphics에서는 Scale, Rotation뿐 아니라 Translation도 하나의 일관된 계산 구조로 처리할 필요가 있다.
-
-이 때문에 일반적으로 **4x4 Matrix**와 **Homogeneous Coordinate**를 함께 사용한다.
-
-Coordinate는 다음과 같이 확장된다.
+그런데 3D Graphics에서는 Scale, Rotation뿐 아니라 Translation도 하나의 일관된 계산 구조로 처리할 필요가 있다. 이 때문에 일반적으로 **4x4 Matrix**와 **Homogeneous Coordinate**를 함께 사용한다. Coordinate는 다음과 같이 확장된다.
 
 ~~~text
 (x, y, z, w)
@@ -7663,9 +6837,11 @@ w = 0
 
 ### Matrix Multiplication Concept
 
-Scale, Rotation, Translation은 서로 다른 결과를 만들지만, Matrix에 표현하면 같은 형태의 계산으로 입력에 적용할 수 있다.
+실제 Shader Code로 옮길 때는 **HLSL(High Level Shading Language)**처럼 GPU의 Shader 계산을 작성하는 언어를 사용한다. 이 절에서는 먼저 수학적인 곱의 의미를 읽고, 구체적인 언어의 mul 입력 순서와 storage 규칙은 뒤의 Implementation Note에서 구분한다.
 
-“입력 Coordinate에 Matrix의 규칙을 적용해 출력 Coordinate를 얻는다”는 관계를 곱으로 적는다. 이 Chapter는 **Column Vector convention**을 사용한다.
+앞의 Scale/Rotation/Translation 예에서는 변환 전후의 결과를 직접 읽었다. 이제 그 관계를 공통 기호로 적는다. **Column Vector**는 성분을 세로 열로 둔 표기이고, 이 Chapter에서는 Matrix를 그 Vector의 왼쪽에 곱한다. **Row Vector**는 성분을 가로 행으로 둔 표기라 곱하는 쪽과 준비된 Matrix의 Convention도 달라진다. 아래는 Column Vector 조건에서 읽는다.
+
+Scale, Rotation, Translation은 서로 다른 결과를 만들지만, Matrix에 표현하면 같은 형태의 계산으로 입력에 적용할 수 있다. “입력 Coordinate에 Matrix의 규칙을 적용해 출력 Coordinate를 얻는다”는 관계를 곱으로 적는다. 이 Chapter는 **Column Vector convention**을 사용한다.
 
 ~~~text
 M × v = v'
@@ -7677,9 +6853,7 @@ M은 적용할 Matrix, v는 Input Vector, v'는 Transformed Vector다. Homogeneo
 Matrix × (x, y, z, w) = (x', y', z', w')
 ~~~
 
-출력의 각 값은 원래 값을 복사한 것이 아니라 Matrix에 담긴 Transform 규칙을 적용한 결과다. Position의 w=1과 Direction의 w=0도 이 계산에 참여하므로 같은 Matrix라도 Translation에 대한 결과는 다르다.
-
-여기서의 ×는 수학적인 Matrix 곱을 뜻한다. HLSL 구현에서는 mul의 입력 순서와 Matrix Convention을 확인한다. 실제 코드의 storage와 곱 규칙을 구분하는 내용은 2.12에서 연결한다.
+출력의 각 값은 원래 값을 복사한 것이 아니라 Matrix에 담긴 Transform 규칙을 적용한 결과다. Position의 w=1과 Direction의 w=0도 이 계산에 참여하므로 같은 Matrix라도 Translation에 대한 결과는 다르다. 여기서의 ×는 수학적인 Matrix 곱을 뜻한다. HLSL 구현에서는 mul의 입력 순서와 Matrix Convention을 확인한다. 실제 코드의 storage와 곱 규칙을 구분하는 내용은 2.12에서 연결한다.
 
 ---
 
@@ -7693,11 +6867,7 @@ Figure 2-11의 4×4 배열은 앞에서 설명한 Transform 규칙을 같은 형
 
 ### Matrix Does Not Mean Only One Transform
 
-Matrix 하나가 반드시 Scale 하나, Rotation 하나만 담는 것은 아니다.
-
-여러 Transform을 결합해 하나의 Matrix로 만들 수도 있다.
-
-예를 들어 Object에
+Matrix 하나가 반드시 Scale 하나, Rotation 하나만 담는 것은 아니다. 여러 Transform을 결합해 하나의 Matrix로 만들 수도 있다. 예를 들어 Object에
 
 ~~~text
 Scale
@@ -7711,11 +6881,7 @@ Rotation
 Translation
 ~~~
 
-을 순서대로 적용할 수 있다.
-
-이 Transform들을 각각 따로 계산할 수도 있지만,
-
-Rendering에서는 여러 Transform을 하나의 Matrix로 미리 결합해 사용할 수 있다.
+을 순서대로 적용할 수 있다. 이 Transform들을 각각 따로 계산할 수도 있지만, Rendering에서는 여러 Transform을 하나의 Matrix로 미리 결합해 사용할 수 있다.
 
 개념적으로는 다음과 같다.
 
@@ -7728,9 +6894,7 @@ Combined Matrix × v = T × (R × (S × v))
 실제 적용 순서: Scale → Rotation → Translation
 ~~~
 
-그리고 이후 Vertex마다 이 Combined Matrix를 적용할 수 있다.
-
-즉,
+그리고 이후 Vertex마다 이 Combined Matrix를 적용할 수 있다. 즉,
 
 > **Matrix는 여러 Transform을 하나의 계산 구조로 합칠 수 있다.**
 
@@ -7739,6 +6903,8 @@ Combined Matrix × v = T × (R × (S × v))
 ---
 
 ### Transform Order Matters
+
+Object를 먼저 오른쪽으로 옮긴 다음 World Origin을 중심으로 돌리면 이동된 위치까지 회전한다. 반대로 Origin에서 돌린 뒤 오른쪽으로 옮기면 마지막 이동은 그 회전의 영향을 받지 않는다. 같은 작업 이름을 사용해도 각 작업이 무엇을 입력으로 받는지 달라지기 때문이다.
 
 여기서 매우 중요한 점이 하나 있다.
 
@@ -7760,11 +6926,7 @@ Translation
 → Scale
 ~~~
 
-은 같은 결과가 아니다.
-
-왜냐하면 각각의 Transform이 이전 Transform 결과를 기준으로 계산되기 때문이다.
-
-예를 들어 Object를 먼저 이동한 뒤 회전시키면
+은 같은 결과가 아니다. 왜냐하면 각각의 Transform이 이전 Transform 결과를 기준으로 계산되기 때문이다. 예를 들어 Object를 먼저 이동한 뒤 회전시키면
 
 > **이동된 위치 자체가 회전의 영향을 받을 수 있다.**
 
@@ -7786,11 +6948,7 @@ Translation
 
 ### Matrix and Coordinate Space Conversion
 
-Rendering에서 Matrix는 단순히 Object를 움직이는 데만 사용되지 않는다.
-
-Coordinate Space를 바꾸는 핵심 도구이기도 하다.
-
-지금까지 살펴본 Coordinate Flow를 Matrix 기준으로 보면 다음과 같다.
+Rendering에서 Matrix는 단순히 Object를 움직이는 데만 사용되지 않는다. Coordinate Space를 바꾸는 핵심 도구이기도 하다. 지금까지 살펴본 Coordinate Flow를 Matrix 기준으로 보면 다음과 같다.
 
 ~~~text
 Local Position
@@ -7844,17 +7002,13 @@ World Space
 
 > **Object 자신의 좌표를 Scene 전체의 공통 좌표로 옮기는 Matrix**
 
-다.
-
-Model Matrix에는 일반적으로 Object의
+다. Model Matrix에는 일반적으로 Object의
 
 - Scale
 - Rotation
 - Translation
 
-정보가 반영될 수 있다.
-
-따라서 같은 Mesh Vertex라도 Object Transform이 다르면 서로 다른 World Position을 가지게 된다.
+정보가 반영될 수 있다. 따라서 같은 Mesh Vertex라도 Object Transform이 다르면 서로 다른 World Position을 가지게 된다.
 
 ---
 
@@ -7878,9 +7032,7 @@ View Space
 
 > **Scene 전체의 Position을 Camera 기준 Coordinate로 다시 표현하는 Matrix**
 
-다.
-
-Chapter 2.5에서 살펴본 것처럼 View Matrix는 Camera Transform의 Inverse와 연결된다.
+다. Chapter 2.5에서 살펴본 것처럼 View Matrix는 Camera Transform의 Inverse와 연결된다.
 
 ---
 
@@ -7907,9 +7059,7 @@ Projection Matrix에는 Perspective Projection에 필요한
 - Near Plane
 - Far Plane
 
-등의 정보가 반영된다.
-
-그리고 이 과정에서
+등의 정보가 반영된다. 그리고 이 과정에서
 
 ~~~text
 (x_view, y_view, z_view, 1)
@@ -7931,9 +7081,7 @@ Projection Matrix
 
 ### The Same Vertex Can Have Different Coordinates
 
-하나의 Vertex를 생각해보자.
-
-Mesh 내부에서는 다음 Local Position을 가질 수 있다.
+하나의 Vertex를 생각해보자. Mesh 내부에서는 다음 Local Position을 가질 수 있다.
 
 ~~~text
 Local Position
@@ -7949,9 +7097,7 @@ World Position
 (5, 3, 2)
 ~~~
 
-처럼 다른 값이 될 수 있다.
-
-다시 View Matrix를 적용하면
+처럼 다른 값이 될 수 있다. 다시 View Matrix를 적용하면
 
 ~~~text
 View Position
@@ -7959,9 +7105,7 @@ View Position
 (...)
 ~~~
 
-이 되고,
-
-Projection Matrix를 적용하면
+이 되고, Projection Matrix를 적용하면
 
 ~~~text
 Clip Position
@@ -7969,15 +7113,11 @@ Clip Position
 (...)
 ~~~
 
-이 된다.
-
-즉,
+이 된다. 즉,
 
 > **같은 Vertex라도 Coordinate Space가 바뀔 때마다 Coordinate 값은 달라질 수 있다.**
 
-이것이 Matrix Transform을 이해해야 하는 가장 중요한 이유 중 하나다.
-
-Matrix는 단순히 숫자를 바꾸는 것이 아니라
+이것이 Matrix Transform을 이해해야 하는 가장 중요한 이유 중 하나다. Matrix는 단순히 숫자를 바꾸는 것이 아니라
 
 > **같은 Geometry를 다른 기준 Space에서 다시 표현한다.**
 
@@ -7985,19 +7125,13 @@ Matrix는 단순히 숫자를 바꾸는 것이 아니라
 
 ### Matrix Is Not Always a Space Conversion
 
-여기서 한 가지 구분할 점이 있다.
-
-Matrix를 사용한다고 해서 항상 Coordinate Space가 바뀌는 것은 아니다.
-
-예를 들어 World Space 안에서 Object를 추가로 회전시키는 Transform Matrix를 적용할 수도 있다.
+여기서 한 가지 구분할 점이 있다. Matrix를 사용한다고 해서 항상 Coordinate Space가 바뀌는 것은 아니다. 예를 들어 World Space 안에서 Object를 추가로 회전시키는 Transform Matrix를 적용할 수도 있다.
 
 즉, Matrix는 더 넓게 보면
 
 > **Coordinate를 Transform하는 계산 구조**
 
-이고,
-
-그중 Rendering Pipeline에서는 자주
+이고, 그중 Rendering Pipeline에서는 자주
 
 > **한 Coordinate Space에서 다른 Coordinate Space로 변환하는 용도**
 
@@ -8007,11 +7141,7 @@ Matrix를 사용한다고 해서 항상 Coordinate Space가 바뀌는 것은 아
 
 ### Matrix and Vertex Processing
 
-Chapter 01에서 Vertex Shader는 Vertex 단위의 Position과 Attribute를 처리한다고 배웠다.
-
-Coordinate Transform 역시 대표적인 Vertex Processing 작업이다.
-
-개념적으로는 다음과 같다.
+Chapter 01에서 Vertex Shader는 Vertex 단위의 Position과 Attribute를 처리한다고 배웠다. Coordinate Transform 역시 대표적인 Vertex Processing 작업이다. 개념적으로는 다음과 같다.
 
 ~~~text
 Vertex Local Position
@@ -8025,11 +7155,7 @@ Matrix Transform
 World / View / Clip Position
 ~~~
 
-각 Vertex에 동일한 Transform Matrix를 적용하면 Object 전체의 Geometry가 일관되게 변환된다.
-
-예를 들어 Cube 하나는 여러 Vertex로 구성되어 있지만,
-
-각 Vertex에 동일한 Model Matrix를 적용하면 Cube 전체가
+각 Vertex에 동일한 Transform Matrix를 적용하면 Object 전체의 Geometry가 일관되게 변환된다. 예를 들어 Cube 하나는 여러 Vertex로 구성되어 있지만, 각 Vertex에 동일한 Model Matrix를 적용하면 Cube 전체가
 
 - 이동하고
 - 회전하고
@@ -8090,17 +7216,13 @@ Projection Matrix
 Clip Position
 ~~~
 
-3D Rendering에서는 4x4 Matrix와 Homogeneous Coordinate를 사용해 Scale, Rotation, Translation뿐 아니라 Coordinate Space Conversion까지 하나의 일관된 계산 구조로 처리한다.
-
-다음 절에서는 지금까지 개별적으로 살펴본 **Model Matrix, View Matrix, Projection Matrix**가 실제 Rendering Pipeline에서 어떻게 연결되는지 더 구체적으로 살펴본다.
+3D Rendering에서는 4x4 Matrix와 Homogeneous Coordinate를 사용해 Scale, Rotation, Translation뿐 아니라 Coordinate Space Conversion까지 하나의 일관된 계산 구조로 처리한다. 다음 절에서는 지금까지 개별적으로 살펴본 **Model Matrix, View Matrix, Projection Matrix**가 실제 Rendering Pipeline에서 어떻게 연결되는지 더 구체적으로 살펴본다.
 
 ---
 
 ## 2.12 Model / View / Projection Matrix
 
-Object만 움직였는데 Camera의 Projection 설정까지 다시 생각해야 한다면 변환의 책임이 섞인 것이다. 반대로 Camera를 옮길 때 원본 Mesh의 Local Vertex Data를 바꿀 필요도 없다.
-
-Renderer는 Object의 배치, Camera의 관점, Camera의 Projection을 나누어 표현한다. 그 역할을 담당하는 것이 **Model Matrix, View Matrix, Projection Matrix**다.
+Object만 움직였는데 Camera의 Projection 설정까지 다시 생각해야 한다면 변환의 책임이 섞인 것이다. 반대로 Camera를 옮길 때 원본 Mesh의 Local Vertex Data를 바꿀 필요도 없다. Renderer는 Object의 배치, Camera의 관점, Camera의 Projection을 나누어 표현한다. 그 역할을 담당하는 것이 **Model Matrix, View Matrix, Projection Matrix**다.
 
 Model Matrix는 Local Data를 World에 배치한다. View Matrix는 그 World Position을 특정 Camera 기준으로 읽는다. Projection Matrix는 Camera 설정을 반영한 Clip Position을 준비한다.
 
@@ -8131,9 +7253,7 @@ Model Matrix
 World Space
 ~~~
 
-Local Space에서 Vertex Position은 Object 자신의 Origin과 Axis를 기준으로 표현된다.
-
-예를 들어 한 Vertex가 다음 Local Position을 가진다고 하자.
+Local Space에서 Vertex Position은 Object 자신의 Origin과 Axis를 기준으로 표현된다. 예를 들어 한 Vertex가 다음 Local Position을 가진다고 하자.
 
 ~~~text
 Local Position
@@ -8145,11 +7265,7 @@ Local Position
 
 > **Object 자신의 기준에서 X 방향으로 1만큼 떨어진 위치**
 
-라는 뜻이다.
-
-하지만 이 Object가 World에서 어디에 위치하고, 얼마나 회전하고, 얼마나 Scale되어 있는지는 이 Local Position만으로는 알 수 없다.
-
-그 정보를 반영하는 것이 Model Matrix다.
+라는 뜻이다. 하지만 이 Object가 World에서 어디에 위치하고, 얼마나 회전하고, 얼마나 Scale되어 있는지는 이 Local Position만으로는 알 수 없다. 그 정보를 반영하는 것이 Model Matrix다.
 
 ---
 
@@ -8182,9 +7298,7 @@ Translation
 World Position
 ~~~
 
-의 관계로 이해할 수 있다.
-
-예를 들어 Local Space에서
+의 관계로 이해할 수 있다. 예를 들어 Local Space에서
 
 ~~~text
 (1, 0, 0)
@@ -8196,9 +7310,7 @@ World Position
 (5, 3, 2)
 ~~~
 
-라는 World Position을 가질 수 있다.
-
-중요한 점은
+라는 World Position을 가질 수 있다. 중요한 점은
 
 > **Vertex 자체가 다른 Vertex로 바뀐 것이 아니라, 같은 Vertex를 World Space 기준으로 다시 표현한 것**
 
@@ -8208,9 +7320,7 @@ World Position
 
 ### The Same Mesh Can Have Different Model Matrices
 
-같은 Mesh Data를 여러 Object가 공유할 수도 있다.
-
-예를 들어 같은 Cube Mesh가 있다고 하자.
+같은 Mesh Data를 여러 Object가 공유할 수도 있다. 예를 들어 같은 Cube Mesh가 있다고 하자.
 
 ~~~text
 Cube Mesh
@@ -8243,11 +7353,7 @@ Model Matrix B
 
 ### View Matrix
 
-World Space까지 변환된 Vertex는 아직 Scene 전체의 Coordinate System을 기준으로 표현되어 있다.
-
-하지만 Rendering에서는 Camera 기준으로 Scene을 해석해야 한다.
-
-이때 사용하는 것이 View Matrix다.
+World Space까지 변환된 Vertex는 아직 Scene 전체의 Coordinate System을 기준으로 표현되어 있다. 하지만 Rendering에서는 Camera 기준으로 Scene을 해석해야 한다. 이때 사용하는 것이 View Matrix다.
 
 ~~~text
 World Space
@@ -8271,11 +7377,7 @@ View Matrix의 역할은
 
 ### Camera Becomes the Reference
 
-World Space에서는 Scene 전체의 Origin과 Axis가 기준이다.
-
-View Space에서는 Camera가 기준이 된다.
-
-개념적으로 다음처럼 생각할 수 있다.
+World Space에서는 Scene 전체의 Origin과 Axis가 기준이다. View Space에서는 Camera가 기준이 된다. 개념적으로 다음처럼 생각할 수 있다.
 
 ~~~text
 World Space
@@ -8293,9 +7395,7 @@ View Space
 "Object가 Camera 기준으로 어디에 있는가?"
 ~~~
 
-같은 World Position이라도 Camera가 이동하거나 회전하면 View Position은 달라질 수 있다.
-
-즉,
+같은 World Position이라도 Camera가 이동하거나 회전하면 View Position은 달라질 수 있다. 즉,
 
 > **View Position은 Object 자체의 World Position뿐 아니라 Camera Transform에도 영향을 받는다.**
 
@@ -8303,11 +7403,7 @@ View Space
 
 ### View Matrix and Camera Transform
 
-Chapter 2.5에서 View Matrix는 Camera Transform의 Inverse와 연결된다고 설명했다.
-
-왜 그런지 직관적으로 생각해보자.
-
-Camera가 World에서 오른쪽으로 이동했다고 하자.
+Chapter 2.5에서 View Matrix는 Camera Transform의 Inverse와 연결된다고 설명했다. 왜 그런지 직관적으로 생각해보자. Camera가 World에서 오른쪽으로 이동했다고 하자.
 
 화면에서는 Scene 전체가 상대적으로 왼쪽으로 이동한 것처럼 보인다.
 
@@ -8319,9 +7415,7 @@ Scene relative to Camera
 → Left
 ~~~
 
-Camera가 위로 이동하면 Scene은 상대적으로 아래로 이동한 것처럼 보인다.
-
-즉 View Space에서는
+Camera가 위로 이동하면 Scene은 상대적으로 아래로 이동한 것처럼 보인다. 즉 View Space에서는
 
 > **Camera를 기준 위치에 두고, World를 Camera Transform의 반대 방향으로 변환하는 것처럼 생각할 수 있다.**
 
@@ -8331,11 +7425,7 @@ Camera가 위로 이동하면 Scene은 상대적으로 아래로 이동한 것�
 
 ### A Simple View Transform Example
 
-Camera가 움직인 뒤에도 World의 Vertex는 그대로일 수 있다. 바뀌어야 하는 것은 그 Vertex를 **Camera에서 측정한 상대 위치**다.
-
-축이 World와 정렬되어 있고 Rotation이 없는 Camera를 가정하자. World Position (10, 0, 0)인 Vertex를 World Origin의 Camera에서 읽으면 X Offset은 10이다.
-
-Camera가 (5, 0, 0)으로 이동하면 기준점이 오른쪽으로 5만큼 이동한 셈이다. 따라서 Vertex를 Camera 기준으로 읽을 때는 Camera 위치를 뺀다.
+Camera가 움직인 뒤에도 World의 Vertex는 그대로일 수 있다. 바뀌어야 하는 것은 그 Vertex를 **Camera에서 측정한 상대 위치**다. 축이 World와 정렬되어 있고 Rotation이 없는 Camera를 가정하자. World Position (10, 0, 0)인 Vertex를 World Origin의 Camera에서 읽으면 X Offset은 10이다. Camera가 (5, 0, 0)으로 이동하면 기준점이 오른쪽으로 5만큼 이동한 셈이다. 따라서 Vertex를 Camera 기준으로 읽을 때는 Camera 위치를 뺀다.
 
 ~~~text
 World Position  = (10, 0, 0)
@@ -8350,11 +7440,7 @@ View Position   = (5, 0, 0)
 
 ### Projection Matrix
 
-View Matrix까지 적용하면 Vertex는 Camera 기준 3D Coordinate를 가진다.
-
-하지만 아직 Screen에 직접 Mapping할 수 있는 형태는 아니다.
-
-다음 단계가 Projection Matrix다.
+View Matrix까지 적용하면 Vertex는 Camera 기준 3D Coordinate를 가진다. 하지만 아직 Screen에 직접 Mapping할 수 있는 형태는 아니다. 다음 단계가 Projection Matrix다.
 
 ~~~text
 View Space
@@ -8388,9 +7474,7 @@ Near Plane
 Far Plane
 ~~~
 
-이 값들은 Camera가 볼 수 있는 View Frustum의 구조와 관련된다.
-
-즉,
+이 값들은 Camera가 볼 수 있는 View Frustum의 구조와 관련된다. 즉,
 
 ~~~text
 View Position
@@ -8427,9 +7511,7 @@ Projection Matrix를 적용하면
 (x_clip, y_clip, z_clip, w_clip)
 ~~~
 
-형태의 Clip Position이 만들어진다.
-
-즉,
+형태의 Clip Position이 만들어진다. 즉,
 
 ~~~text
 View Position
@@ -8455,9 +7537,7 @@ Clip Position
 
 ### Projection Matrix Is Not the Final Perspective Result
 
-Projection Matrix를 적용했다고 해서 바로 NDC나 Screen Space가 만들어지는 것은 아니다.
-
-전체 흐름은 다음과 같다.
+Projection Matrix를 적용했다고 해서 바로 NDC나 Screen Space가 만들어지는 것은 아니다. 전체 흐름은 다음과 같다.
 
 ~~~text
 View Space
@@ -8495,13 +7575,13 @@ Screen Space
 
 > **Projection Matrix는 Perspective Projection에 필요한 Clip Coordinate를 준비하는 단계**
 
-이고,
-
-Perspective Divide가 이후 실제 NDC Coordinate를 만든다.
+이고, Perspective Divide가 이후 실제 NDC Coordinate를 만든다.
 
 ---
 
 ### Model, View and Projection as a Chain
+
+앞 단계가 만든 값의 Space가 다음 단계의 입력 Space와 맞아야 한다. Model의 출력은 World Position이므로 View가 그 값을 Camera 기준으로 읽을 수 있다. View의 출력은 Camera 기준 3D Position이므로 Projection이 그 Camera 설정을 적용할 수 있다. 이 입출력 관계를 따라 아래의 연결을 읽는다.
 
 세 Matrix를 하나로 연결해서 보면 다음과 같다.
 
@@ -8563,9 +7643,7 @@ Clip Coordinate로 바꾼다."
 
 ### One Vertex, Multiple Coordinates
 
-같은 Vertex 하나를 예로 들어보자.
-
-Local Space에서는 다음 값을 가질 수 있다.
+같은 Vertex 하나를 예로 들어보자. Local Space에서는 다음 값을 가질 수 있다.
 
 ~~~text
 Local Position
@@ -8581,9 +7659,7 @@ World Position
 (5, 3, 2)
 ~~~
 
-가 될 수 있다.
-
-View Matrix를 적용하면
+가 될 수 있다. View Matrix를 적용하면
 
 ~~~text
 View Position
@@ -8591,9 +7667,7 @@ View Position
 (2, 1, -8)
 ~~~
 
-처럼 Camera 기준의 다른 Coordinate가 될 수 있다.
-
-Projection Matrix를 적용하면
+처럼 Camera 기준의 다른 Coordinate가 될 수 있다. Projection Matrix를 적용하면
 
 ~~~text
 Clip Position
@@ -8601,19 +7675,24 @@ Clip Position
 (x_clip, y_clip, z_clip, w_clip)
 ~~~
 
-형태로 다시 변한다.
-
-즉,
+형태로 다시 변한다. 즉,
 
 > **하나의 Vertex는 그대로지만 어느 Coordinate Space에서 표현하느냐에 따라 숫자 값은 계속 달라진다.**
 
 ---
 
-Figure 2-12는 Translation (4, 3, 2), Identity Rotation, Scale 1을 적용한 Local Point (1, 0, 0)을 보여준다. Camera가 (3, 2, 10)이고 Rotation이 Identity이면 View Position은 (2, 1, -8)이다. 이 예의 Forward는 -Z이고 Column Vector를 사용한다. P의 구체 값은 Camera Projection 설정에 따라 결정된다.
+Figure 2-12에서 한 Vertex를 Object → Scene → Camera 순으로 읽는다. 숫자의 변화를 따라가면서 각 Matrix가 어떤 기준을 입력받고 어느 기준으로 출력하는지 확인한다.
 
 <img src="Figures/Chapter02/Fig2_12.png" width="90%">
 
 **Figure 2-12. Model / View / Projection Matrix**
+
+<details>
+<summary>Figure Reading Note — Example Conditions and Scope</summary>
+
+Figure 2-12는 Translation (4, 3, 2), Identity Rotation, Scale 1을 적용한 Local Point (1, 0, 0)을 보여준다. Camera가 (3, 2, 10)이고 Rotation이 Identity이면 View Position은 (2, 1, -8)이다. 이 예의 Forward는 -Z이고 Column Vector를 사용한다. P의 구체 값은 Camera Projection 설정에 따라 결정된다.
+
+</details>
 
 ---
 
@@ -8623,11 +7702,7 @@ Figure 2-12는 Translation (4, 3, 2), Identity Rotation, Scale 1을 적용한 Lo
 
 > **그냥 Local Position을 바로 Clip Position으로 한 번에 바꾸면 되지 않나?**
 
-라고 생각할 수 있다.
-
-수학적으로 여러 Transform을 결합하는 것은 가능하다.
-
-하지만 개념적으로 Matrix를 분리하면 각각의 역할이 명확해진다.
+라고 생각할 수 있다. 수학적으로 여러 Transform을 결합하는 것은 가능하다. 하지만 개념적으로 Matrix를 분리하면 각각의 역할이 명확해진다.
 
 ~~~text
 Model Matrix
@@ -8654,9 +7729,9 @@ Projection Matrix
 
 ### Matrix Combination
 
-여러 Matrix는 필요에 따라 하나의 Combined Matrix로 결합해서 사용할 수 있다.
+앞의 세 규칙을 한 번에 적용하고 싶다면 입력부터 출력까지의 연결을 하나의 규칙으로 미리 묶을 수 있다. **MVP(Model View Projection)**는 이 세 Transform을 결합해 Local Position을 Clip Position으로 전달하는 관계를 가리킨다. 아래 그림의 +는 역할을 함께 묶는다는 개념 표시다. 실제 결합 계산은 Matrix의 덧셈이 아니라 Convention에 맞는 곱이다.
 
-개념적으로는
+여러 Matrix는 필요에 따라 하나의 Combined Matrix로 결합해서 사용할 수 있다. 개념적으로는
 
 ~~~text
 Model Matrix
@@ -8670,9 +7745,7 @@ Projection Matrix
 Combined Transform
 ~~~
 
-처럼 생각할 수 있다.
-
-이렇게 결합된 Transform을 흔히 **MVP - Model View Projection**과 연결해서 설명한다.
+처럼 생각할 수 있다. 이렇게 결합된 Transform을 흔히 **MVP - Model View Projection**과 연결해서 설명한다.
 
 ~~~text
 M
@@ -8695,9 +7768,7 @@ P
 
 ### Why Combine Matrices?
 
-Object 하나가 수천 또는 수만 개의 Vertex를 가지고 있다고 하자.
-
-각 Vertex마다
+Object 하나가 수천 또는 수만 개의 Vertex를 가지고 있다고 하자. 각 Vertex마다
 
 ~~~text
 Model Transform
@@ -8707,11 +7778,7 @@ View Transform
 Projection Transform
 ~~~
 
-을 개별적으로 준비하는 것보다,
-
-가능한 Transform을 미리 결합해두고 반복해서 사용할 수 있다.
-
-개념적으로는 다음과 같다.
+을 개별적으로 준비하는 것보다, 가능한 Transform을 미리 결합해두고 반복해서 사용할 수 있다. 개념적으로는 다음과 같다.
 
 ~~~text
 Projection × View × Model
@@ -8729,21 +7796,17 @@ Vertex 4
 ...
 ~~~
 
-이 방식은 Rendering에서 매우 자주 사용된다.
-
-다만 실제 Engine이나 Shader에서는 중간 결과가 필요하거나 다른 계산을 위해 Matrix를 분리해서 사용하는 경우도 많다.
+이 방식은 Rendering에서 매우 자주 사용된다. 다만 실제 Engine이나 Shader에서는 중간 결과가 필요하거나 다른 계산을 위해 Matrix를 분리해서 사용하는 경우도 많다.
 
 ---
 
 ### A Small Matrix Example
 
-앞의 순서를 실제 값으로 확인해보자. Local X 방향의 Vertex를 먼저 두 배 늘린 뒤 World Z축을 기준으로 +90° 회전시키고, 마지막에 (5, 2, 0)만큼 이동한다. 이 예는 Column Vector convention을 사용한다.
+Matrix의 성분을 먼저 읽기보다 결과를 세 단계로 예상해보자. Local의 화살표를 Scale로 늘리고 Rotation으로 돌리면 같은 입력의 위치와 방향이 함께 바뀐다. 마지막 Translation에서 Position만 옮겨야 한다. 이 예상과 Matrix 곱의 결과가 일치하는지 아래 수치를 확인한다.
 
-Position (1, 0, 0)은 Scale 뒤 (2, 0, 0), Rotation 뒤 (0, 2, 0)이 된다. 마지막 Translation을 더하면 World Position은 (5, 4, 0)이다.
+앞의 순서를 실제 값으로 확인해보자. Local X 방향의 Vertex를 먼저 두 배 늘린 뒤 World Z축을 기준으로 +90° 회전시키고, 마지막에 (5, 2, 0)만큼 이동한다. 이 예는 Column Vector convention을 사용한다. Position (1, 0, 0)은 Scale 뒤 (2, 0, 0), Rotation 뒤 (0, 2, 0)이 된다. 마지막 Translation을 더하면 World Position은 (5, 4, 0)이다.
 
-같은 XYZ의 Direction도 Scale과 Rotation을 받는다. 하지만 위치가 아니므로 Translation은 제외한다. 결과 방향 성분은 (0, 2, 0)이다.
-
-이 결과를 하나의 Matrix로 표현하면 다음과 같다.
+같은 XYZ의 Direction도 Scale과 Rotation을 받는다. 하지만 위치가 아니므로 Translation은 제외한다. 결과 방향 성분은 (0, 2, 0)이다. 이 결과를 하나의 Matrix로 표현하면 다음과 같다.
 
 ~~~text
 M = T × R × S =
@@ -8760,16 +7823,12 @@ M × d = (0, 2, 0, 0)
 normalize(d_world) = (0, 1, 0)
 ~~~
 
-Scale로 Direction의 길이가 바뀌었으므로 방향만 비교할 때는 Normalize한다. 이 예는 일반 Direction에 관한 것이며 Normal은 2.13과 Chapter 03의 3.5에서 구분한다.
-
-Camera가 Rotation 없이 World (5, 0, 0)에 있다면 View Transform은 (-5, 0, 0)의 Translation이다. 앞의 World Position (5, 4, 0)은 Camera 기준으로 (0, 4, 0)이 된다.
+Scale로 Direction의 길이가 바뀌었으므로 방향만 비교할 때는 Normalize한다. 이 예는 일반 Direction에 관한 것이며 Normal은 2.13과 Chapter 03의 3.5에서 구분한다. Camera가 Rotation 없이 World (5, 0, 0)에 있다면 View Transform은 (-5, 0, 0)의 Translation이다. 앞의 World Position (5, 4, 0)은 Camera 기준으로 (0, 4, 0)이 된다.
 
 <details>
 <summary>Implementation Note — Rigid Camera Inverse</summary>
 
-Camera가 Translation뿐 아니라 Rotation도 가지면 두 변환을 되돌려야 한다. 먼저 Camera 위치 t_c를 빼고, Camera의 Rotation R_c를 되돌린다. Rotation의 축들이 서로 수직인 Unit Axis인 rigid transform에서는 R_c의 transpose가 inverse와 같으므로 이 transpose를 적용할 수 있다.
-
-이는 R_c가 orthonormal인 Rotation + Translation 조건의 간단한 Inverse 예제다. Scale이 포함된 일반 Matrix의 Inverse 알고리즘까지 이 절에서 전개하지 않는다.
+Camera가 Translation뿐 아니라 Rotation도 가지면 두 변환을 되돌려야 한다. 먼저 Camera 위치 t_c를 빼고, Camera의 Rotation R_c를 되돌린다. Rotation의 축들이 서로 수직인 Unit Axis인 rigid transform에서는 R_c의 transpose가 inverse와 같으므로 이 transpose를 적용할 수 있다. 이는 R_c가 orthonormal인 Rotation + Translation 조건의 간단한 Inverse 예제다. Scale이 포함된 일반 Matrix의 Inverse 알고리즘까지 이 절에서 전개하지 않는다.
 
 </details>
 
@@ -8777,9 +7836,7 @@ Camera가 Translation뿐 아니라 Rotation도 가지면 두 변환을 되돌려
 
 ### Matrix Multiplication Order
 
-Model → View → Projection의 책임을 결합하더라도 실제 적용 순서는 유지되어야 한다. Local Position을 World에 배치하기 전에 Camera 기준으로 읽으면 입력 Space가 맞지 않는다.
-
-이 장의 Column Vector에서는 입력과 가까운 오른쪽 Matrix부터 적용한다. 따라서 Local Position에 Model, View, Projection을 차례로 적용하는 식은 다음과 같다.
+Model → View → Projection의 책임을 결합하더라도 실제 적용 순서는 유지되어야 한다. Local Position을 World에 배치하기 전에 Camera 기준으로 읽으면 입력 Space가 맞지 않는다. 이 장의 Column Vector에서는 입력과 가까운 오른쪽 Matrix부터 적용한다. 따라서 Local Position에 Model, View, Projection을 차례로 적용하는 식은 다음과 같다.
 
 ~~~text
 p_clip = P × V × M × p_local
@@ -8825,9 +7882,7 @@ World 기준
 Camera 기준
 ~~~
 
-World를 Camera 기준으로 다시 표현한다.
-
-따라서
+World를 Camera 기준으로 다시 표현한다. 따라서
 
 > **Model Matrix는 Object의 위치와 방향을 Scene에 적용하고, View Matrix는 Scene을 Camera 관점으로 재해석한다.**
 
@@ -8853,9 +7908,7 @@ Camera 기준 3D Coordinate를 만든다.
 View → Clip
 ~~~
 
-Perspective 또는 Orthographic Projection 규칙을 적용한다.
-
-즉,
+Perspective 또는 Orthographic Projection 규칙을 적용한다. 즉,
 
 > **View Matrix는 Camera 기준을 만들고, Projection Matrix는 그 Camera가 Scene을 어떻게 볼 것인지를 결정한다.**
 
@@ -8863,9 +7916,7 @@ Perspective 또는 Orthographic Projection 규칙을 적용한다.
 
 ### Perspective and Orthographic Projection Matrix
 
-Projection Matrix는 Perspective Projection만을 위한 것은 아니다.
-
-Orthographic Projection에서도 Projection Matrix를 사용할 수 있다.
+Projection Matrix는 Perspective Projection만을 위한 것은 아니다. Orthographic Projection에서도 Projection Matrix를 사용할 수 있다.
 
 ~~~text
 Perspective Projection Matrix
@@ -9101,23 +8152,17 @@ Projection Matrix
 Clip Position
 ~~~
 
-이 세 Transform은 필요에 따라 결합해서 사용할 수 있으며, 이를 흔히 **MVP - Model View Projection** 구조와 연결해서 이해한다.
-
-하지만 Matrix 표기 순서를 외우는 것보다 먼저 기억해야 할 것은
+이 세 Transform은 필요에 따라 결합해서 사용할 수 있으며, 이를 흔히 **MVP - Model View Projection** 구조와 연결해서 이해한다. 하지만 Matrix 표기 순서를 외우는 것보다 먼저 기억해야 할 것은
 
 > **Local → World → View → Clip**
 
-이라는 실제 Coordinate Space의 이동 순서다.
-
-다음 절에서는 Matrix Transform에서 매우 중요한 차이인 **Position Transform vs Direction Transform**을 살펴본다.
+이라는 실제 Coordinate Space의 이동 순서다. 다음 절에서는 Matrix Transform에서 매우 중요한 차이인 **Position Transform vs Direction Transform**을 살펴본다.
 
 ---
 
 ## 2.13 Position Transform vs Direction Transform
 
-Object의 Vertex Position에 이동량을 적용하면 Object가 움직인다. 그런데 Normal이나 Forward Direction에도 같은 이동량을 더하면 Object의 방향까지 잘못 바뀌게 된다.
-
-Matrix를 연결하기 전에 이 차이를 먼저 구분해야 한다. **Position은 어디에 있는지, Direction은 어느 방향인지**를 나타내기 때문이다.
+Object의 Vertex Position에 이동량을 적용하면 Object가 움직인다. 그런데 Normal이나 Forward Direction에도 같은 이동량을 더하면 Object의 방향까지 잘못 바뀌게 된다. Matrix를 연결하기 전에 이 차이를 먼저 구분해야 한다. **Position은 어디에 있는지, Direction은 어느 방향인지**를 나타내기 때문이다.
 
 ~~~text
 Object Translation
@@ -9125,17 +8170,13 @@ Object Translation
     → Direction: 같은 방향 유지
 ~~~
 
-Affine Matrix 입력에서는 이 관계를 Position의 w=1, Direction의 w=0으로 표현한다. 반면 Rotation과 Scale은 둘의 XYZ에 영향을 줄 수 있다.
-
-이 절에서는 Transform별로 무엇을 유지해야 하는지 확인한다. 마지막에는 일반 Direction처럼 보이는 Normal도 왜 Surface와의 관계를 보존하는 별도 처리가 필요한지 연결한다.
+Affine Matrix 입력에서는 이 관계를 Position의 w=1, Direction의 w=0으로 표현한다. 반면 Rotation과 Scale은 둘의 XYZ에 영향을 줄 수 있다. 이 절에서는 Transform별로 무엇을 유지해야 하는지 확인한다. 마지막에는 일반 Direction처럼 보이는 Normal도 왜 Surface와의 관계를 보존하는 별도 처리가 필요한지 연결한다.
 
 ---
 
 ### Position Represents a Location
 
-Position은 공간 안의 특정 위치를 나타낸다.
-
-예를 들어 다음 Position이 있다고 하자.
+Position은 공간 안의 특정 위치를 나타낸다. 예를 들어 다음 Position이 있다고 하자.
 
 ~~~text id="jd8lu1"
 Position
@@ -9151,9 +8192,7 @@ Y 방향으로 1
 Z 방향으로 0
 ~~~
 
-만큼 떨어진 위치를 의미한다.
-
-즉,
+만큼 떨어진 위치를 의미한다. 즉,
 
 > **Position은 Origin과의 관계를 가지는 Point다.**
 
@@ -9163,9 +8202,7 @@ Z 방향으로 0
 
 ### Direction Represents an Orientation
 
-Direction은 공간 안의 특정 위치를 나타내는 것이 아니다.
-
-예를 들어 다음 Direction을 생각해보자.
+Direction은 공간 안의 특정 위치를 나타내는 것이 아니다. 예를 들어 다음 Direction을 생각해보자.
 
 ~~~text id="93s8qg"
 Direction
@@ -9177,9 +8214,7 @@ Direction
 
 > **X 방향을 향한다.**
 
-는 의미다.
-
-이 Direction이 World Origin에 있든,
+는 의미다. 이 Direction이 World Origin에 있든,
 
 ~~~text id="s5ee7r"
 (0, 0, 0)
@@ -9191,15 +8226,15 @@ Direction
 (10, 5, 2)
 ~~~
 
-Direction 자체는 여전히 X 방향을 나타낼 수 있다.
-
-즉,
+Direction 자체는 여전히 X 방향을 나타낼 수 있다. 즉,
 
 > **Direction은 위치가 아니라 방향 관계를 나타낸다.**
 
 ---
 
 ### Translation Is the Key Difference
+
+2.2에서 구분한 “붙은 위치”와 “가리키는 방향”을 실제 Transform 입력에 적용한다. Position에는 Object의 이동량을 더해야 하지만 Direction에는 더하지 않는다. 아래의 수치 차이는 숫자의 형식 때문이 아니라 그 숫자가 맡은 역할 때문에 생긴다.
 
 Position과 Direction의 차이가 가장 명확하게 드러나는 Transform이 Translation이다.
 
@@ -9227,17 +8262,13 @@ Translate X +5
 (6, 2, 3)
 ~~~
 
-이 된다.
-
-즉, Position은 실제 위치가 바뀐다.
+이 된다. 즉, Position은 실제 위치가 바뀐다.
 
 ---
 
 ### Direction Does Not Move with Translation
 
-반면 Direction은 위치가 아니다.
-
-다음 Direction이 있다고 하자.
+반면 Direction은 위치가 아니다. 다음 Direction이 있다고 하자.
 
 ~~~text id="t5o1dh"
 Direction
@@ -9283,9 +8314,7 @@ Position은 일반적으로
 (x, y, z, 1)
 ~~~
 
-로 표현하고,
-
-Direction은
+로 표현하고, Direction은
 
 ~~~text id="6mycd8"
 (x, y, z, 0)
@@ -9337,9 +8366,7 @@ Translation 적용되지 않음
 
 ### Rotation Affects Both Position and Direction
 
-Translation과 달리 Rotation은 Position과 Direction 모두에 영향을 줄 수 있다.
-
-예를 들어 X 방향을 향하는 Direction이 있다고 하자.
+Translation과 달리 Rotation은 Position과 Direction 모두에 영향을 줄 수 있다. 예를 들어 X 방향을 향하는 Direction이 있다고 하자.
 
 ~~~text id="vz0tns"
 Direction
@@ -9347,9 +8374,7 @@ Direction
 (1, 0, 0)
 ~~~
 
-이 Object를 회전시키면 Direction 역시 회전해야 한다.
-
-예를 들어 개념적으로 90도 회전했다고 하면
+이 Object를 회전시키면 Direction 역시 회전해야 한다. 예를 들어 개념적으로 90도 회전했다고 하면
 
 ~~~text id="xkz41j"
 Before
@@ -9365,9 +8390,7 @@ Rotation
 ↑
 ~~~
 
-처럼 방향 자체가 달라진다.
-
-즉,
+처럼 방향 자체가 달라진다. 즉,
 
 ~~~text id="iq7c6i"
 Position
@@ -9383,9 +8406,7 @@ Direction
 
 ### Why Rotation Must Affect Direction
 
-예를 들어 Character의 얼굴이 Forward 방향을 나타내는 Direction을 가지고 있다고 하자.
-
-Character가 회전했는데 Direction이 그대로라면
+예를 들어 Character의 얼굴이 Forward 방향을 나타내는 Direction을 가지고 있다고 하자. Character가 회전했는데 Direction이 그대로라면
 
 ~~~text id="6rq9vr"
 Character
@@ -9395,9 +8416,7 @@ Direction Data
 → 계속 앞을 봄
 ~~~
 
-처럼 실제 Object 방향과 Data가 일치하지 않게 된다.
-
-따라서 Object가 회전하면
+처럼 실제 Object 방향과 Data가 일치하지 않게 된다. 따라서 Object가 회전하면
 
 - Forward Vector
 - Right Vector
@@ -9411,9 +8430,9 @@ Direction Data
 
 ### Scale Can Affect Direction Values
 
-Scale 역시 Position과 Direction 모두의 숫자 값에 영향을 줄 수 있다.
+Translation을 제외했다고 Direction의 모든 성분이 그대로인 것은 아니다. X 쪽만 늘리면 대각선 화살표의 X 변화량이 Y 변화량보다 더 커진다. 축마다 다른 비율로 늘리는 **Non-uniform Scale**에서는 길이뿐 아니라 방향도 달라질 수 있다.
 
-예를 들어 Direction Vector가 다음과 같다고 하자.
+Scale 역시 Position과 Direction 모두의 숫자 값에 영향을 줄 수 있다. 예를 들어 Direction Vector가 다음과 같다고 하자.
 
 ~~~text id="xp44gk"
 Direction
@@ -9439,9 +8458,7 @@ After
 (2, 1, 0)
 ~~~
 
-즉 방향 자체도 달라질 수 있다.
-
-특히 **Non-uniform Scale**에서는 이러한 현상이 더 중요해진다.
+즉 방향 자체도 달라질 수 있다. 특히 **Non-uniform Scale**에서는 이러한 현상이 더 중요해진다.
 
 ---
 
@@ -9451,9 +8468,7 @@ After
 
 Direction Data는 종종 단순히 방향만 필요하기 때문에 길이를 `1`로 맞춰 사용한다.
 
-이런 Vector를 **Normalized Vector** 또는 **Unit Vector**라고 한다.
-
-예를 들어
+이런 Vector를 **Normalized Vector** 또는 **Unit Vector**라고 한다. 예를 들어
 
 ~~~text id="u1ntys"
 Direction
@@ -9469,9 +8484,7 @@ Direction
 (1, 0, 0)
 ~~~
 
-은 길이는 다르지만 같은 X 방향을 가리킨다.
-
-따라서 Transform 이후 Direction Vector의 길이가 변했다면 필요에 따라 다시 Normalize할 수 있다.
+은 길이는 다르지만 같은 X 방향을 가리킨다. 따라서 Transform 이후 Direction Vector의 길이가 변했다면 필요에 따라 다시 Normalize할 수 있다.
 
 ~~~text id="03st83"
 Direction Transform
@@ -9526,11 +8539,7 @@ w = 0
 
 ### A Practical DCC Example
 
-DCC Tool에서 Cube 하나를 생각해보자.
-
-Cube에는 Vertex Position도 있고 Surface Normal도 있다.
-
-Object를 World에서 오른쪽으로 이동시키면
+DCC Tool에서 Cube 하나를 생각해보자. Cube에는 Vertex Position도 있고 Surface Normal도 있다. Object를 World에서 오른쪽으로 이동시키면
 
 ~~~text id="avg5qn"
 Vertex Position
@@ -9544,9 +8553,7 @@ Normal Direction
 → 그대로
 ~~~
 
-다.
-
-Cube를 회전시키면 상황이 달라진다.
+다. Cube를 회전시키면 상황이 달라진다.
 
 ~~~text id="fa7sdt"
 Vertex Position
@@ -9564,9 +8571,9 @@ Normal Direction
 
 ### Normal Is Also a Direction, but It Needs Special Care
 
-Normal은 Surface가 어느 방향을 향하고 있는지를 나타낸다.
+Surface 위에 붙은 화살표와 Surface 바깥을 가리키는 화살표를 함께 생각해보자. 회전은 둘을 함께 돌리지만 한 축만 늘리면 두 화살표의 관계가 달라질 수 있다. Normal은 단순히 따라 늘릴 화살표가 아니라, Surface의 방향 관계를 대표해야 하는 Data다. 그래서 일반 Direction과 같은 처리를 해도 되는지 따로 확인한다.
 
-따라서 기본적으로 Direction Data로 생각할 수 있다.
+Normal은 Surface가 어느 방향을 향하고 있는지를 나타낸다. 따라서 기본적으로 Direction Data로 생각할 수 있다.
 
 ~~~text id="7i35pk"
 Normal
@@ -9576,11 +8583,7 @@ Normal
 → Translation 영향 X
 ~~~
 
-Object를 이동시켜도 Normal 방향 자체는 바뀌지 않는다.
-
-Rotation을 적용하면 Normal도 함께 회전한다.
-
-여기까지는 일반 Direction과 비슷하다.
+Object를 이동시켜도 Normal 방향 자체는 바뀌지 않는다. Rotation을 적용하면 Normal도 함께 회전한다. 여기까지는 일반 Direction과 비슷하다.
 
 하지만 **Non-uniform Scale**이 들어가면 문제가 생길 수 있다.
 
@@ -9608,17 +8611,13 @@ Y = 1
 Z = 0.5
 ~~~
 
-Object가 한 방향으로 늘어나거나 눌리는 경우다.
-
-DCC Tool에서는 매우 흔한 Transform이다.
+Object가 한 방향으로 늘어나거나 눌리는 경우다. DCC Tool에서는 매우 흔한 Transform이다.
 
 ---
 
 ### Why Normal Becomes a Special Case
 
-Non-uniform Scale로 Surface를 한 방향으로 늘리면 Surface 위에서 따라갈 수 있는 Tangent 방향도 달라진다. 이때 Geometric Normal은 변형된 Surface에 수직인 관계를 계속 유지해야 한다.
-
-일반 Direction을 변환하는 목적은 그 화살표 자체를 Geometry와 함께 늘리는 것이다. Normal을 변환하는 목적은 **변형된 Surface와의 수직 관계를 유지하는 것**이다. 목적이 다르므로 같은 Scale을 적용한 결과가 올바르다고 가정할 수 없다.
+Non-uniform Scale로 Surface를 한 방향으로 늘리면 Surface 위에서 따라갈 수 있는 Tangent 방향도 달라진다. 이때 Geometric Normal은 변형된 Surface에 수직인 관계를 계속 유지해야 한다. 일반 Direction을 변환하는 목적은 그 화살표 자체를 Geometry와 함께 늘리는 것이다. Normal을 변환하는 목적은 **변형된 Surface와의 수직 관계를 유지하는 것**이다. 목적이 다르므로 같은 Scale을 적용한 결과가 올바르다고 가정할 수 없다.
 
 ~~~text
 Surface에 Non-uniform Scale 적용
@@ -9628,17 +8627,13 @@ Surface 위의 Tangent 방향 변화
 Normal은 새 Tangent에 수직이어야 함
 ~~~
 
-Normal에 일반 Direction과 같은 변환을 그대로 적용하면 새 Surface에 수직이 아닌 방향이 남을 수 있다. 길이를 Normalize해도 틀어진 각도 자체를 고치지는 못한다.
-
-여기서 수직 관계의 기준은 **Geometric Normal과 해당 Surface의 Tangent**다. Shading Normal은 보간, Normal Map, Artist 조정으로 Geometry의 Face Normal과 달라질 수 있다. Shading Normal을 사용할 때도 그 Data의 의미와 변환 Space를 명확히 구분한다.
+Normal에 일반 Direction과 같은 변환을 그대로 적용하면 새 Surface에 수직이 아닌 방향이 남을 수 있다. 길이를 Normalize해도 틀어진 각도 자체를 고치지는 못한다. 여기서 수직 관계의 기준은 **Geometric Normal과 해당 Surface의 Tangent**다. Shading Normal은 보간, Normal Map, Artist 조정으로 Geometry의 Face Normal과 달라질 수 있다. Shading Normal을 사용할 때도 그 Data의 의미와 변환 Space를 명확히 구분한다.
 
 ---
 
 ### Why This Matters for Lighting
 
-Normal은 Lighting 계산에서 매우 중요하다.
-
-예를 들어 Lighting에서는 자주
+Normal은 Lighting 계산에서 매우 중요하다. 예를 들어 Lighting에서는 자주
 
 ~~~text id="q49gih"
 Normal
@@ -9646,11 +8641,7 @@ Normal
 Light Direction
 ~~~
 
-사이의 관계를 사용한다.
-
-Normal이 Surface의 실제 방향과 맞지 않으면 Lighting 결과도 틀어진다.
-
-즉,
+사이의 관계를 사용한다. Normal이 Surface의 실제 방향과 맞지 않으면 Lighting 결과도 틀어진다. 즉,
 
 > **Normal Transform이 잘못되면 Geometry는 올바르게 보이더라도 Lighting이 잘못될 수 있다.**
 
@@ -9660,9 +8651,9 @@ Normal이 Surface의 실제 방향과 맞지 않으면 Lighting 결과도 틀어
 
 ### Normal Matrix
 
-앞의 문제를 해결하려면 Surface를 늘린 것과 같은 방식으로 Normal을 늘리는 대신, **Surface와의 수직 관계를 유지하도록 Scale의 영향을 보정**해야 한다.
+여기서 필요한 것은 “같은 방향 성분에 같은 Scale을 적용하기”가 아니라 “변형 뒤에도 필요한 Surface 관계를 지키기”다. **Inverse**는 Transform을 되돌리는 관계이고 **Transpose**는 Matrix의 행(Row)과 열(Column)을 바꾸는 연산이다. **Inverse Transpose**는 이 둘을 연결한 Normal 변환의 도구다. 이름의 세부 유도보다 보존해야 할 수직 관계를 먼저 읽고, 수치 예제와 원리는 Chapter 03의 3.5에서 이어간다.
 
-예를 들어 X 방향으로 Surface를 더 늘렸다면, Normal 성분을 같은 방향으로 더 늘리는 것만으로는 필요한 관계를 지키지 못한다. Normal의 변환에는 Scale에 대한 역방향 보정이 필요하다. 이것을 일반적인 Transform의 관계로 표현하는 도구가 **Normal Matrix**다.
+앞의 문제를 해결하려면 Surface를 늘린 것과 같은 방식으로 Normal을 늘리는 대신, **Surface와의 수직 관계를 유지하도록 Scale의 영향을 보정**해야 한다. 예를 들어 X 방향으로 Surface를 더 늘렸다면, Normal 성분을 같은 방향으로 더 늘리는 것만으로는 필요한 관계를 지키지 못한다. Normal의 변환에는 Scale에 대한 역방향 보정이 필요하다. 이것을 일반적인 Transform의 관계로 표현하는 도구가 **Normal Matrix**다.
 
 Normal Matrix는 변환의 **Inverse Transpose**와 연결된다. 이 변환과 재정규화의 관계는 [NVIDIA GPU Gems의 Normal 변환 설명](https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-42-deformers)에서도 확인할 수 있다. 여기서 먼저 기억할 것은 이름보다 각 Data의 변환 목적이다.
 
@@ -9674,25 +8665,28 @@ Normal → Surface의 방향 관계를 보존하도록 변환
 
 순수 Rotation처럼 일반 Direction 변환과 같은 방향 결과를 얻는 조건도 있다. 하지만 Non-uniform Scale이 포함되면 일반 Direction 변환만으로 충분하다고 가정하지 않는다. 적절한 Normal Transform 뒤에는 Unit Normal이 필요한 계산을 위해 Normalize 조건도 확인한다.
 
-이 절은 Position / Direction / Normal의 변환 책임을 구분한다. Inverse Transpose가 수직 관계를 보존하는 이유와 수치 예제의 Primary Explanation은 **Chapter 03의 3.5 Normal Transformation**에 둔다. 긴 Matrix 증명을 여기서 추가하지 않는다.
-
-Artist가 만든 Shading Normal도 Translation을 받지 않는 방향 Data다. 다만 Face Normal과 같아야 한다는 뜻은 아니며, 어느 Space에서 어떤 기준 방향으로 만든 값인지 함께 확인한다.
+이 절은 Position / Direction / Normal의 변환 책임을 구분한다. Inverse Transpose가 수직 관계를 보존하는 이유와 수치 예제의 Primary Explanation은 **Chapter 03의 3.5 Normal Transformation**에 둔다. 긴 Matrix 증명을 여기서 추가하지 않는다. Artist가 만든 Shading Normal도 Translation을 받지 않는 방향 Data다. 다만 Face Normal과 같아야 한다는 뜻은 아니며, 어느 Space에서 어떤 기준 방향으로 만든 값인지 함께 확인한다.
 
 ---
 
-Figure 2-13에서는 Translation이 Position에만 참여하는 이유를 먼저 비교한다. M=T·R·S는 Column Vector의 곱이며 실제 적용 순서는 Scale → Rotation → Translation이다. Normal 패널은 Geometric Normal과 Shading Normal을 구분하고, Non-uniform Scale에서 Surface 관계를 별도로 보존해야 한다는 점을 요약한다.
+Figure 2-13의 첫 비교는 “Object를 옮길 때 위치와 방향 중 무엇이 달라져야 하는가”다. 뒤의 Normal 비교는 “늘어난 Surface와의 관계까지 지켰는가”라는 추가 질문으로 읽는다.
 
 <img src="Figures/Chapter02/Fig2_13.png" width="90%">
 
 **Figure 2-13. Position Transform vs Direction Transform**
 
+<details>
+<summary>Figure Reading Note — Example Conditions and Scope</summary>
+
+Figure 2-13에서는 Translation이 Position에만 참여하는 이유를 먼저 비교한다. M=T·R·S는 Column Vector의 곱이며 실제 적용 순서는 Scale → Rotation → Translation이다. Normal 패널은 Geometric Normal과 Shading Normal을 구분하고, Non-uniform Scale에서 Surface 관계를 별도로 보존해야 한다는 점을 요약한다.
+
+</details>
+
 ---
 
 ### Why Not Treat Every Vector the Same?
 
-Rendering에서는 많은 Data가 Vector 형태를 가진다.
-
-예를 들면
+Rendering에서는 많은 Data가 Vector 형태를 가진다. 예를 들면
 
 - Position
 - Direction
@@ -9702,9 +8696,7 @@ Rendering에서는 많은 Data가 Vector 형태를 가진다.
 - View Direction
 - Velocity
 
-등이 있다.
-
-모두 숫자 세 개로 표현될 수 있다.
+등이 있다. 모두 숫자 세 개로 표현될 수 있다.
 
 ~~~text id="01226g"
 (x, y, z)
@@ -9760,9 +8752,7 @@ Projection Matrix
 Clip Position
 ~~~
 
-반면 Direction Data는 Projection Matrix까지 Position과 완전히 같은 방식으로 처리하는 것이 일반적인 목적은 아니다.
-
-예를 들어 Lighting에 사용하는
+반면 Direction Data는 Projection Matrix까지 Position과 완전히 같은 방식으로 처리하는 것이 일반적인 목적은 아니다. 예를 들어 Lighting에 사용하는
 
 ~~~text id="o48fph"
 Normal
@@ -9772,15 +8762,11 @@ Light Direction
 View Direction
 ~~~
 
-등은 주로 Lighting 계산에 필요한 Coordinate Space로 변환해서 사용한다.
-
-즉,
+등은 주로 Lighting 계산에 필요한 Coordinate Space로 변환해서 사용한다. 즉,
 
 > **Position Transform의 목적과 Direction Transform의 목적은 서로 다를 수 있다.**
 
-Position은 Geometry를 Screen까지 전달하기 위한 Coordinate Flow를 따라가고,
-
-Direction은 주로 Surface Orientation이나 Lighting 관계를 계산하기 위한 Space Conversion에 사용된다.
+Position은 Geometry를 Screen까지 전달하기 위한 Coordinate Flow를 따라가고, Direction은 주로 Surface Orientation이나 Lighting 관계를 계산하기 위한 Space Conversion에 사용된다.
 
 ---
 
@@ -9822,35 +8808,25 @@ w = 0
 → Translation 제외
 ~~~
 
-하지만 Direction이라고 해서 모든 Vector를 동일하게 처리할 수 있는 것은 아니다.
-
-특히 Normal은
+하지만 Direction이라고 해서 모든 Vector를 동일하게 처리할 수 있는 것은 아니다. 특히 Normal은
 
 > **Surface의 방향 관계를 보존해야 하는 Direction Data**
 
-이므로 Non-uniform Scale에서는 일반 Direction Transform과 다른 처리가 필요할 수 있다.
-
-그리고 실제 Shader에서는 Position인지 Direction인지뿐 아니라
+이므로 Non-uniform Scale에서는 일반 Direction Transform과 다른 처리가 필요할 수 있다. 그리고 실제 Shader에서는 Position인지 Direction인지뿐 아니라
 
 > **현재 어떤 Coordinate Space의 Data인가**
 
-도 반드시 함께 확인해야 한다.
-
-다음 절에서는 Surface Direction Data를 이해하는 데 핵심이 되는 **Tangent Space**를 살펴본다.
+도 반드시 함께 확인해야 한다. 다음 절에서는 Surface Direction Data를 이해하는 데 핵심이 되는 **Tangent Space**를 살펴본다.
 
 ---
 
 ## 2.14 Tangent Space
 
-Normal Map을 Object에 적용한 뒤 Object를 회전시켜보자. Texture를 다시 만들지 않아도 주름이나 홈의 Lighting Detail이 Surface를 따라 회전하기를 기대한다.
-
-그러려면 Texture에 저장한 Direction을 World의 고정된 축이 아니라 **그 Surface를 기준으로** 읽을 수 있어야 한다. 그래서 먼저 다음 질문에 답해야 한다.
+Normal Map을 Object에 적용한 뒤 Object를 회전시켜보자. Texture를 다시 만들지 않아도 주름이나 홈의 Lighting Detail이 Surface를 따라 회전하기를 기대한다. 그러려면 Texture에 저장한 Direction을 World의 고정된 축이 아니라 **그 Surface를 기준으로** 읽을 수 있어야 한다. 그래서 먼저 다음 질문에 답해야 한다.
 
 > **Normal Map에 저장된 방향은 무엇을 기준으로 표현되어 있는가?**
 
-일반적인 Normal Map은 Surface에 붙어 있는 **Tangent Space**를 기준으로 Direction을 저장한다. Object 전체의 Local Origin과 Axis를 사용하는 Local Space와 달리, Surface의 위치와 방향에 따라 그 기준도 달라진다.
-
-다음 문제는 Lighting이다. Light Direction을 World Space로 계산했다면 Tangent Space Normal을 그대로 비교할 수 없다. Surface의 방향 기준을 이용해 같은 Lighting Space로 옮겨야 한다.
+여기서 **Normal Map**은 Surface의 세부 방향을 Texture에 저장해 Geometry를 늘리지 않고 Lighting Detail을 표현하는 Data다. 일반적인 Tangent-space Normal Map은 Surface에 붙어 있는 **Tangent Space**를 기준으로 Direction을 저장한다. Object 전체의 Local Origin과 Axis를 사용하는 Local Space와 달리, Surface의 위치와 방향에 따라 그 기준도 달라진다. 다음 문제는 Lighting이다. Light Direction을 World Space로 계산했다면 Tangent Space Normal을 그대로 비교할 수 없다. Surface의 방향 기준을 이용해 같은 Lighting Space로 옮겨야 한다.
 
 ~~~text
 Texture에 저장한 Direction
@@ -9859,17 +8835,15 @@ Texture에 저장한 Direction
     → Light / View Direction과 비교
 ~~~
 
-이 절에서는 Surface의 T/B/N 기준부터 읽고, Normal Map의 Encoding을 분리해서 이해한 뒤 **TBN**을 변환 도구로 연결한다. Geometric Normal과 Shading Normal의 구분은 2.13을 그대로 유지한다.
+이 절에서는 Surface의 T/B/N 기준부터 읽는다. **Encoding**은 Direction을 Texture가 저장할 수 있는 값으로 바꿔 기록하는 과정이다. 그 저장값을 Direction 성분으로 되돌리는 과정은 **Decode**다. 이를 Space 변환과 분리해 이해한 뒤, 앞서 이름을 본 **TBN**을 변환 도구로 연결한다. Geometric Normal과 Shading Normal의 구분은 2.13을 그대로 유지한다.
 
 ---
 
 ### Tangent Space Is a Local Coordinate System on the Surface
 
-Local Space는 Object 전체의 Origin과 Axis를 기준으로 한다.
+Character가 회전해도 피부의 주름 방향은 피부에 붙어 있어야 한다. World의 고정된 오른쪽을 Texture에 저장했다면 이 요구와 맞지 않을 수 있다. Surface의 위치마다 함께 움직이는 작은 축을 두면, Texture의 Direction을 그 축 기준으로 계속 읽을 수 있다.
 
-예를 들어 Cube 하나가 있다면 Cube 전체가 하나의 Local Coordinate System을 가진다.
-
-반면 Tangent Space는 Surface의 각 지점에서 만들어진다.
+Local Space는 Object 전체의 Origin과 Axis를 기준으로 한다. 예를 들어 Cube 하나가 있다면 Cube 전체가 하나의 Local Coordinate System을 가진다. 반면 Tangent Space는 Surface의 각 지점에서 만들어진다.
 
 개념적으로는 다음과 같다.
 
@@ -9895,9 +8869,9 @@ Tangent Space
 
 ### TBN Basis
 
-Normal Map의 한 Direction을 Surface 기준으로 읽으려면 Surface의 옆 방향과 바깥 방향이 필요하다. World의 X/Y/Z처럼 사용할 세 기준 방향을 먼저 준비한다.
+Surface 위에서 “옆으로 얼마나, 다른 옆 방향으로 얼마나, 바깥으로 얼마나” 기울었는지 읽을 세 기준이 필요하다. 그 기준 방향의 묶음을 **Basis(성분을 읽는 기준 방향들)**라고 한다. **TBN(Tangent, Bitangent, Normal)**은 Surface 위의 두 방향과 바깥 방향의 머리글자를 묶은 이름이다. 이 이름 자체가 Matrix를 요구하는 것은 아니다. 먼저 세 방향을 이해하고, 뒤에서 다른 Space로 옮길 때 Matrix로 묶는다.
 
-일반적으로 이 방향을 **Tangent, Bitangent, Normal**이라고 부른다. 이 셋이 Tangent Space의 Basis를 이룬다.
+Normal Map의 한 Direction을 Surface 기준으로 읽으려면 Surface의 옆 방향과 바깥 방향이 필요하다. World의 X/Y/Z처럼 사용할 세 기준 방향을 먼저 준비한다. 일반적으로 이 방향을 **Tangent, Bitangent, Normal**이라고 부른다. 이 셋이 Tangent Space의 Basis를 이룬다.
 
 ~~~text
 T → Tangent
@@ -9923,9 +8897,7 @@ Tangent Space의 바깥 방향 기준이다. 평평한 Surface의 Geometric Norm
 
 ### Why Is It Called a Basis?
 
-여기서 **Basis**는 Coordinate System을 구성하는 기준 방향이라고 생각하면 된다.
-
-예를 들어 World Space에는
+여기서 **Basis**는 Coordinate System을 구성하는 기준 방향이라고 생각하면 된다. 예를 들어 World Space에는
 
 ~~~text id="17f9hy"
 World X
@@ -9935,9 +8907,7 @@ World Y
 World Z
 ~~~
 
-가 있다.
-
-Tangent Space에서는 그 역할을
+가 있다. Tangent Space에서는 그 역할을
 
 ~~~text id="4g8ffm"
 Tangent
@@ -9947,15 +8917,11 @@ Bitangent
 Normal
 ~~~
 
-이 대신한다.
-
-즉,
+이 대신한다. 즉,
 
 > **Tangent, Bitangent, Normal은 Tangent Space의 X/Y/Z Axis와 비슷한 역할을 한다.**
 
-라고 이해할 수 있다.
-
-정확한 축 대응 방식은 Convention에 따라 달라질 수 있지만, 개념적으로는
+라고 이해할 수 있다. 정확한 축 대응 방식은 Convention에 따라 달라질 수 있지만, 개념적으로는
 
 ~~~text id="q4ufb3"
 Tangent
@@ -9974,15 +8940,9 @@ Normal
 
 ### Tangent Space Changes Across the Surface
 
-Object Local Space는 Object 전체에서 하나의 기준 Coordinate System을 가진다.
+Object Local Space는 Object 전체에서 하나의 기준 Coordinate System을 가진다. 하지만 Tangent Space는 Surface가 휘어지면 방향도 함께 변한다. 예를 들어 Sphere를 생각해보자.
 
-하지만 Tangent Space는 Surface가 휘어지면 방향도 함께 변한다.
-
-예를 들어 Sphere를 생각해보자.
-
-Sphere의 위쪽 Normal과 옆쪽 Normal은 서로 다른 방향을 가진다.
-
-따라서 각 Surface Point의 Tangent Space도 서로 다르게 배치된다.
+Sphere의 위쪽 Normal과 옆쪽 Normal은 서로 다른 방향을 가진다. 따라서 각 Surface Point의 Tangent Space도 서로 다르게 배치된다.
 
 ~~~text id="j5hmr7"
 Surface Point A
@@ -10010,9 +8970,9 @@ N_B
 
 ### Tangent and UV Are Closely Related
 
-Tangent와 Bitangent는 보통 Mesh의 UV Coordinate와 밀접하게 연결된다.
+Chapter 01의 UV는 Texture의 위치를 읽는 두 좌표 U와 V였다. 이번에는 UV 숫자가 Surface 위에서 어느 쪽으로 증가하는지 본다. Texture의 오른쪽으로 한 칸 움직일 때 Mesh Surface의 어느 방향으로 이동하는지 연결하면 Tangent의 방향을 이해할 수 있다. Texture 위치와 3D 방향은 서로 관련되어도 같은 종류의 Data가 아니다.
 
-UV에는 두 방향이 있다.
+Tangent와 Bitangent는 보통 Mesh의 UV Coordinate와 밀접하게 연결된다. UV에는 두 방향이 있다.
 
 ~~~text id="8305mk"
 U
@@ -10030,9 +8990,7 @@ Bitangent
 → V 방향과 연결
 ~~~
 
-해서 계산할 수 있다.
-
-즉,
+해서 계산할 수 있다. 즉,
 
 > **UV가 Surface 위에서 어느 방향으로 펼쳐지는지를 이용해 Tangent Space의 방향을 정의한다.**
 
@@ -10042,17 +9000,9 @@ Bitangent
 
 ### Why Does Normal Mapping Need Tangent Space?
 
-Normal Map은 Texture다.
+Normal Map은 Texture다. Texture는 2D UV Space에 저장된다. 하지만 실제 Lighting 계산은 3D Surface 위에서 이루어진다.
 
-Texture는 2D UV Space에 저장된다.
-
-하지만 실제 Lighting 계산은 3D Surface 위에서 이루어진다.
-
-따라서 Texture에 저장된 방향 정보를 Surface Orientation과 연결할 Coordinate System이 필요하다.
-
-그 역할을 하는 것이 Tangent Space다.
-
-개념적으로는 다음과 같다.
+따라서 Texture에 저장된 방향 정보를 Surface Orientation과 연결할 Coordinate System이 필요하다. 그 역할을 하는 것이 Tangent Space다. 개념적으로는 다음과 같다.
 
 ~~~text id="t1my47"
 Normal Map
@@ -10079,11 +9029,9 @@ Lighting에 사용할 Normal
 
 ### Tangent Space Normal Map
 
-일반적인 Tangent Space Normal Map은 다음과 같은 보라색 계열의 Texture로 보인다.
+Direction에는 음수 성분이 있을 수 있지만 Texture는 정해진 저장 범위를 사용한다. 따라서 방향 성분을 그대로 색으로 칠하는 대신 저장 가능한 RGB 값으로 바꿔 기록한다. 이 과정을 **Encoding**이라고 한다. RGB는 Red/Green/Blue 세 Channel이며, 여기서는 보이는 색이 아니라 T/B/N 방향 성분을 저장하는 통로다.
 
-이 Texture의 RGB 값은 Color 자체가 목적이 아니다.
-
-각 Channel은 Direction 정보를 저장한다.
+일반적인 Tangent Space Normal Map은 다음과 같은 보라색 계열의 Texture로 보인다. 이 Texture의 RGB 값은 Color 자체가 목적이 아니다. 각 Channel은 Direction 정보를 저장한다.
 
 개념적으로는 다음과 같다.
 
@@ -10106,9 +9054,7 @@ B
 
 ### Why Does a Flat Normal Map Look Purple?
 
-Detail을 추가하지 않은 Normal Map은 Surface 기준의 기본 바깥 방향을 저장한다. Tangent Space에서 T와 B 쪽으로 기울지 않았다면 N Axis 방향, 일반적으로 (0, 0, 1)이다.
-
-이 Direction을 Texture에 저장하려면 범위를 맞춰야 한다. Direction의 성분에는 음수가 있지만 일반적인 RGB 저장 값은 0~1 범위를 사용하기 때문이다.
+Detail을 추가하지 않은 Normal Map은 Surface 기준의 기본 바깥 방향을 저장한다. Tangent Space에서 T와 B 쪽으로 기울지 않았다면 N Axis 방향, 일반적으로 (0, 0, 1)이다. 이 Direction을 Texture에 저장하려면 범위를 맞춰야 한다. Direction의 성분에는 음수가 있지만 일반적인 RGB 저장 값은 0~1 범위를 사용하기 때문이다.
 
 ~~~text
 Direction 성분의 -1 ~ +1
@@ -10116,19 +9062,13 @@ Direction 성분의 -1 ~ +1
 Texture 값의 0 ~ 1
 ~~~
 
-이 Mapping에서 방향 성분의 0은 저장 값 0.5에, +1은 저장 값 1에 대응한다. 따라서 기본 (0, 0, 1) 방향의 RGB 예는 (0.5, 0.5, 1.0)이며 파란색 또는 보라색으로 보인다.
-
-이 색은 Material을 보라색으로 칠하라는 값이 아니다. **Surface 기준 Direction을 RGB 형태로 저장했을 때 보이는 모습**이다. 실제 저장 형식과 Decode 과정은 Chapter 04의 Normal Map 설명에서 이어진다.
+이 Mapping에서 방향 성분의 0은 저장 값 0.5에, +1은 저장 값 1에 대응한다. 따라서 기본 (0, 0, 1) 방향의 RGB 예는 (0.5, 0.5, 1.0)이며 파란색 또는 보라색으로 보인다. 이 색은 Material을 보라색으로 칠하라는 값이 아니다. **Surface 기준 Direction을 RGB 형태로 저장했을 때 보이는 모습**이다. 실제 저장 형식과 Decode 과정은 Chapter 04의 Normal Map 설명에서 이어진다.
 
 ---
 
 ### Normal Map Stores Surface Detail
 
-Low Poly Mesh의 실제 Geometry Normal만 사용하면 Surface는 비교적 단순하게 보인다.
-
-하지만 Normal Map을 사용하면 Texture 안에 미세한 Surface Direction 변화를 저장할 수 있다.
-
-예를 들어 Brick Surface를 생각해보자.
+Low Poly Mesh의 실제 Geometry Normal만 사용하면 Surface는 비교적 단순하게 보인다. 하지만 Normal Map을 사용하면 Texture 안에 미세한 Surface Direction 변화를 저장할 수 있다. 예를 들어 Brick Surface를 생각해보자.
 
 실제 Geometry는 평평할 수 있다.
 
@@ -10151,9 +9091,7 @@ Pixel C
 → Normal C
 ~~~
 
-Lighting 계산에서는 이 방향 차이를 사용한다.
-
-결과적으로 실제 Geometry를 크게 늘리지 않고도
+Lighting 계산에서는 이 방향 차이를 사용한다. 결과적으로 실제 Geometry를 크게 늘리지 않고도
 
 - 홈
 - 돌출
@@ -10166,17 +9104,11 @@ Lighting 계산에서는 이 방향 차이를 사용한다.
 
 ### Tangent Space Moves with the Surface
 
-Tangent Space Normal Map의 큰 장점은 Object Transform에 자연스럽게 따라간다는 것이다.
-
-예를 들어 Object를 World에서 회전시키더라도 Normal Map Texture 자체를 새로 만들 필요는 없다.
-
-왜냐하면 Normal Map은
+Tangent Space Normal Map의 큰 장점은 Object Transform에 자연스럽게 따라간다는 것이다. 예를 들어 Object를 World에서 회전시키더라도 Normal Map Texture 자체를 새로 만들 필요는 없다. 왜냐하면 Normal Map은
 
 > **World 방향이 아니라 Surface 자신의 Tangent Space 기준**
 
-으로 방향을 저장하기 때문이다.
-
-즉,
+으로 방향을 저장하기 때문이다. 즉,
 
 ~~~text id="u9aylk"
 Normal Map
@@ -10188,17 +9120,13 @@ Normal Map
 "이 Surface 기준으로 바깥쪽 / 옆쪽"
 ~~~
 
-으로 저장되어 있다.
-
-따라서 Object가 회전하면 Tangent Space도 함께 회전하고 Normal Map도 같은 Surface Detail을 유지할 수 있다.
+으로 저장되어 있다. 따라서 Object가 회전하면 Tangent Space도 함께 회전하고 Normal Map도 같은 Surface Detail을 유지할 수 있다.
 
 ---
 
 ### Why Not Store Everything in World Space?
 
-Normal Map을 World Space 기준으로 저장한다고 생각해보자.
-
-Object가 회전하면 기존 Texture에 저장된 World Direction과 실제 Surface 방향의 관계가 달라진다.
+Normal Map을 World Space 기준으로 저장한다고 생각해보자. Object가 회전하면 기존 Texture에 저장된 World Direction과 실제 Surface 방향의 관계가 달라진다.
 
 ~~~text id="a2mw1j"
 World Space Normal Map
@@ -10228,13 +9156,13 @@ Tangent Space도 함께 회전
 Normal Map Detail 유지
 ~~~
 
-가 가능하다.
-
-그래서 일반적인 Game Asset에서는 Tangent Space Normal Map이 매우 널리 사용된다.
+가 가능하다. 그래서 일반적인 Game Asset에서는 Tangent Space Normal Map이 매우 널리 사용된다.
 
 ---
 
 ### Tangent Space Normal Is Not Yet World Space Normal
+
+Texture에서 저장 범위의 값을 방향 성분으로 되돌리는 일이 **Decode**다. 그 결과가 Direction이라고 해도 그 Direction의 기준은 여전히 Surface의 Tangent Space다. “방향 값을 읽었는가”와 “Lighting의 World 기준으로 옮겼는가”는 두 단계로 구분해야 한다.
 
 Texture에서 Direction을 올바르게 Decode했더라도 아직 Lighting 입력을 준비한 것은 아니다. Decode는 저장 값을 방향 성분으로 읽는 과정이고, 그 Direction의 **기준 Space를 바꾸는 과정**은 따로 있기 때문이다.
 
@@ -10254,15 +9182,15 @@ World Space Normal
 World Space Light Direction과 비교
 ~~~
 
-Engine의 Normal Sampler가 이미 Direction을 Decode했다면 첫 단계를 반복하지 않는다. 다음 절의 TBN은 **Decode가 끝난 Direction을 다른 Space로 표현하는 도구**다.
+Texture에서 값을 읽는 규칙을 담당하는 것이 Sampler다. Engine의 Normal Sampler가 이미 Direction을 Decode했다면 첫 단계를 반복하지 않는다. 다음 절의 TBN은 **Decode가 끝난 Direction을 다른 Space로 표현하는 도구**다.
 
 ---
 
 ### TBN Matrix
 
-Tangent Space의 Direction에서 X 성분은 T 방향을 얼마나 사용하는지, Y는 B 방향을 얼마나 사용하는지, Z는 N 방향을 얼마나 사용하는지를 뜻한다.
+같은 화살표를 World에서 읽으려면 Surface의 T 방향이 World 어디를 향하는지 먼저 알아야 한다. B와 N도 같은 방식으로 World 방향을 준비한다. Tangent 성분은 World T를 얼마나 쓰는지, Bitangent 성분은 World B를 얼마나 쓰는지, Normal 성분은 World N을 얼마나 쓰는지를 알려준다. 그 세 방향의 조합을 Matrix 곱으로 표현한 것이 아래 식이다.
 
-그러므로 그 Direction을 World에서 표현하려면 Surface의 **T/B/N이 World에서 어느 방향인지** 알아야 한다. Tangent 성분만큼 World T를 사용하고, Bitangent 성분만큼 World B를 사용하며, Normal 성분만큼 World N을 사용해 하나의 방향을 만들 수 있다.
+Tangent Space의 Direction에서 X 성분은 T 방향을 얼마나 사용하는지, Y는 B 방향을 얼마나 사용하는지, Z는 N 방향을 얼마나 사용하는지를 뜻한다. 그러므로 그 Direction을 World에서 표현하려면 Surface의 **T/B/N이 World에서 어느 방향인지** 알아야 한다. Tangent 성분만큼 World T를 사용하고, Bitangent 성분만큼 World B를 사용하며, Normal 성분만큼 World N을 사용해 하나의 방향을 만들 수 있다.
 
 ~~~text
 Tangent Space의 Direction 성분
@@ -10285,27 +9213,30 @@ N_world = normalize(TBN × N_tangent)
 
 Engine의 Normal Sampler가 이미 Decode한 값에 RGB × 2 − 1을 다시 적용하지 않는다. T/B/N의 Space와 Matrix 곱 Convention도 함께 확인한다. View Space 결과가 필요하면 Basis도 그 목표 Space에서 표현해야 한다.
 
-Figure 2-14와 이 변환 예는 정규 직교 Basis를 가정한다. Basis의 transpose가 inverse와 같은 것은 orthonormal일 때다. 보간 뒤 길이만 Normalize했다고 세 Axis가 자동으로 서로 수직이 되는 것은 아니다. Mirrored UV의 Handedness와 Engine의 Basis 구성 방식도 맞춰야 한다.
-
-Scale이 있는 Object의 Normal을 어떻게 준비할지는 2.13의 Normal Transform 조건과 연결된다. 이 간단한 식만으로 모든 Engine의 Non-uniform Scale 처리가 보장된다고 읽지 않는다.
+Figure 2-14와 이 변환 예는 정규 직교 Basis를 가정한다. Basis의 transpose가 inverse와 같은 것은 orthonormal일 때다. 보간 뒤 길이만 Normalize했다고 세 Axis가 자동으로 서로 수직이 되는 것은 아니다. Mirrored UV의 Handedness와 Engine의 Basis 구성 방식도 맞춰야 한다. Scale이 있는 Object의 Normal을 어떻게 준비할지는 2.13의 Normal Transform 조건과 연결된다. 이 간단한 식만으로 모든 Engine의 Non-uniform Scale 처리가 보장된다고 읽지 않는다.
 
 </details>
 
 ---
 
-Figure 2-14에서는 Texture 저장 값의 Decode와 TBN에 의한 Space Conversion을 나누어 읽는다. Basis N은 Vertex / Shading Normal일 수 있으며 Face Normal과 항상 같은 것은 아니다. (0.5, 0.5, 1)은 기본 (0, 0, 1) Direction의 RGB 예다. 변환식의 T/B/N은 목표 Space에서 표현한 정규 직교 Basis를 가정한다. 이미 Decode한 Sampler 출력에는 같은 Decode를 반복하지 않는다.
+Figure 2-14에서는 Texture의 값을 Direction으로 읽는 Decode와, 그 Direction을 Lighting 기준으로 옮기는 TBN Transform을 나누어 본다. 저장값을 풀었다고 World 방향으로 바뀐 것은 아니다.
 
 <img src="Figures/Chapter02/Fig2_14.png" width="90%">
 
 **Figure 2-14. Tangent Space**
 
+<details>
+<summary>Figure Reading Note — Example Conditions and Scope</summary>
+
+Figure 2-14에서는 Texture 저장 값의 Decode와 TBN에 의한 Space Conversion을 나누어 읽는다. Basis N은 Vertex / Shading Normal일 수 있으며 Face Normal과 항상 같은 것은 아니다. (0.5, 0.5, 1)은 기본 (0, 0, 1) Direction의 RGB 예다. 변환식의 T/B/N은 목표 Space에서 표현한 정규 직교 Basis를 가정한다. 이미 Decode한 Sampler 출력에는 같은 Decode를 반복하지 않는다.
+
+</details>
+
 ---
 
 ### Why Convert Normal to World Space?
 
-Lighting 계산에서는 모든 Direction이 같은 Coordinate Space에 있어야 한다.
-
-예를 들어 다음 두 Vector가 있다고 하자.
+Lighting 계산에서는 모든 Direction이 같은 Coordinate Space에 있어야 한다. 예를 들어 다음 두 Vector가 있다고 하자.
 
 ~~~text id="7mlfux"
 Normal
@@ -10315,9 +9246,7 @@ Light Direction
 → World Space
 ~~~
 
-이 둘을 그대로 Dot Product하면 서로 다른 기준의 값을 비교하는 것이 된다.
-
-따라서 먼저 Space를 맞춘다.
+이 둘을 그대로 Dot Product하면 서로 다른 기준의 값을 비교하는 것이 된다. 따라서 먼저 Space를 맞춘다.
 
 ~~~text id="hv9u01"
 Tangent Space Normal
@@ -10339,9 +9268,7 @@ World Space Normal
 World Space Light Direction
 ~~~
 
-을 같은 Space에서 비교할 수 있다.
-
-즉,
+을 같은 Space에서 비교할 수 있다. 즉,
 
 > **Lighting 계산에서 중요한 것은 Normal이 어떤 Space에 있느냐가 아니라, 서로 비교하는 Direction들이 같은 Space에 있느냐이다.**
 
@@ -10349,11 +9276,7 @@ World Space Light Direction
 
 ### World Space Is Not the Only Option
 
-Normal을 반드시 World Space로 변환해야 하는 것은 아니다.
-
-Lighting 계산을 View Space에서 수행한다면 Normal도 View Space로 변환할 수 있다.
-
-또는 반대로 Light Direction을 Tangent Space로 변환해서 계산할 수도 있다.
+Normal을 반드시 World Space로 변환해야 하는 것은 아니다. Lighting 계산을 View Space에서 수행한다면 Normal도 View Space로 변환할 수 있다. 또는 반대로 Light Direction을 Tangent Space로 변환해서 계산할 수도 있다.
 
 즉,
 
@@ -10379,9 +9302,7 @@ Light
 World → Tangent
 ~~~
 
-처럼 여러 방식이 가능하다.
-
-핵심은
+처럼 여러 방식이 가능하다. 핵심은
 
 > **Lighting에 사용되는 Vector들이 동일한 Coordinate Space에 있어야 한다.**
 
@@ -10396,11 +9317,7 @@ Mesh에는 일반적으로 Vertex마다
 - Normal
 - Tangent
 
-같은 Attribute가 존재한다.
-
-Rasterization 과정에서는 Vertex 사이의 값이 Fragment 위치에 맞게 Interpolation된다.
-
-즉,
+같은 Attribute가 존재한다. Rasterization 과정에서는 Vertex 사이의 값이 Fragment 위치에 맞게 Interpolation된다. 즉,
 
 ~~~text id="8ocnct"
 Vertex A Tangent / Normal
@@ -10418,11 +9335,7 @@ Rasterization + Interpolation
 Fragment의 Tangent / Normal
 ~~~
 
-을 만들 수 있다.
-
-그 결과 Pixel 또는 Fragment 단위에서도 Surface에 맞는 Tangent Space를 구성할 수 있다.
-
-이 위에 Normal Map의 Detail Normal을 적용한다.
+을 만들 수 있다. 그 결과 Pixel 또는 Fragment 단위에서도 Surface에 맞는 Tangent Space를 구성할 수 있다. 이 위에 Normal Map의 Detail Normal을 적용한다.
 
 즉,
 
@@ -10432,9 +9345,7 @@ Fragment의 Tangent / Normal
 
 ### Tangent Space and Smooth Surface
 
-Curved Mesh에서는 Surface 위치마다 Normal 방향이 달라진다.
-
-예를 들어 Sphere에서는
+Curved Mesh에서는 Surface 위치마다 Normal 방향이 달라진다. 예를 들어 Sphere에서는
 
 ~~~text id="o5yqcv"
 Top Surface
@@ -10447,19 +9358,16 @@ Bottom Surface
 → Normal Down
 ~~~
 
-처럼 방향이 계속 변한다.
-
-Tangent Space도 Surface 방향에 맞춰 함께 변한다.
-
-따라서 같은 Normal Map Texture를 Sphere 전체에 적용해도 각 Surface 위치에 맞는 방향으로 Detail이 표현될 수 있다.
+처럼 방향이 계속 변한다. Tangent Space도 Surface 방향에 맞춰 함께 변한다. 따라서 같은 Normal Map Texture를 Sphere 전체에 적용해도 각 Surface 위치에 맞는 방향으로 Detail이 표현될 수 있다.
 
 ---
 
+<details>
+<summary>Implementation Note — Mirrored UV and Handedness</summary>
+
 ### Mirrored UV
 
-실무에서 Tangent Space를 사용할 때 주의해야 할 대표적인 경우가 **Mirrored UV**다.
-
-UV를 좌우 반전해서 재사용하면 Texture 공간의 방향이 뒤집힌다.
+실무에서 Tangent Space를 사용할 때 주의해야 할 대표적인 경우가 **Mirrored UV**다. UV를 좌우 반전해서 재사용하면 Texture 공간의 방향이 뒤집힌다.
 
 ~~~text id="of4zkt"
 Original UV
@@ -10471,21 +9379,20 @@ Mirrored UV
 ← U
 ~~~
 
-이 경우 Tangent 방향 역시 뒤집힐 수 있다.
-
-따라서 Tangent Basis를 올바르게 처리하지 않으면 Normal Map Lighting이 반대로 보이거나 Seam이 생길 수 있다.
-
-즉,
+이 경우 Tangent 방향 역시 뒤집힐 수 있다. 따라서 Tangent Basis를 올바르게 처리하지 않으면 Normal Map Lighting이 반대로 보이거나 Seam이 생길 수 있다. 즉,
 
 > **Mirrored UV에서는 UV Orientation과 Tangent Orientation의 관계를 주의해야 한다.**
 
+</details>
+
 ---
+
+<details>
+<summary>Implementation Note — Tangent Seams and Vertex Data</summary>
 
 ### Tangent Discontinuity
 
-UV Seam이나 Hard Edge에서는 Tangent Space가 연속적이지 않을 수 있다.
-
-예를 들어 UV Island가 분리되면 같은 Geometry 위치라도 UV 방향이 달라질 수 있다.
+UV Seam이나 Hard Edge에서는 Tangent Space가 연속적이지 않을 수 있다. 예를 들어 UV Island가 분리되면 같은 Geometry 위치라도 UV 방향이 달라질 수 있다.
 
 ~~~text id="y5id9f"
 Surface A
@@ -10503,25 +9410,22 @@ Surface B
 Tangent B
 ~~~
 
-따라서 Seam 경계에서는 Tangent가 달라질 수 있다.
-
-이 때문에 Rendering용 Mesh에서는 같은 Position에 여러 Vertex가 존재하는 경우도 생긴다.
-
-Chapter 01에서 살펴본
+따라서 Seam 경계에서는 Tangent가 달라질 수 있다. 이 때문에 Rendering용 Mesh에서는 같은 Position에 여러 Vertex가 존재하는 경우도 생긴다. Chapter 01에서 살펴본
 
 > **같은 DCC Point가 UV나 Normal이 다르면 Rendering에서는 여러 Vertex로 분리될 수 있다.**
 
 는 내용과 연결된다.
 
+</details>
+
 ---
+
+<details>
+<summary>Implementation Note — Tangent Data and Vertex Splits</summary>
 
 ### Tangent and Vertex Splits
 
-예를 들어 하나의 Geometry Point가 UV Seam에 걸려 있다고 하자.
-
-DCC에서는 하나의 위치처럼 보일 수 있다.
-
-하지만 Render Data에서는
+예를 들어 하나의 Geometry Point가 UV Seam에 걸려 있다고 하자. DCC에서는 하나의 위치처럼 보일 수 있다. 하지만 Render Data에서는
 
 ~~~text id="hv09sc"
 Position
@@ -10534,21 +9438,19 @@ Tangent
 → 다를 수 있음
 ~~~
 
-이므로 여러 Vertex Data로 분리될 수 있다.
-
-즉,
+이므로 여러 Vertex Data로 분리될 수 있다. 즉,
 
 > **Tangent Space는 Vertex Count와도 간접적으로 연결될 수 있다.**
 
 이 내용은 이후 Chapter 09 - Rendering Debug and Optimization에서 Vertex Split과 Geometry Cost를 다룰 때 다시 연결할 수 있다.
 
+</details>
+
 ---
 
 ### Normalization After Transform
 
-Lighting에서 방향의 관계만 비교하려면 Vector의 길이가 결과에 섞이지 않아야 한다. 하지만 Vertex의 Unit Normal을 사용했다고 해서 Fragment에서도 길이가 계속 1인 것은 아니다.
-
-Interpolation과 Scale, Coordinate Transform을 거치면 Normal이나 Tangent의 Length가 바뀔 수 있다. 따라서 필요한 Transform을 마친 뒤 Lighting 계산 전에 길이를 다시 확인한다.
+Lighting에서 방향의 관계만 비교하려면 Vector의 길이가 결과에 섞이지 않아야 한다. 하지만 Vertex의 Unit Normal을 사용했다고 해서 Fragment에서도 길이가 계속 1인 것은 아니다. Interpolation과 Scale, Coordinate Transform을 거치면 Normal이나 Tangent의 Length가 바뀔 수 있다. 따라서 필요한 Transform을 마친 뒤 Lighting 계산 전에 길이를 다시 확인한다.
 
 ~~~text
 Interpolation / Transform
@@ -10560,28 +9462,20 @@ Unit Direction
 Lighting
 ~~~
 
-Normalize는 길이를 맞추는 도구다. 잘못된 Normal Transform으로 틀어진 방향이나 서로 수직이 아니게 된 Basis를 이것 하나로 모두 고치는 것은 아니다. 올바른 Transform과 Basis를 먼저 준비한 뒤 Unit Normal을 사용한다.
-
-Normalize의 원리와 Zero Vector 조건은 Chapter 03에서 다룬다.
+Normalize는 길이를 맞추는 도구다. 잘못된 Normal Transform으로 틀어진 방향이나 서로 수직이 아니게 된 Basis를 이것 하나로 모두 고치는 것은 아니다. 올바른 Transform과 Basis를 먼저 준비한 뒤 Unit Normal을 사용한다. Normalize의 원리와 Zero Vector 조건은 Chapter 03에서 다룬다.
 
 ---
 
 ### Tangent Space vs Local Space
 
-두 Space는 모두 Object와 관련되어 있기 때문에 처음에는 비슷하게 느껴질 수 있다.
-
-하지만 기준이 다르다.
+두 Space는 모두 Object와 관련되어 있기 때문에 처음에는 비슷하게 느껴질 수 있다. 하지만 기준이 다르다.
 
 | Space | 기준 |
 |---|---|
 | Local Space | Object 전체의 Origin과 Axis |
 | Tangent Space | Surface의 각 Point에서 T/B/N으로 만든 Axis |
 
-Local Space는 Object 전체에서 공통이다.
-
-Tangent Space는 Surface 위치에 따라 달라진다.
-
-즉,
+Local Space는 Object 전체에서 공통이다. Tangent Space는 Surface 위치에 따라 달라진다. 즉,
 
 ~~~text id="gh4d11"
 Local Space
@@ -10601,9 +9495,7 @@ Surface 기준
 
 ### Tangent Space vs UV Space
 
-UV Space와 Tangent Space 역시 관련은 있지만 같은 Space는 아니다.
-
-UV Space는 Texture 위의 2D Coordinate다.
+UV Space와 Tangent Space 역시 관련은 있지만 같은 Space는 아니다. UV Space는 Texture 위의 2D Coordinate다.
 
 ~~~text id="dvn0wo"
 UV Space
@@ -10619,9 +9511,7 @@ Tangent Space
 (T, B, N)
 ~~~
 
-UV의 U/V 방향을 이용해서 Tangent와 Bitangent 방향을 계산할 수 있기 때문에 서로 밀접한 관계가 있다.
-
-하지만
+UV의 U/V 방향을 이용해서 Tangent와 Bitangent 방향을 계산할 수 있기 때문에 서로 밀접한 관계가 있다. 하지만
 
 > **UV Space는 2D Texture Coordinate이고, Tangent Space는 Surface 위의 3D Direction Coordinate System이다.**
 
@@ -10631,19 +9521,13 @@ UV의 U/V 방향을 이용해서 Tangent와 Bitangent 방향을 계산할 수 �
 
 ### Tangent Space in a Character Shader
 
-Character Shader에서도 Tangent Space는 매우 중요하다.
-
-예를 들어 Character의 Skin Normal Map에는
+Character Shader에서도 Tangent Space는 매우 중요하다. 예를 들어 Character의 Skin Normal Map에는
 
 - 피부 주름
 - 모공
 - 작은 형태 변화
 
-등이 저장될 수 있다.
-
-Hair나 Cloth에서도 Surface Detail을 표현하는 데 Normal Map을 사용할 수 있다.
-
-이 Detail을 실제 Lighting에 사용하려면
+등이 저장될 수 있다. Hair나 Cloth에서도 Surface Detail을 표현하는 데 Normal Map을 사용할 수 있다. 이 Detail을 실제 Lighting에 사용하려면
 
 ~~~text id="v190aq"
 Normal Map Sample
@@ -10665,9 +9549,7 @@ Lighting Space Normal
 Lighting Calculation
 ~~~
 
-과정을 거친다.
-
-즉,
+과정을 거친다. 즉,
 
 > **Normal Map Texture와 실제 3D Lighting을 연결하는 중간 다리가 Tangent Space다.**
 
@@ -10688,11 +9570,7 @@ Tangent Space는 Surface 위에 작은 Coordinate Axis가 붙어 있다고 생�
  Bitangent
 ~~~
 
-Surface가 회전하면 이 Axis도 함께 회전한다.
-
-Surface가 휘어지면 각 Point의 Axis 방향도 달라진다.
-
-Normal Map은 이 작은 Axis를 기준으로
+Surface가 회전하면 이 Axis도 함께 회전한다. Surface가 휘어지면 각 Point의 Axis 방향도 달라진다. Normal Map은 이 작은 Axis를 기준으로
 
 > **현재 Pixel의 Normal이 기본 Surface Normal에서 어느 방향으로 얼마나 틀어져 있는가**
 
@@ -10757,9 +9635,7 @@ Tangent Space는 Surface의 각 지점에 붙어 있는 Coordinate System이고 
 
 ## 2.15 Coordinate Space Conversion in Unreal
 
-Material Graph에서 Normal Map과 Camera Direction을 연결했는데 Object를 회전할 때 결과가 예상과 달라진다고 생각해보자. 계산식의 숫자만 살피기 전에 입력의 기준부터 확인해야 한다.
-
-Normal은 Tangent Space에 있고 Camera Direction은 World Space에 있다면, 두 Vector의 X/Y/Z는 서로 다른 Axis를 뜻한다. 먼저 같은 Space의 Direction으로 옮겨야 화면 결과를 해석할 수 있다.
+Material Graph에서 Normal Map과 Camera Direction을 연결했는데 Object를 회전할 때 결과가 예상과 달라진다고 생각해보자. 계산식의 숫자만 살피기 전에 입력의 기준부터 확인해야 한다. Normal은 Tangent Space에 있고 Camera Direction은 World Space에 있다면, 두 Vector의 X/Y/Z는 서로 다른 Axis를 뜻한다. 먼저 같은 Space의 Direction으로 옮겨야 화면 결과를 해석할 수 있다.
 
 지금까지 배운 Space와 Transform은 Unreal에서도 이 문제를 판단하는 기준이다. Engine의 Node는 필요한 Data를 제공하거나 변환을 수행하는 구현 수단이다.
 
@@ -10777,9 +9653,9 @@ Data의 의미 확인
 
 ### Common Coordinate Spaces in Unreal
 
-Unreal Material에서는 여러 Coordinate Space의 Data를 직접 사용하게 된다.
+Unreal의 Node 이름을 외우기 전에 지금까지의 질문을 그대로 적용한다. 이 값은 위치인가 방향인가, 누구의 축으로 읽는가, 다음 계산은 누구의 축을 요구하는가? Material Graph는 Node 사이에 값이 흐르는 연결 구조이며, 이 질문은 연결선마다 확인할 수 있는 입력·출력의 의미다.
 
-대표적인 Space는 다음과 같다.
+Unreal Material에서는 여러 Coordinate Space의 Data를 직접 사용하게 된다. 대표적인 Space는 다음과 같다.
 
 ~~~text id="b7h79f"
 Tangent Space
@@ -10807,9 +9683,7 @@ Bitangent
 Normal
 ~~~
 
-세 방향을 기준으로 한다.
-
-Normal Map에서 읽어온 Normal은 일반적으로 Tangent Space 기준으로 생각할 수 있다.
+세 방향을 기준으로 한다. Normal Map에서 읽어온 Normal은 일반적으로 Tangent Space 기준으로 생각할 수 있다.
 
 ~~~text id="ox89dc"
 Normal Map Sample
@@ -10835,19 +9709,13 @@ Local Position
 → Object 자신의 기준 Position
 ~~~
 
-Object가 World에서 이동하거나 회전하더라도 Mesh 내부의 Local Position은 그대로 유지될 수 있다.
-
-Unreal에서는 Object Transform을 통해 이러한 Local Data가 World Space로 변환된다.
+Object가 World에서 이동하거나 회전하더라도 Mesh 내부의 Local Position은 그대로 유지될 수 있다. Unreal에서는 Object Transform을 통해 이러한 Local Data가 World Space로 변환된다.
 
 ---
 
 ### World Space
 
-World Space는 Scene 전체가 공유하는 Coordinate System이다.
-
-Unreal Material에서 많은 Position과 Direction Data가 World Space 기준으로 제공된다.
-
-예를 들면
+World Space는 Scene 전체가 공유하는 Coordinate System이다. Unreal Material에서 많은 Position과 Direction Data가 World Space 기준으로 제공된다. 예를 들면
 
 - Absolute World Position
 - VertexNormalWS
@@ -10885,9 +9753,7 @@ Camera를 기준으로 Position과 Direction을 해석하기 때문에 Camera �
 
 ### Screen Space
 
-Screen Space는 현재 Viewport나 Screen을 기준으로 한다.
-
-예를 들어
+Screen Space는 현재 Viewport나 Screen을 기준으로 한다. 예를 들어
 
 - Screen Position
 - Viewport UV
@@ -10911,11 +9777,9 @@ Screen Space
 
 ### Absolute World Position
 
-Unreal Material에서 자주 사용하는 값 중 하나가 **Absolute World Position**이다.
+Object가 어디에 있든 World의 같은 높이에서 색이 바뀌는 Effect를 만들고 싶다고 하자. 그러려면 Object 내부의 높이보다 현재 Surface가 Scene에서 어디에 놓였는지 필요하다. Absolute World Position은 이 World 기준 위치를 제공하는 출발점이다.
 
-이 값은 현재 Surface Point의 World Space Position을 제공한다.
-
-개념적으로는 다음과 같다.
+Unreal Material에서 자주 사용하는 값 중 하나가 **Absolute World Position**이다. 이 값은 현재 Surface Point의 World Space Position을 제공한다. 개념적으로는 다음과 같다.
 
 ~~~text id="apw9mc"
 Current Surface Point
@@ -10940,9 +9804,7 @@ World Space Position
 
 ### Why Absolute World Position Is Useful
 
-World Position을 알면 World를 기준으로 Effect를 만들 수 있다.
-
-예를 들어
+World Position을 알면 World를 기준으로 Effect를 만들 수 있다. 예를 들어
 
 ~~~text id="i57bfa"
 World Height
@@ -10954,17 +9816,15 @@ World-aligned Mask
 Distance from World Position
 ~~~
 
-같은 계산에 사용할 수 있다.
-
-Object Local Space가 아니라 World Space를 기준으로 하기 때문에 Object가 이동하더라도 Effect가 World에 고정된 것처럼 만들 수도 있다.
+같은 계산에 사용할 수 있다. Object Local Space가 아니라 World Space를 기준으로 하기 때문에 Object가 이동하더라도 Effect가 World에 고정된 것처럼 만들 수도 있다.
 
 ---
 
 ### Object Position
 
-현재 Surface Point에서 Object의 기준점까지의 거리나 Offset을 만들려면 두 위치가 필요하다. 하나는 현재 Surface의 World Position이고, 다른 하나는 Object의 World 기준 위치다.
+현재 Surface가 Object의 기준점에서 얼마나 떨어졌는지 계산할 때는 “Object라는 이름의 Position”이 정확히 어떤 점을 뜻하는지 먼저 확인한다. **Bounds**는 Object를 감싸는 경계 범위이고 그 **Center**는 그 범위의 중심이다. 중심은 Modeling 기준 Origin이나 조작의 Pivot과 다른 점일 수 있다.
 
-Unreal에서 “Object Position”이라고 묶어 부르는 값은 정확한 Node에 따라 의미가 다를 수 있다. ObjectPositionWS는 공식 문서에서 **Object bounds의 World Space center**를 제공하는 값으로 설명한다. 이것을 Actor Origin이나 Mesh Pivot의 동의어로 사용하지 않는다.
+현재 Surface Point에서 Object의 기준점까지의 거리나 Offset을 만들려면 두 위치가 필요하다. 하나는 현재 Surface의 World Position이고, 다른 하나는 Object의 World 기준 위치다. Unreal에서 “Object Position”이라고 묶어 부르는 값은 정확한 Node에 따라 의미가 다를 수 있다. ObjectPositionWS는 공식 문서에서 **Object bounds의 World Space center**를 제공하는 값으로 설명한다. 이것을 Actor Origin이나 Mesh Pivot의 동의어로 사용하지 않는다.
 
 ~~~text
 Absolute World Position → 현재 Surface Point
@@ -11015,9 +9875,7 @@ Pixel 단위의 Normal Map Detail을 반영한 방향과는 역할이 다르다.
 
 ### PixelNormalWS
 
-Normal Map으로 Surface Detail을 표현하면 같은 Triangle 안에서도 Pixel마다 Lighting에 사용하는 방향이 달라질 수 있다. Vertex Normal만으로는 그 Detail을 읽을 수 없다.
-
-**PixelNormalWS**는 Pixel / Fragment의 현재 Normal을 World Space에서 읽는 값이다. 일반적인 Normal Map Material에서는 보간된 Surface 방향과 Normal Map Detail이 반영되는 상황을 구분해 볼 수 있다.
+Normal Map으로 Surface Detail을 표현하면 같은 Triangle 안에서도 Pixel마다 Lighting에 사용하는 방향이 달라질 수 있다. Vertex Normal만으로는 그 Detail을 읽을 수 없다. **PixelNormalWS**는 Pixel / Fragment의 현재 Normal을 World Space에서 읽는 값이다. 일반적인 Normal Map Material에서는 보간된 Surface 방향과 Normal Map Detail이 반영되는 상황을 구분해 볼 수 있다.
 
 ~~~text
 Vertex의 Surface 방향
@@ -11042,9 +9900,9 @@ PixelNormalWS를 모든 Material 경로의 “최종 Surface Normal”을 무조
 
 ### Camera Vector
 
-현재 Surface를 어느 각도에서 보고 있는지 계산하려면 Camera Position 자체보다 **Surface에서 Camera로 향하는 방향**이 필요하다.
+Camera는 하나의 위치에 있어도 넓은 Surface의 각 Point에서는 서로 다른 쪽에 놓인다. 그러므로 Camera의 고정된 Forward와 각 Surface에서 Camera로 향하는 Direction을 구분한다. 지금 필요한 것은 후자이며, View-dependent Effect는 이 방향과 Normal의 관계를 사용한다.
 
-Camera Vector 계열의 Data는 이 방향을 제공한다. Unreal의 CameraVectorWS를 사용할 때는 World Space의 Surface → Camera 방향으로 읽는다.
+현재 Surface를 어느 각도에서 보고 있는지 계산하려면 Camera Position 자체보다 **Surface에서 Camera로 향하는 방향**이 필요하다. Camera Vector 계열의 Data는 이 방향을 제공한다. Unreal의 CameraVectorWS를 사용할 때는 World Space의 Surface → Camera 방향으로 읽는다.
 
 ~~~text
 Current Surface Point → Camera
@@ -11052,17 +9910,13 @@ Current Surface Point → Camera
 Surface에서 Camera를 향하는 View Direction
 ~~~
 
-이 Direction은 Camera의 고정된 Forward Axis와 같은 값이 아니다. Camera가 같은 곳에 있어도 Surface Point가 달라지면 그 Point에서 Camera를 향하는 방향은 달라질 수 있다.
-
-Normal과 이 방향의 관계는 Fresnel, Rim Light, View-dependent Highlight, Stylized Edge Effect에서 사용한다. 계산 순간에는 Normal과 View Direction을 같은 Space로 맞추고 필요한 Unit Vector 조건을 확인한다.
+이 Direction은 Camera의 고정된 Forward Axis와 같은 값이 아니다. Camera가 같은 곳에 있어도 Surface Point가 달라지면 그 Point에서 Camera를 향하는 방향은 달라질 수 있다. Normal과 이 방향의 관계는 Fresnel, Rim Light, View-dependent Highlight, Stylized Edge Effect에서 사용한다. 계산 순간에는 Normal과 View Direction을 같은 Space로 맞추고 필요한 Unit Vector 조건을 확인한다.
 
 ---
 
 ### Camera Vector and Coordinate Space
 
-Camera Vector를 사용할 때도 현재 어떤 Space 기준인지 확인해야 한다.
-
-만약 Camera Direction이 World Space라면 비교하는 Normal 역시 World Space여야 한다.
+Camera Vector를 사용할 때도 현재 어떤 Space 기준인지 확인해야 한다. 만약 Camera Direction이 World Space라면 비교하는 Normal 역시 World Space여야 한다.
 
 ~~~text id="6vx8da"
 World Space Normal
@@ -11108,9 +9962,7 @@ Screen Position
 
 > **현재 Pixel이 Viewport 또는 Screen에서 어디에 위치하는가**
 
-를 나타내는 데 사용할 수 있다.
-
-이 값은
+를 나타내는 데 사용할 수 있다. 이 값은
 
 - Screen-space Effect
 - Post Process
@@ -11124,9 +9976,7 @@ Screen Position
 
 ### Transforming Between Coordinate Spaces
 
-Unreal Material에서는 필요에 따라 Vector를 한 Coordinate Space에서 다른 Coordinate Space로 변환해야 한다.
-
-개념적으로는 다음과 같다.
+Unreal Material에서는 필요에 따라 Vector를 한 Coordinate Space에서 다른 Coordinate Space로 변환해야 한다. 개념적으로는 다음과 같다.
 
 ~~~text id="u2br0a"
 Input Vector
@@ -11190,9 +10040,7 @@ Direction → Affine 입력 w=0 → Translation 제외
 
 ### A Typical Normal Map Conversion
 
-Normal Map을 사용하는 경우를 생각해보자.
-
-Normal Map에서 읽은 값은 일반적으로 Tangent Space Normal이다.
+Normal Map을 사용하는 경우를 생각해보자. Normal Map에서 읽은 값은 일반적으로 Tangent Space Normal이다.
 
 ~~~text id="82i1dj"
 Normal Map Sample
@@ -11256,13 +10104,13 @@ TBN Transform
 World Space Direction
 ~~~
 
-으로 변환할 수 있다.
-
-Unreal 내부에서도 이러한 Tangent Basis와 Coordinate Transform이 Material과 Rendering Pipeline에서 사용된다.
+으로 변환할 수 있다. Unreal 내부에서도 이러한 Tangent Basis와 Coordinate Transform이 Material과 Rendering Pipeline에서 사용된다.
 
 ---
 
 ### The Most Important Rule: Use the Same Space
+
+두 화살표의 관계를 읽기 전에 둘이 같은 축을 기준으로 쓰였는지 확인한다. 숫자만 보고 XYZ를 곱하면 계산 자체는 되지만 원한 Surface-Light 관계라는 보장은 없다. 여기서는 Chapter 03에서 다룰 **Dot Product(두 Vector의 방향·길이 관계를 한 숫자로 읽는 연산)**를 예로 삼되, 각도 관계를 읽을 때는 같은 직교 기준의 Unit Direction 조건도 확인한다.
 
 Shader 계산에서 가장 중요한 규칙 중 하나는 다음과 같다.
 
@@ -11316,11 +10164,7 @@ Light Direction
 (x, y, z)
 ~~~
 
-형태라서 계산 자체는 가능하다.
-
-하지만 이 숫자들이 의미하는 Axis 기준이 다르다.
-
-따라서 결과는 수학적으로 계산되더라도 Rendering 관점에서는 의미가 없거나 잘못된 값이 될 수 있다.
+형태라서 계산 자체는 가능하다. 하지만 이 숫자들이 의미하는 Axis 기준이 다르다. 따라서 결과는 수학적으로 계산되더라도 Rendering 관점에서는 의미가 없거나 잘못된 값이 될 수 있다.
 
 즉,
 
@@ -11360,19 +10204,13 @@ World Space
 
 > **World Coordinate System의 특정 Axis 방향**
 
-을 의미한다.
-
-따라서 숫자가 같다고 해서 실제 3D 공간에서 같은 Direction이라는 보장은 없다.
-
-이것이 Coordinate Space를 반드시 확인해야 하는 이유다.
+을 의미한다. 따라서 숫자가 같다고 해서 실제 3D 공간에서 같은 Direction이라는 보장은 없다. 이것이 Coordinate Space를 반드시 확인해야 하는 이유다.
 
 ---
 
 ### Compare Values Only After Conversion
 
-Tangent Space Normal과 World Space Light Direction을 가지고 있다고 하자. 하나는 Surface의 T/B/N 축을 기준으로 읽고, 다른 하나는 World X/Y/Z를 기준으로 읽으므로 숫자를 바로 비교할 수 없다.
-
-먼저 계산 Space를 선택한 뒤 필요한 입력만 옮긴다.
+Tangent Space Normal과 World Space Light Direction을 가지고 있다고 하자. 하나는 Surface의 T/B/N 축을 기준으로 읽고, 다른 하나는 World X/Y/Z를 기준으로 읽으므로 숫자를 바로 비교할 수 없다. 먼저 계산 Space를 선택한 뒤 필요한 입력만 옮긴다.
 
 #### Method A
 
@@ -11407,9 +10245,7 @@ Non-uniform Scale이 섞인 Object 좌표로 Direction을 단순히 옮겼다고
 
 ### Coordinate Space and Dot Product
 
-Surface가 Light를 어느 정도 정면으로 바라보는지 비교하려면 Surface Normal과 Light Direction의 관계를 하나의 값으로 읽어야 한다. Chapter 03에서 배울 Dot Product가 그 비교에 사용된다.
-
-하지만 먼저 두 Direction이 같은 Space의 Axis를 뜻해야 한다. World Normal과 Tangent Light Direction을 그대로 곱하면 필요한 Surface-Light 관계를 표현하지 못한다.
+Surface가 Light를 어느 정도 정면으로 바라보는지 비교하려면 Surface Normal과 Light Direction의 관계를 하나의 값으로 읽어야 한다. Chapter 03에서 배울 Dot Product가 그 비교에 사용된다. 하지만 먼저 두 Direction이 같은 Space의 Axis를 뜻해야 한다. World Normal과 Tangent Light Direction을 그대로 곱하면 필요한 Surface-Light 관계를 표현하지 못한다.
 
 ~~~text
 Normal          → 같은 Calculation Space의 Unit Direction
@@ -11418,17 +10254,13 @@ Light Direction → 같은 Calculation Space의 Unit Direction
 N · L
 ~~~
 
-여기서 N은 Normal, L은 Surface에서 Light를 향하는 Direction이다. 이후 Lighting에서는 이 Signed Value와 필요에 따라 Clamp한 Diffuse Factor를 구분해 사용한다. 그 계산의 원리와 부호는 Chapter 03에서 다룬다.
-
-이 절의 목적은 Formula를 먼저 외우는 것이 아니라 **Dot Product에 들어가는 두 값의 Space를 먼저 맞춰야 한다**는 규칙을 구현과 연결하는 것이다.
+여기서 N은 Normal, L은 Surface에서 Light를 향하는 Direction이다. 이후 Lighting에서는 이 Signed Value와 필요에 따라 Clamp한 Diffuse Factor를 구분해 사용한다. 그 계산의 원리와 부호는 Chapter 03에서 다룬다. 이 절의 목적은 Formula를 먼저 외우는 것이 아니라 **Dot Product에 들어가는 두 값의 Space를 먼저 맞춰야 한다**는 규칙을 구현과 연결하는 것이다.
 
 ---
 
 ### Coordinate Space and View Direction
 
-View-dependent Effect에서도 동일하다.
-
-예를 들어
+View-dependent Effect에서도 동일하다. 예를 들어
 
 ~~~text id="uyyf01"
 Normal
@@ -11452,9 +10284,7 @@ View Normal
 View Space View Direction
 ~~~
 
-처럼 맞춘다.
-
-이 원칙은 이후
+처럼 맞춘다. 이 원칙은 이후
 
 - Fresnel
 - Specular
@@ -11467,9 +10297,9 @@ View Space View Direction
 
 ### Absolute World Position and Object Position Example
 
-Unreal Material에서 World Space를 사용하는 간단한 예를 생각해보자.
+같은 World 기준으로 표현한 두 위치를 빼면 두 점 사이의 변화량을 얻는다. 기준점을 Object 쪽으로 옮겨 읽는 데에는 유용하지만 World의 축을 Object의 축으로 회전시킨 것은 아니다. 따라서 아래 차이의 결과를 Local Position이라고 바로 부르면 안 된다.
 
-현재 Surface Position과 Object Position의 차이를 계산한다.
+Unreal Material에서 World Space를 사용하는 간단한 예를 생각해보자. 현재 Surface Position과 Object Position의 차이를 계산한다.
 
 ~~~text id="tcc79k"
 Absolute World Position
@@ -11483,9 +10313,7 @@ Object Position
 Object 기준 상대 Offset
 ~~~
 
-두 값이 모두 같은 World Space 기준이라면 직접 Subtract할 수 있다. 결과는 Object 기준점에서 현재 Surface까지의 **World Space Offset**이다. 이 차이만으로 Object의 회전·Scale을 제거한 Local Position이 되지는 않는다.
-
-이렇게 만들어진 Vector를 이용해
+두 값이 모두 같은 World Space 기준이라면 직접 Subtract할 수 있다. 결과는 Object 기준점에서 현재 Surface까지의 **World Space Offset**이다. 이 차이만으로 Object의 회전·Scale을 제거한 Local Position이 되지는 않는다. 이렇게 만들어진 Vector를 이용해
 
 - Object 중심에서의 거리
 - Object 중심에서 Surface로 향하는 Direction
@@ -11497,9 +10325,7 @@ Object 기준 상대 Offset
 
 ### World-space Effect vs Object-space Effect
 
-Coordinate Space를 어떻게 선택하느냐에 따라 Effect의 행동도 달라진다.
-
-예를 들어 World Position을 사용해서 Gradient를 만든다고 하자.
+Coordinate Space를 어떻게 선택하느냐에 따라 Effect의 행동도 달라진다. 예를 들어 World Position을 사용해서 Gradient를 만든다고 하자.
 
 ~~~text id="84vwv5"
 Absolute World Position Z
@@ -11509,9 +10335,7 @@ Absolute World Position Z
 World Height Mask
 ~~~
 
-Object가 이동하면 Object가 World Gradient를 통과하는 것처럼 보일 수 있다.
-
-WorldPosition−ObjectPosition으로 만든 Offset은 기준점의 Translation을 따르지만 축 방향은 여전히 World 기준이다. Object의 Rotation/Scale까지 따르는 Local-space Effect에는 World Position을 inverse Model Transform으로 바꾼 Local Position이 필요하다.
+Object가 이동하면 Object가 World Gradient를 통과하는 것처럼 보일 수 있다. WorldPosition−ObjectPosition으로 만든 Offset은 기준점의 Translation을 따르지만 축 방향은 여전히 World 기준이다. Object의 Rotation/Scale까지 따르는 Local-space Effect에는 World Position을 inverse Model Transform으로 바꾼 Local Position이 필요하다.
 
 즉,
 
@@ -11533,9 +10357,7 @@ Local Space Effect (inverse Model Transform 사용)
 
 ### Unreal Material Node Names Often Reveal the Space
 
-Unreal Material에서 일부 Node 이름은 현재 Data의 Space를 직접 알려준다.
-
-예를 들어
+Unreal Material에서 일부 Node 이름은 현재 Data의 Space를 직접 알려준다. 예를 들어
 
 ~~~text id="tqu449"
 VertexNormalWS
@@ -11549,17 +10371,13 @@ PixelNormalWS
 
 > **이 값이 어느 Space인지 먼저 확인하는 습관**
 
-을 들이는 것이 좋다.
-
-Node 이름만 보고 의미가 불분명하다면 Documentation이나 Node 설명을 확인해야 한다.
+을 들이는 것이 좋다. Node 이름만 보고 의미가 불분명하다면 Documentation이나 Node 설명을 확인해야 한다.
 
 ---
 
 ### Position Data and Direction Data Should Not Be Mixed
 
-Unreal Material에서 Vector처럼 보이는 값이라고 해서 모두 같은 종류는 아니다.
-
-예를 들어
+Unreal Material에서 Vector처럼 보이는 값이라고 해서 모두 같은 종류는 아니다. 예를 들어
 
 ~~~text id="qnbutm"
 Absolute World Position
@@ -11572,11 +10390,7 @@ Camera Vector
 → Direction
 ~~~
 
-이다.
-
-Position과 Direction은 서로 다른 의미를 가진다.
-
-따라서
+이다. Position과 Direction은 서로 다른 의미를 가진다. 따라서
 
 > **Data가 어느 Space인지뿐 아니라 Position인지 Direction인지도 함께 확인해야 한다.**
 
@@ -11600,9 +10414,7 @@ PixelNormalWS
 → Pixel 단계의 Surface Orientation
 ~~~
 
-Normal Map이나 Interpolation이 반영되는 상황에서는 두 값이 서로 다를 수 있다.
-
-즉,
+Normal Map이나 Interpolation이 반영되는 상황에서는 두 값이 서로 다를 수 있다. 즉,
 
 > **같은 Coordinate Space라고 해서 같은 Data라는 뜻은 아니다.**
 
@@ -11617,9 +10429,7 @@ Space와 함께
 
 ### Coordinate Space Conversion Is Not Always Free
 
-Coordinate Space Conversion은 Matrix Transform 계산을 필요로 할 수 있다.
-
-따라서 Material Graph에서 불필요하게
+Coordinate Space Conversion은 Matrix Transform 계산을 필요로 할 수 있다. 따라서 Material Graph에서 불필요하게
 
 ~~~text id="swxhtl"
 World → Tangent
@@ -11628,15 +10438,11 @@ World → Tangent
 → World
 ~~~
 
-처럼 반복 변환하는 것은 피하는 것이 좋다.
-
-실무에서는 먼저
+처럼 반복 변환하는 것은 피하는 것이 좋다. 실무에서는 먼저
 
 > **이 계산을 어느 Space에서 수행할 것인가**
 
-를 결정하고, 필요한 Data를 그 Space로 맞추는 방식이 좋다.
-
-즉,
+를 결정하고, 필요한 Data를 그 Space로 맞추는 방식이 좋다. 즉,
 
 ~~~text id="1j3qur"
 Choose Calculation Space
@@ -11650,17 +10456,13 @@ Convert Required Inputs
 Perform Calculation
 ~~~
 
-이라는 흐름을 갖는 것이 좋다.
-
-구체적인 Shader Instruction Cost나 Optimization은 Chapter 09 - Rendering Debug and Optimization에서 다시 다룬다.
+이라는 흐름을 갖는 것이 좋다. 구체적인 Shader Instruction Cost나 Optimization은 Chapter 09 - Rendering Debug and Optimization에서 다시 다룬다.
 
 ---
 
 ### Choosing a Calculation Space
 
-어떤 Space가 항상 정답인 것은 아니다.
-
-계산 목적에 따라 적절한 Space를 선택한다.
+어떤 Space가 항상 정답인 것은 아니다. 계산 목적에 따라 적절한 Space를 선택한다.
 
 #### World Space
 
@@ -11714,11 +10516,18 @@ Viewport Effect
 
 ---
 
-Figure 2-15의 Space 목록은 실행 순서가 아니라 사용할 수 있는 기준의 비교다. Normal과 Camera Direction이 같은 Space의 Unit Vector가 된 뒤 dot(N,V)를 읽는다. 그림의 ObjectPositionWS는 Bounds의 World Center를 뜻한다. 이 그림은 실제 Editor Screenshot이나 Graph 실행 결과가 아니라 Data와 Space 변환의 개념도다. 정확한 Node 출력과 Position 기준점, ScreenPosition의 출력 모드, Transform 지원 범위와 Non-uniform Scale 조건은 대상 Engine에서 검증한다.
+Figure 2-15에서는 사용할 Data의 이름보다 의미와 Space를 먼저 읽는다. 어떤 Space에서 계산할지 고른 뒤 필요한 입력만 그 기준으로 옮기는 관계를 따라간다.
 
 <img src="Figures/Chapter02/Fig2_15.png" width="90%">
 
 **Figure 2-15. Coordinate Space Conversion in Unreal**
+
+<details>
+<summary>Figure Reading Note — Example Conditions and Scope</summary>
+
+Figure 2-15의 Space 목록은 실행 순서가 아니라 사용할 수 있는 기준의 비교다. Normal과 Camera Direction이 같은 Space의 Unit Vector가 된 뒤 dot(N,V)를 읽는다. 그림의 ObjectPositionWS는 Bounds의 World Center를 뜻한다. 이 그림은 실제 Editor Screenshot이나 Graph 실행 결과가 아니라 Data와 Space 변환의 개념도다. 정확한 Node 출력과 Position 기준점, ScreenPosition의 출력 모드, Transform 지원 범위와 Non-uniform Scale 조건은 대상 Engine에서 검증한다.
+
+</details>
 
 ---
 
@@ -11799,9 +10608,7 @@ Calculation Space
 
 ### ASF Implementation Perspective
 
-이 원칙은 이후 Anime Shader를 구현할 때 매우 중요하다.
-
-예를 들어 Stylized Lighting에서 다음 값을 사용한다고 하자.
+이 원칙은 이후 Anime Shader를 구현할 때 매우 중요하다. 예를 들어 Stylized Lighting에서 다음 값을 사용한다고 하자.
 
 ~~~text id="wqk3w1"
 Normal
@@ -11823,9 +10630,7 @@ Specular
 Rim Light
 ~~~
 
-같은 계산의 결과가 틀어질 수 있다.
-
-따라서 ASF에서는 계산 전에 항상
+같은 계산의 결과가 틀어질 수 있다. 따라서 ASF에서는 계산 전에 항상
 
 > **현재 사용하는 Vector들이 어느 Coordinate Space에 있는가?**
 
@@ -11857,9 +10662,7 @@ Light Direction
 View Direction
 ~~~
 
-과 같은 Vector들의 Space가 서로 맞아야 한다.
-
-예를 들어
+과 같은 Vector들의 Space가 서로 맞아야 한다. 예를 들어
 
 ~~~text id="t56uwh"
 Tangent Space Normal
@@ -11885,29 +10688,25 @@ World Space View Direction
 Lighting Calculation
 ~~~
 
-처럼 계산 Space를 통일할 수 있다.
-
-또한 Position과 Direction은 같은 Vector 형태로 보여도 Transform 방식이 다르므로
+처럼 계산 Space를 통일할 수 있다. 또한 Position과 Direction은 같은 Vector 형태로 보여도 Transform 방식이 다르므로
 
 > **이 값이 Position인지 Direction인지도 함께 확인해야 한다.**
 
-이 원칙은 이후 Unreal Material과 ASF Shader를 구현할 때 반복해서 사용하게 된다.
-
-다음 절에서는 Chapter 02에서 살펴본 모든 Coordinate Space와 Transform을 하나의 흐름으로 다시 연결하는 **Complete Coordinate Flow**를 정리한다.
+이 원칙은 이후 Unreal Material과 ASF Shader를 구현할 때 반복해서 사용하게 된다. 다음 절에서는 Chapter 02에서 살펴본 모든 Coordinate Space와 Transform을 하나의 흐름으로 다시 연결하는 **Complete Coordinate Flow**를 정리한다.
 
 ---
 
 ## 2.16 Complete Coordinate Flow
 
-이제 하나의 Vertex가 화면에 도달하는 경로와 Surface의 Direction이 Lighting 입력이 되는 경로를 나란히 확인하자. 두 경로는 같은 Geometry에서 시작해도 목적이 다르다.
-
-Position은 “화면 어디에 나타날 것인가”에 답하기 위해 Screen Space까지 간다. Direction과 Normal은 “다른 방향과 어떤 관계인가”에 답하기 위해 선택한 계산 Space로 옮긴다. 이 구분을 기준으로 전체 흐름을 읽으면 모든 Vector를 같은 Matrix Chain에 넣는 실수를 피할 수 있다.
+이제 하나의 Vertex가 화면에 도달하는 경로와 Surface의 Direction이 Lighting 입력이 되는 경로를 나란히 확인하자. 두 경로는 같은 Geometry에서 시작해도 목적이 다르다. Position은 “화면 어디에 나타날 것인가”에 답하기 위해 Screen Space까지 간다. Direction과 Normal은 “다른 방향과 어떤 관계인가”에 답하기 위해 선택한 계산 Space로 옮긴다. 이 구분을 기준으로 전체 흐름을 읽으면 모든 Vector를 같은 Matrix Chain에 넣는 실수를 피할 수 있다.
 
 <img src="Figures/Chapter02/Fig2_16.png" width="90%">
 
 **Figure 2-16. Complete Coordinate Flow**
 
 ### The Complete Position Flow
+
+처음의 Cube와 Camera 예로 돌아가 보자. Mesh는 Local의 형태를 제공하고, Object Transform은 Scene의 배치를 제공하며, Camera와 Projection은 화면에 나타날 위치를 정한다. 아래 경로는 이 서로 다른 질문에 차례로 답하는 과정이다. 한 단계의 출력을 다음 단계의 입력 기준으로 읽는다.
 
 ~~~text
 Local Position
@@ -11932,9 +10731,7 @@ Local Position
 
 ### Projection, Clipping and Perspective Divide
 
-FOV, Aspect Ratio, Near / Far 설정은 Projection Matrix에 반영된다. 따라서 Clipping은 이 설정이 반영된 Clip Coordinate를 대상으로 수행한다. Vertex 하나가 범위를 벗어났다고 Triangle 전체가 반드시 제거되는 것은 아니다.
-
-Clipping 이후의 Divide는 **View Position이 아니라 Clip Position**에 적용한다.
+FOV, Aspect Ratio, Near / Far 설정은 Projection Matrix에 반영된다. 따라서 Clipping은 이 설정이 반영된 Clip Coordinate를 대상으로 수행한다. Vertex 하나가 범위를 벗어났다고 Triangle 전체가 반드시 제거되는 것은 아니다. Clipping 이후의 Divide는 **View Position이 아니라 Clip Position**에 적용한다.
 
 ~~~text
 x_ndc = x_clip / w_clip
@@ -11956,6 +10753,8 @@ Viewport는 Monitor 전체와 같지 않을 수 있다. Split Screen, Editor Vie
 
 ### Position, Direction and Normal
 
+Chapter의 시작에서는 모두 XYZ라는 점 때문에 위치와 방향을 혼동할 수 있었다. 이제 무엇을 보존해야 하는지로 구분한다. Position에는 Object 배치의 이동량이 필요하고 Direction에는 필요하지 않다. Normal은 위치가 아니면서 Surface와의 방향 관계도 지켜야 하므로 일반 Direction과 구분할 조건이 남는다.
+
 | Data | Affine Transform 입력 | Translation | Rotation / Scale |
 |---|---|---|---|
 | Position | `(x, y, z, 1)` | 적용 | 적용 |
@@ -11967,6 +10766,8 @@ Vertex Position의 투영 흐름과 달리 Light Direction, View Direction, Norm
 Geometric Normal은 Surface의 Tangent에 수직이다. Shading Normal은 보간, Normal Map, Artist 조정으로 Face Normal과 다를 수 있다. Non-uniform Scale에서는 일반 Direction 변환으로 수직 관계가 보존되지 않을 수 있으므로 Inverse Transpose와 Normalize 조건을 확인한다. 데이터 종류별 비교는 2.13, 상세 원리와 수치 예제는 Chapter 03의 3.5를 참고한다.
 
 ### Tangent Space and Lighting Inputs
+
+Normal Map의 Direction을 읽었다면 마지막으로 그 Direction이 누구의 축을 뜻하는지 확인한다. Decode는 저장 표현을 풀어 방향 성분을 만들고, TBN은 그 방향을 계산할 Space로 옮긴다. 그 뒤에야 Light/View Direction과 같은 기준에서 관계를 읽을 수 있다.
 
 Tangent Space의 T / B / N은 Surface 지점의 Basis다. 일반적인 Tangent-space Normal Map은 다음과 같이 Lighting 입력으로 연결된다.
 
@@ -11981,9 +10782,7 @@ Engine Sampler가 이미 Decode한 값은 다시 Decode하지 않는다. TBN의 
 
 ### Matrix Chain
 
-마지막에는 각 단계의 입력과 출력 Space가 맞는지 확인한다. Model의 World 출력이 View의 입력이 되고, View의 출력이 Projection으로 전달된다. 이 관계를 하나의 식에 적을 때도 실제 적용 순서는 바뀌지 않는다.
-
-이 Chapter의 Column Vector convention에서는 다음과 같다.
+마지막에는 각 단계의 입력과 출력 Space가 맞는지 확인한다. Model의 World 출력이 View의 입력이 되고, View의 출력이 Projection으로 전달된다. 이 관계를 하나의 식에 적을 때도 실제 적용 순서는 바뀌지 않는다. 이 Chapter의 Column Vector convention에서는 다음과 같다.
 
 ~~~text
 p_world = M × p_local
@@ -12010,7 +10809,4 @@ Unreal Material이나 Shader의 입력을 연결할 때 다음을 확인한다.
 - Clip Coordinate는 Clipping 뒤 w로 나누어 NDC가 되고, Viewport 크기와 위치로 Screen Space에 연결된다.
 - Normal Map은 Decode된 Direction의 Space까지 확인하고 TBN으로 Lighting 입력과 기준을 맞춘다.
 
-숫자만이 아니라 **Data의 의미와 기준 Space를 함께 확인하는 것**이 이 Chapter의 핵심이다.
-
-다음 [Chapter 03 — Lighting Mathematics](Chapter03_LightingMathematics.md)에서는 이 Position과 Direction을 실제 Lighting 계산에 사용하는 과정을 살펴본다.
-
+숫자만이 아니라 **Data의 의미와 기준 Space를 함께 확인하는 것**이 이 Chapter의 핵심이다. 다음 [Chapter 03 — Lighting Mathematics](Chapter03_LightingMathematics.md)에서는 이 Position과 Direction을 실제 Lighting 계산에 사용하는 과정을 살펴본다.

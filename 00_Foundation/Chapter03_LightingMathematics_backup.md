@@ -2,7 +2,11 @@
 
 Rendering Pipeline은 Geometry와 Material, Light 등의 정보를 이용해 화면에 표시할 결과를 만들어가는 과정이다.
 
-Geometry의 위치와 형태가 결정되고 Rasterization을 통해 Surface의 입력 데이터가 준비되면, Shader는 해당 Surface가 빛을 어떻게 받는지 계산한다. 이때 계산한 Lighting 결과가 곧바로 최종 화면의 Pixel Color와 같은 것은 아니다.
+Geometry의 위치와 형태가 결정되면 Rasterization을 통해 화면에서 처리할 Surface의 입력 데이터가 준비된다.
+
+Shader는 이 데이터를 받아 해당 Surface가 빛을 어떻게 받는지 계산한다.
+
+여기서 계산한 Lighting 결과는 이후 화면을 만드는 과정에 전달되는 값이다. 곧바로 최종 화면의 Pixel Color와 같은 것은 아니다.
 
 Lighting에서 먼저 확인해야 할 것은 단순히 Light의 밝기가 아니다.
 
@@ -30,7 +34,11 @@ Chapter 01에서 Vertex는 Position만 전달하는 것이 아니라 Normal, Tan
 
 이 데이터들은 서로 다른 역할을 한다.
 
-Vertex Position과 Triangle의 연결 관계는 Geometry의 실제 위치와 형태를 결정한다. Normal은 Lighting에서 사용할 Surface의 방향을 제공하고, Tangent와 UV는 Surface의 기준 방향이나 Texture의 위치를 해석하는 데 사용된다.
+Vertex Position과 Triangle의 연결 관계는 Geometry의 실제 위치와 형태를 결정한다.
+
+Normal은 그 Geometry 위에서 Lighting에 사용할 Surface의 방향을 제공한다.
+
+Tangent는 Surface를 따라가는 기준 방향을 제공하고, UV는 Texture의 어느 위치를 읽을지 연결한다. 이 두 입력의 사용은 Chapter 02의 Tangent Space와 Chapter 04의 Texture Sampling으로 이어진다.
 
 따라서 같은 Geometry라도 Normal이나 Texture 데이터가 다르면 Shading 결과가 달라질 수 있다.
 
@@ -123,7 +131,11 @@ Perspective Camera와 Orthographic Camera에서 이 방향을 준비하는 방�
 
 ### Direction and Magnitude
 
-Vector는 방향뿐 아니라 길이도 가진다. 이 길이를 Magnitude라고 한다.
+같은 방향에서 Light를 받는 두 Surface가 있다고 해보자.
+
+이 Section에서 비교하려는 것은 Light를 얼마나 정면으로 바라보는가다. 따라서 방향이 같다면 방향 비교의 결과도 같아야 한다.
+
+그런데 이 방향을 표현하는 Vector에는 방향뿐 아니라 길이도 들어 있다. 이 길이를 Magnitude라고 한다.
 
 하지만 서로 길이가 다른 Vector가 같은 방향을 가리킬 수도 있다.
 
@@ -150,8 +162,6 @@ Normalize는 **Vector의 방향을 유지하면서 길이를 1로 맞추는 과�
 화살표가 가리키는 방향은 그대로 두고, 비교에 사용할 화살표의 길이를 통일한다고 생각하면 된다.
 
 이렇게 길이가 1인 Vector를 Unit Vector라고 한다.
-
-<img src="Figures/Chapter03/Fig3_01.png" width="90%">
 
 앞의 A와 B를 Normalize하면 둘 다 같은 Unit Vector가 된다.
 
@@ -181,6 +191,10 @@ Shader에서는 이러한 처리를 다음과 같이 표현한다.
 `normalize(Vector)`
 
 이 표현을 읽을 때는 **“이 Vector의 방향은 유지하고 길이를 1로 맞춘다”**라고 이해하면 된다.
+
+<img src="Figures/Chapter03/Fig3_01.png" width="90%">
+
+**Figure 3-1. Vector and Normalize.** 왼쪽의 두 화살표는 방향이 같고 길이만 다르다. 오른쪽에서는 같은 길이로 정리되어 겹친다. 그림의 길이 계산은 왜 각 Vector를 자신의 길이로 나누는지를 확인하는 보조 표현이다.
 
 ---
 
@@ -265,8 +279,6 @@ Light가 Surface의 뒤쪽으로 넘어가면 앞쪽과 뒤쪽을 구분할 수 
 
 이러한 방향 관계를 하나의 값으로 계산하는 연산이 Dot Product다.
 
-<img src="Figures/Chapter03/Fig3_02.png" width="90%">
-
 두 Unit Vector를 비교하면 다음과 같은 결과를 얻는다.
 
 | Angle Between N and L | Direction Relationship | Dot Product |
@@ -349,7 +361,7 @@ NdotL이 표현하는 것은 먼저 **Surface의 방향과 Light Direction의 �
 
 NdotL의 음수 값은 Light가 Surface Normal의 반대쪽에 있다는 의미다.
 
-하지만 Surface 앞면의 기본적인 Diffuse Lighting을 계산할 때 이 음수를 그대로 음수 밝기로 사용하지는 않는다.
+여기서 다루는 One-sided Opaque Surface 앞면의 기본적인 Diffuse Lighting에서는 이 음수를 그대로 음수 밝기로 사용하지 않는다.
 
 앞면에 기여하지 않는 방향은 0으로 처리할 수 있다.
 
@@ -396,6 +408,17 @@ Dot Product의 핵심은 복잡한 성분 계산을 외우는 것이 아니다.
 
 **두 방향의 관계를 Shader가 사용할 수 있는 하나의 값으로 바꾸는 것**이다.
 
+<img src="Figures/Chapter03/Fig3_02.png" width="90%">
+
+**Figure 3-2. Dot Product and Direction Factor.** 위쪽의 Signed Dot Product와 아래쪽의 Clamped Factor를 나누어 읽는다. 두 값 모두 최종 화면 밝기는 아니다.
+
+### Key Takeaways
+
+- Normalize는 비교할 방향의 길이를 맞추고, Dot Product는 두 방향의 관계를 Scalar로 바꾼다.
+- 같은 Space의 Unit Vector를 비교할 때 NdotL은 두 방향 사이 각도의 Cosine으로 읽을 수 있다.
+- Signed NdotL과 Clamped Diffuse Factor는 보존하는 정보가 다르다.
+- 방향 계수에 Material의 응답과 Light의 기여가 결합되어야 Lighting 결과가 만들어진다.
+
 ---
 
 ## 3.4 Surface Normal
@@ -404,7 +427,11 @@ Dot Product의 핵심은 복잡한 성분 계산을 외우는 것이 아니다.
 
 앞 Section에서는 Normal을 Surface 방향의 기준으로 사용했다.
 
-이제 그 Normal이 실제 Geometry와 Shading에서 어떻게 준비되는지 살펴본다.
+그런데 같은 Low Poly Mesh도 어떤 설정에서는 면마다 각져 보이고, 다른 설정에서는 부드러운 곡면처럼 보인다.
+
+Vertex Position을 바꾸지 않았는데도 이런 차이가 생긴다면, Lighting에서 비교하는 방향은 어디에서 달라진 것일까?
+
+이 질문을 이해하려면 실제 Geometry의 면 방향과 Shading에 사용할 방향을 나누어 살펴봐야 한다. 먼저 그 기준이 되는 Surface Normal을 확인한다.
 
 먼저 Geometry의 표면을 기준으로 생각하면, Normal은 **그 Surface에 수직인 방향**이다.
 
@@ -413,8 +440,6 @@ Dot Product의 핵심은 복잡한 성분 계산을 외우는 것이 아니다.
 반면 Sphere처럼 휘어진 Surface에서는 위치에 따라 표면의 방향이 달라지므로 Normal도 달라진다. 위쪽에서는 위를 향하고, 옆쪽에서는 바깥쪽을 향한다.
 
 즉 Normal은 Object 전체를 대표하는 하나의 방향이 아니라, **Surface의 각 위치에서 사용하는 방향 정보**다.
-
-<img src="Figures/Chapter03/Fig3_03.png" width="90%">
 
 여기서 먼저 구분할 것은 Geometry의 실제 면 방향과 Shading에서 사용하는 방향이다.
 
@@ -446,7 +471,14 @@ Triangle에서는 같은 Vertex에서 출발하는 두 Edge를 사용할 수 있
 
 따라서 Face Normal의 방향은 Vertex가 나열되는 순서인 Winding과 연결되며, Renderer의 Front-Face 규칙도 함께 확인해야 한다.
 
+<details>
+<summary>Technical Note — Degenerate Geometry</summary>
+
 세 Vertex가 일직선에 있거나 중복되어 Triangle의 면적이 0이라면 이 방식으로 유효한 Face Normal을 만들 수 없다. 또한 하나의 평면에 놓이지 않은 Polygon은 Triangle 단위로 해석해야 한다.
+
+이 조건은 정상적인 Triangle의 설명을 바꾸는 예외가 아니라, Normal을 만들 입력 Geometry가 유효한지 확인하는 조건이다.
+
+</details>
 
 ---
 
@@ -504,11 +536,17 @@ Rasterization 과정에서는 Vertex Attribute가 Triangle 내부의 위치에 �
 
 다만 **길이가 1인 Vector들을 보간했다고 해서 결과의 길이도 항상 1이 되는 것은 아니다.**
 
+두 화살표가 서로 다른 방향을 가리키면 그 사이의 값을 만드는 과정에서 일부 성분이 서로 상쇄될 수 있기 때문이다. 따라서 방향을 부드럽게 이어주는 Interpolation과 길이를 통일하는 Normalize는 서로 다른 일을 한다.
+
 따라서 Lighting에서 방향을 비교하기 전에는 다시 Normalize한다.
 
 `N = normalize(InterpolatedNormal)`
 
 이것은 방향을 임의로 바꾸는 처리가 아니라, 보간 후의 방향을 유지하면서 길이를 다시 정리하는 과정이다.
+
+<img src="Figures/Chapter03/Fig3_03.png" width="90%">
+
+**Figure 3-3. Surface Normal and Shading.** Face Normal은 실제 Triangle 면의 방향을, Vertex Normal은 Shading에 사용할 방향을 제공한다. Smooth Shading에서는 Normal의 변화가 부드러워지지만 Geometry와 Silhouette는 그대로다. 그림의 Unit Vector 설명은 Lighting에 사용하기 위해 길이를 정리한 상태를 뜻한다.
 
 ---
 
@@ -603,8 +641,6 @@ Surface는 가로로 더 길어지면서 기울기가 달라질 수 있다.
 즉 Non-Uniform Scale이 올바른 Normal 자체를 없애는 것은 아니다.
 
 변형된 Geometry에도 그 면에 수직인 방향은 존재한다. 문제는 **기존 Normal에 적용한 변환 방식이 그 방향을 제대로 만들어주지 못하는 것**이다.
-
-<img src="Figures/Chapter03/Fig3_04.png" width="90%">
 
 ---
 
@@ -784,6 +820,10 @@ Normalize 단계는 그렇게 준비된 방향의 길이를 1로 정리한다.
 
 > **Position Transform은 Geometry의 위치와 형태를 변환하고, Normal Transform은 그 결과에 맞는 Surface 방향을 준비한다.**
 
+<img src="Figures/Chapter03/Fig3_04.png" width="90%">
+
+**Figure 3-4. Normal Transformation.** 원래 Tangent, 변형된 Tangent, 같은 Scale을 적용한 잘못된 Normal, 보정한 Normal 순서로 읽는다. 그림의 `(-1, 2)`와 본문의 `(-0.5, 1)`은 길이가 다르지만 같은 방향이다. 이 수직 관계의 설명은 Geometric Normal을 기준으로 한다.
+
 ---
 
 <details>
@@ -835,6 +875,13 @@ Normal 변환이 올바르게 끝났더라도 Vector의 길이가 1이라고 보
 
 이 둘을 함께 만족해야 NdotL을 올바르게 해석할 수 있다.
 
+### Key Takeaways
+
+- Translation은 Normal 방향을 바꾸지 않으며, Rotation은 Surface와 Normal을 함께 회전시킨다.
+- Non-Uniform Scale에서는 변형된 Surface에 맞는 방향 보정이 필요하다.
+- Inverse Transpose는 방향을 준비하고, Normalize는 그 방향의 길이를 정리한다.
+- 올바른 Normal Transform을 적용했어도 Interpolation 뒤에는 Unit Length를 다시 확인한다.
+
 ---
 
 ## 3.6 Light and View Direction
@@ -859,8 +906,6 @@ Light Direction이라는 이름이 항상 이 방향을 뜻하는 것은 아니�
 어떤 Engine이나 API는 빛이 실제로 진행하는 **Light → Surface** 방향을 제공할 수도 있다. 이 방향은 이 문서에서 사용하는 L과 반대다.
 
 따라서 외부에서 받은 Light Direction을 사용할 때는 변수 이름뿐 아니라 방향의 정의도 확인해야 한다. 반대 방향을 그대로 Dot Product에 사용하면 결과의 부호도 반대로 바뀐다.
-
-<img src="Figures/Chapter03/Fig3_05.png" width="90%">
 
 ---
 
@@ -954,6 +999,8 @@ Surface Position이나 Camera Position이 달라지면 이 방향도 달라질 �
 
 Specular Reflection처럼 관찰 방향에 따라 달라지는 계산에서는 V가 중요한 입력이 된다.
 
+한 Camera를 사용해도 화면의 서로 다른 Surface 위치에서는 Camera를 향하는 방향이 다를 수 있다. 따라서 V는 Camera의 Forward Direction을 모든 Surface에 그대로 복사한 값이 아니다.
+
 ---
 
 ### View Direction for an Orthographic Camera
@@ -984,6 +1031,10 @@ Light Direction과 View Direction은 Light와 Camera의 Position 자체가 아�
 
 **현재 Surface를 기준으로 방향 관계를 비교하기 위해 준비한 Vector**다.
 
+<img src="Figures/Chapter03/Fig3_05.png" width="90%">
+
+**Figure 3-5. Light and View Direction.** Directional Light의 빛 진행 방향 D와 Surface → Light 방향 L은 서로 반대다. Point/Spot Light에서는 같은 Space의 Position 차이로 L을 준비한다. 그림은 Camera Position 차이로 V를 만드는 **Perspective Camera 예제**와, 평행 Viewing Ray의 반대 방향을 V로 사용하는 **Orthographic Camera 경로**를 별도로 구분한다.
+
 다음 Section에서는 이렇게 준비한 N, L, V를 하나의 Lighting 계산에 연결한다.
 
 ---
@@ -1001,8 +1052,6 @@ Light Direction은 Light의 종류에 따라 방향 정보나 Position 차이로
 View Direction은 Camera의 Projection 방식에 맞게 준비한다.
 
 이제 중요한 것은 **각각 올바르게 준비한 Vector들이 서로 같은 기준에서 표현되어 있는가**다.
-
-<img src="Figures/Chapter03/Fig3_06.png" width="90%">
 
 ---
 
@@ -1054,6 +1103,10 @@ World Space에서 Lighting을 계산한다면 입력을 다음과 같이 준비�
 Position은 Chapter 02의 Position Transform 경로를 사용하고, Normal은 3.5에서 살펴본 Normal Transform 경로를 사용한다.
 
 그 결과로 준비된 N, L, V가 같은 World Space의 방향이면 서로의 관계를 비교할 수 있다.
+
+<img src="Figures/Chapter03/Fig3_06.png" width="90%">
+
+**Figure 3-6. A Common Coordinate Space.** 오른쪽 비교에서는 물리적으로 같은 L을 World와 View의 서로 다른 성분으로 표현한 뒤, 기준을 섞었을 때 Dot Product가 달라지는 문제를 보여준다. 아래 표의 Position 차이 경로는 **Point/Spot Light와 Perspective Camera 예제**다. 별도의 `다른 준비 경로`는 Directional Light의 L과 Orthographic Camera의 V를 구분한다. 이 방향들도 선택한 같은 Lighting Space의 Unit Vector로 준비하며, 입력 조건은 3.6의 구분을 따른다.
 
 ---
 
@@ -1176,4 +1229,13 @@ Dot Product는 그렇게 준비된 두 방향의 관계를 하나의 Scalar 값�
 
 이번 Chapter의 목표는 이 연산들을 따로 외우는 것이 아니라, **어떤 입력을 왜 준비하고, 어떤 조건에서 서로 비교해야 하는지** 이해하는 것이다.
 
-다음 Chapter 04에서는 이렇게 준비한 Surface에 Texture Sample과 Material Parameter가 어떻게 합류하는지 살펴본다. 이후 Chapter 05에서는 방향 관계를 실제 반사 응답에 연결하고, Chapter 08에서는 구현한 Module의 입력과 결과를 검증하는 과정으로 이어간다.
+Chapter 03은 방향 관계를, Chapter 04는 Surface의 Material Data를 준비한다. Chapter 05에서는 이 두 입력이 실제 반사 응답에 어떻게 연결되는지 살펴본다. Chapter 08에서는 구현한 Module의 입력과 결과를 검증하는 과정으로 이어간다.
+
+### Chapter Summary
+
+- Surface Position은 상대 방향을 만드는 기준점이고, Normal은 Shading 방향의 기준이다.
+- L과 V는 Light Type과 Camera Projection에 맞는 입력에서 준비한다.
+- Space, 방향 규약, Unit Length는 각각 확인해야 하는 조건이다.
+- 기본 검증에서는 화면 인상과 실제 입력값을 함께 확인한다.
+
+다음 [Chapter 04 — Material Architecture](Chapter04_MaterialArchitecture.md)에서는 이렇게 준비한 Surface에 Texture Sample과 Material Parameter가 어떻게 합류하는지 살펴본다.

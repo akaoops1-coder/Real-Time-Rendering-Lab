@@ -2,6 +2,8 @@
 
 ## 8.6 MatCap
 
+MatCap은 View-space Normal 기반 Appearance Lookup이며 실제 Environment Reflection/IBL 계산과 다르다. 이 예제는 Camera Basis를 공유하는 투영 근사로, Perspective 화면의 모든 Pixel View Ray를 정확하게 사용하는 구면 Reflection Mapping과 같지 않다. Function Input은 World-space Normal과 Texture Object이고 Output은 Linear RGB MatCapResult이다.
+
 Chapter 8.5까지는 `Surface Normal`, `Light Direction`, `View Direction`과 같은 방향 Data를 이용하여 Base Lighting, Specular, Rim Light를 직접 계산했다.
 
 이 방식은 Shader 안에서 실제 방향 관계를 계산하고, 그 결과를 필요에 맞게 Stylization하는 구조다.
@@ -14,9 +16,7 @@ Chapter 8.5까지는 `Surface Normal`, `Light Direction`, `View Direction`과 �
 
 이 더 효율적이고 직관적일 수 있다.
 
-MatCap은 `Material Capture`의 줄임말이며, 재질이 보이는 모습인 Appearance를 이미지에 저장하고 표면 방향에 맞는 부분을 다시 읽는 기법이다. 예를 들어 보라색 구의 오른쪽 위에 밝은 무늬를 그려두면, 다른 Mesh에서도 Camera 기준으로 오른쪽 위를 향하는 표면이 그 무늬를 읽도록 만들 수 있다.
-
-여기서 새로 계산할 것은 빛의 양 전체가 아니라 **이 표면 방향에 대응하는 이미지 위치**다. 앞에서 배운 Normal은 이번에도 표면의 방향을 알려주지만, 그 방향을 밝기 대신 Texture 좌표를 찾는 데 사용한다.
+MatCap은 바로 이러한 아이디어를 사용하는 기법이다.
 
 이번 절에서는 MatCap Texture를 단순히 Sphere에 Mapping하는 효과로 이해하지 않고,
 
@@ -40,16 +40,9 @@ Stored Lighting / Material Appearance
 Stylized Result
 ~~~
 
-<details>
-<summary>Implementation Note — Lookup Contract</summary>
+이를 통해 MatCap이 일반적인 Lighting 계산과 어떤 차이를 가지는지 이해하고,
 
-MatCap은 View-space Normal 기반 Appearance Lookup이며 실제 Environment Reflection/IBL 계산과 다르다. 이 예제는 Camera Basis를 공유하는 투영 근사로, Perspective 화면의 모든 Pixel View Ray를 정확하게 사용하는 구면 Reflection Mapping과 같지 않다. Function Input은 World-space Normal과 Texture Object이고 Output은 Linear RGB MatCapResult이다.
-
-Texture Object는 Chapter 04에서 구분한 Texture Resource를 전달하는 입력이다. 이미 읽힌 RGB 값이 아니라, Function이 자신이 만든 UV로 읽을 대상 Texture를 지정한다. Normal은 현재 계약의 World Space 비영 Unit Vector를 공급하고, 읽힌 Color가 Linear RGB가 되는 Decode 조건은 Sampling 단계에서 확인한다.
-
-</details>
-
-이를 통해 MatCap이 일반적인 Lighting 계산과 어떤 차이를 가지는지 이해하고, 최종적으로 `MF_MatCap`이라는 독립적인 Module로 구성하여 ASF Master Material에 통합한다.
+최종적으로 `MF_MatCap`이라는 독립적인 Module로 구성하여 ASF Master Material에 통합한다.
 
 ---
 
@@ -147,7 +140,9 @@ Anime Style이나 NPR Rendering에서는 때때로 실제 Light 관계보다
 
 이러한 표현을 모두 수식과 Lighting Module만으로 만들 수도 있다.
 
-하지만 원하는 결과가 명확하게 정해져 있다면, 그 결과를 Texture 형태로 미리 저장하고 필요한 위치에서 읽어오는 방법이 더 단순할 수 있다.
+하지만 원하는 결과가 명확하게 정해져 있다면,
+
+그 결과를 Texture 형태로 미리 저장하고 필요한 위치에서 읽어오는 방법이 더 단순할 수 있다.
 
 이때 사용하는 방식이 MatCap이다.
 
@@ -171,7 +166,9 @@ MatCap은
 
 즉 MatCap Texture에는 이미 어떤 Lighting 또는 Material Appearance가 저장되어 있다.
 
-Shader는 현재 Surface 방향에 따라 Texture의 어느 위치를 읽을지를 결정하고, 그 위치에 저장된 Color를 가져온다.
+Shader는 현재 Surface 방향에 따라 Texture의 어느 위치를 읽을지를 결정하고,
+
+그 위치에 저장된 Color를 가져온다.
 
 개념적으로는 다음과 같다.
 
@@ -284,7 +281,9 @@ Result
 
 하지만 MatCap이 모든 Lighting을 대체할 수 있는 것은 아니다.
 
-MatCap은 실제 Scene Light를 계산한 결과가 아니기 때문에, Scene Lighting과 물리적으로 일치하지 않을 수 있다.
+MatCap은 실제 Scene Light를 계산한 결과가 아니기 때문에,
+
+Scene Lighting과 물리적으로 일치하지 않을 수 있다.
 
 예를 들어 Scene의 Directional Light가 오른쪽으로 이동하더라도 MatCap에 저장된 Highlight Pattern은 같은 방식으로 반응하지 않을 수 있다.
 
@@ -383,9 +382,13 @@ Texture 안에는 다음과 같은 다양한 Appearance를 담을 수 있다.
 
 Anime Style에서는 실제 물리적 Lighting보다 특정 Material의 인상을 유지하는 것이 중요한 경우가 많다.
 
-예를 들어 Hair Highlight를 생각해보자. 실제 Hair Reflection을 물리적으로 구현하려면 Hair Tangent, Anisotropic Reflection 등 더 복잡한 계산이 필요할 수 있다.
+예를 들어 Hair Highlight를 생각해보자.
 
-하지만 특정한 Anime Style의 Hair Highlight Pattern이 이미 정해져 있다면, 그 Pattern을 MatCap 형태로 저장하고 Surface 방향에 따라 읽어오는 방식으로 비슷한 인상을 빠르게 만들 수 있다.
+실제 Hair Reflection을 물리적으로 구현하려면 Hair Tangent, Anisotropic Reflection 등 더 복잡한 계산이 필요할 수 있다.
+
+하지만 특정한 Anime Style의 Hair Highlight Pattern이 이미 정해져 있다면,
+
+그 Pattern을 MatCap 형태로 저장하고 Surface 방향에 따라 읽어오는 방식으로 비슷한 인상을 빠르게 만들 수 있다.
 
 또한 Armor, Accessory, Eye, Hair 등 특정 Material 영역에만 MatCap을 적용하여 기본 Lighting 위에 추가적인 스타일을 만들 수도 있다.
 
@@ -468,7 +471,9 @@ MatCap Texture는 일반적인 UV Texture와 달리 Surface Normal Direction을 
 
 ### MatCap Texture Contents
 
-앞에서 이름을 풀어본 `Material Capture`는 재질의 모습을 저장한다는 뜻이었다. 이제 저장된 이미지의 각 위치가 무엇을 의미하는지 살펴보자. 이름 그대로 보면,
+MatCap은 `Material Capture`의 줄임말이다.
+
+이름 그대로 보면,
 
 ~~~text
 Material
@@ -569,7 +574,11 @@ MatCap에서는 같은 Surface라도 Camera와 Object의 관계가 달라지면 
 
 MatCap Texture가 흔히 구처럼 보이는 이유는 Sphere가 다양한 Surface Normal Direction을 한 화면 안에서 매우 쉽게 보여줄 수 있기 때문이다.
 
-Sphere의 정면 중앙을 생각해보자. Camera가 Sphere를 정면에서 보고 있다면, 중앙 Surface의 Normal은 거의 Camera를 향한다.
+Sphere의 정면 중앙을 생각해보자.
+
+Camera가 Sphere를 정면에서 보고 있다면,
+
+중앙 Surface의 Normal은 거의 Camera를 향한다.
 
 ~~~text
 Sphere Center
@@ -585,7 +594,11 @@ Sphere Right
 Right-facing Normal
 ~~~
 
-왼쪽은 왼쪽으로, 위쪽은 위쪽으로, 아래쪽은 아래쪽으로 기울어진다.
+왼쪽은 왼쪽으로,
+
+위쪽은 위쪽으로,
+
+아래쪽은 아래쪽으로 기울어진다.
 
 ~~~text
           Up Normal
@@ -624,7 +637,9 @@ Surface Normal
 View Direction
 ~~~
 
-따라서 MatCap Texture의 중앙이 밝다면, Camera를 정면으로 바라보는 Surface가 밝게 보인다.
+따라서 MatCap Texture의 중앙이 밝다면,
+
+Camera를 정면으로 바라보는 Surface가 밝게 보인다.
 
 ~~~text
 MatCap Center = Bright
@@ -632,7 +647,9 @@ MatCap Center = Bright
 Front-facing Surface = Bright
 ~~~
 
-여기서 중요한 점은, MatCap Texture의 중앙이 **Object의 중앙 위치를 의미하지 않는다**는 것이다.
+여기서 중요한 점은,
+
+MatCap Texture의 중앙이 **Object의 중앙 위치를 의미하지 않는다**는 것이다.
 
 중앙은 위치가 아니라 방향을 의미한다.
 
@@ -666,11 +683,15 @@ MatCap Bottom
 → Down-facing Normal
 ~~~
 
-예를 들어 MatCap Texture의 오른쪽 위에 강한 Highlight가 있다면, Camera 기준으로 오른쪽 위 방향을 향하는 Surface에서 그 Highlight가 나타난다.
+예를 들어 MatCap Texture의 오른쪽 위에 강한 Highlight가 있다면,
+
+Camera 기준으로 오른쪽 위 방향을 향하는 Surface에서 그 Highlight가 나타난다.
 
 이 때문에 MatCap은 특정한 Material Pattern을 매우 직관적으로 디자인할 수 있다.
 
-원하는 방향에 밝은 영역을 그려두면, 그 방향을 향하는 Surface가 해당 Appearance를 Lookup해서 가져오기 때문이다.
+원하는 방향에 밝은 영역을 그려두면,
+
+그 방향을 향하는 Surface가 해당 Appearance를 Lookup해서 가져오기 때문이다.
 
 ---
 
@@ -688,7 +709,9 @@ Sphere 중앙에서는
 N · V ≈ 1
 ~~~
 
-이지만, 실루엣에 가까워질수록
+이지만,
+
+실루엣에 가까워질수록
 
 ~~~text
 N · V ≈ 0
@@ -710,7 +733,9 @@ MatCap Border
 → Grazing Surface
 ~~~
 
-그래서 MatCap Texture의 외곽에 밝은 Pattern을 그려두면, Object의 실루엣 주변에서 밝은 효과가 나타날 수 있다.
+그래서 MatCap Texture의 외곽에 밝은 Pattern을 그려두면,
+
+Object의 실루엣 주변에서 밝은 효과가 나타날 수 있다.
 
 겉으로 보면 Rim Light와 비슷해 보일 수 있지만 계산 방식은 다르다.
 
@@ -722,7 +747,9 @@ N · V
 Mask 계산
 ~~~
 
-을 수행하지만, MatCap은
+을 수행하지만,
+
+MatCap은
 
 ~~~text
 Surface Normal Direction
@@ -863,7 +890,9 @@ Sphere Border
 
 그리고 MatCap Texture에는 그 가상의 Sphere에서 각 방향이 어떤 모습으로 보여야 하는지가 저장되어 있다고 생각할 수 있다.
 
-실제 Mesh에서는 현재 Surface Normal Direction을 확인한 뒤, 가상의 Sphere에서 같은 방향에 해당하는 위치를 찾아 그 Color를 가져온다.
+실제 Mesh에서는 현재 Surface Normal Direction을 확인한 뒤,
+
+가상의 Sphere에서 같은 방향에 해당하는 위치를 찾아 그 Color를 가져온다.
 
 ~~~text
 Actual Mesh Surface
@@ -885,7 +914,9 @@ Color / Appearance Lookup
 
 MatCap은 `Material Capture`의 줄임말이다.
 
-말 그대로 Material Appearance를 미리 이미지 형태로 저장해두고, Surface Direction을 기준으로 필요한 Appearance를 찾아 사용하는 방식이다.
+말 그대로 Material Appearance를 미리 이미지 형태로 저장해두고,
+
+Surface Direction을 기준으로 필요한 Appearance를 찾아 사용하는 방식이다.
 
 여기서 `Lookup`은
 
@@ -939,7 +970,9 @@ Stored Appearance
 
 > Surface Normal을 Camera 기준 Direction으로 어떻게 바꿀 수 있을까?
 
-다음 절에서는 `World Space Normal`과 `View Space Normal`의 차이를 살펴보고, 왜 MatCap 구현에서 `View Space Normal`이 필요한지 확인한다.
+다음 절에서는 `World Space Normal`과 `View Space Normal`의 차이를 살펴보고,
+
+왜 MatCap 구현에서 `View Space Normal`이 필요한지 확인한다.
 
 ---
 
@@ -968,7 +1001,9 @@ Stored Appearance
 
 에 따라 그 방향의 의미가 달라진다.
 
-MatCap은 Camera 기준 Appearance를 사용하기 때문에, Surface Normal도 Camera 기준으로 해석해야 한다.
+MatCap은 Camera 기준 Appearance를 사용하기 때문에,
+
+Surface Normal도 Camera 기준으로 해석해야 한다.
 
 즉 MatCap 구현에서는 `World Space Normal`보다 `View Space Normal`이 더 적합하다.
 
@@ -978,7 +1013,9 @@ MatCap은 Camera 기준 Appearance를 사용하기 때문에, Surface Normal도 
 
 #### World-space Normal
 
-먼저 `World Space Normal`을 생각해보자. World Space는 Scene 전체에서 사용하는 고정된 기준 좌표계다.
+먼저 `World Space Normal`을 생각해보자.
+
+World Space는 Scene 전체에서 사용하는 고정된 기준 좌표계다.
 
 예를 들어 Unreal Scene에서 World Space의 축은 Object나 Camera가 움직여도 기본적으로 변하지 않는다.
 
@@ -1001,7 +1038,13 @@ Z
 
 는 것이다.
 
-예를 들어 Sphere의 어떤 Surface에 하나의 Normal이 있다고 하자. Camera가 왼쪽에 있을 때도, Camera가 오른쪽으로 이동했을 때도, 그 Surface 자체가 변하지 않았다면 World Space Normal 값은 그대로다.
+예를 들어 Sphere의 어떤 Surface에 하나의 Normal이 있다고 하자.
+
+Camera가 왼쪽에 있을 때도,
+
+Camera가 오른쪽으로 이동했을 때도,
+
+그 Surface 자체가 변하지 않았다면 World Space Normal 값은 그대로다.
 
 ~~~text
 Camera A
@@ -1055,9 +1098,13 @@ MatCap에서 필요한 것은 단순히 World에서의 방향이 아니다.
 
 > 현재 Camera에서 이 Surface를 보았을 때, 이 Surface는 화면 기준으로 어느 방향으로 기울어져 있는가?
 
-예를 들어 어떤 Surface Normal이 World 기준으로 오른쪽 위를 향하고 있다고 하자. Camera가 정면에 있을 때는 화면에서도 오른쪽 위를 향하는 것처럼 보일 수 있다.
+예를 들어 어떤 Surface Normal이 World 기준으로 오른쪽 위를 향하고 있다고 하자.
 
-하지만 Camera가 Object 주위를 돌아가면, 같은 World Space Normal이라도 화면에서는 전혀 다른 방향으로 보일 수 있다.
+Camera가 정면에 있을 때는 화면에서도 오른쪽 위를 향하는 것처럼 보일 수 있다.
+
+하지만 Camera가 Object 주위를 돌아가면,
+
+같은 World Space Normal이라도 화면에서는 전혀 다른 방향으로 보일 수 있다.
 
 즉
 
@@ -1073,7 +1120,9 @@ World Space Normal
 
 이다.
 
-MatCap은 화면 기준으로 Texture를 Lookup해야 하므로, 이 상태는 충분하지 않다.
+MatCap은 화면 기준으로 Texture를 Lookup해야 하므로,
+
+이 상태는 충분하지 않다.
 
 ---
 
@@ -1081,7 +1130,11 @@ MatCap은 화면 기준으로 Texture를 Lookup해야 하므로, 이 상태는 �
 
 이 부분이 View Space를 이해하는 핵심이다.
 
-하나의 Surface Point를 고정해두고 Camera만 이동한다고 생각해보자. Surface도 그대로고, Surface Normal도 World Space에서는 그대로다.
+하나의 Surface Point를 고정해두고 Camera만 이동한다고 생각해보자.
+
+Surface도 그대로고,
+
+Surface Normal도 World Space에서는 그대로다.
 
 하지만 Camera가 바뀌면
 
@@ -1098,7 +1151,9 @@ Surface Normal
 → 화면 왼쪽 위
 ~~~
 
-Camera가 반대쪽으로 이동하면, 같은 Surface Normal이 이번에는 화면 기준으로 오른쪽 방향에 더 가깝게 보일 수 있다.
+Camera가 반대쪽으로 이동하면,
+
+같은 Surface Normal이 이번에는 화면 기준으로 오른쪽 방향에 더 가깝게 보일 수 있다.
 
 ~~~text
 Camera B 기준
@@ -1119,7 +1174,9 @@ MatCap에서는 바로 이 Camera 기준 해석이 필요하다.
 
 `View Space`는 Camera를 기준으로 만들어지는 Coordinate Space다.
 
-World Space가 Scene 전체에 고정된 Coordinate System이라면, View Space는 Camera의 위치와 방향을 기준으로 좌표계를 다시 정의한다.
+World Space가 Scene 전체에 고정된 Coordinate System이라면,
+
+View Space는 Camera의 위치와 방향을 기준으로 좌표계를 다시 정의한다.
 
 개념적으로는 다음과 같다.
 
@@ -1164,7 +1221,9 @@ Camera에서 보았을 때
 
 MatCap이 필요한 것은 두 번째 정보다.
 
-왜냐하면 MatCap Texture의 좌우와 상하는 World의 좌우와 상하가 아니라,
+왜냐하면 MatCap Texture의 좌우와 상하는
+
+World의 좌우와 상하가 아니라,
 
 **화면에서 보이는 좌우와 상하 방향**
 
@@ -1201,7 +1260,9 @@ MatCap Bottom
 
 이라는 점이다.
 
-MatCap Texture의 오른쪽에 Highlight가 있다고 해보자. 그 Highlight가 적용되어야 하는 Surface는
+MatCap Texture의 오른쪽에 Highlight가 있다고 해보자.
+
+그 Highlight가 적용되어야 하는 Surface는
 
 ~~~text
 World에서 오른쪽을 향하는 Surface
@@ -1309,7 +1370,9 @@ Surface가 Camera를 얼마나 향하고 있는가
 
 에 가까운 정보를 가진다.
 
-즉 Z는 화면 평면 위의 위치를 직접 나타내기보다는, Camera의 기준 축에 대한 Normal 방향 성분이다. Position의 Depth나 Camera까지의 거리가 아니다.
+즉 Z는 화면 평면 위의 위치를 직접 나타내기보다는,
+
+Camera의 기준 축에 대한 Normal 방향 성분이다. Position의 Depth나 Camera까지의 거리가 아니다.
 
 MatCap Texture의 좌우·상하 위치를 만들기 위해서는
 
@@ -1363,7 +1426,9 @@ MatCap
 
 까지 알아야 한다.
 
-그래서 Dot Product 하나만으로는 부족하고, Camera 기준으로 변환된 Normal Vector 자체가 필요하다.
+그래서 Dot Product 하나만으로는 부족하고,
+
+Camera 기준으로 변환된 Normal Vector 자체가 필요하다.
 
 ---
 
@@ -1550,7 +1615,9 @@ MatCap Texture Lookup
 
 이제 Surface Normal을 Camera 기준으로 해석할 수 있게 되었다.
 
-다음 단계에서는 `View Space Normal`의 `XY` 값이 어떤 범위를 가지는지 살펴보고, 이를 실제 Texture에서 사용할 수 있는 `0~1 UV Coordinate`로 어떻게 변환하는지 확인한다.
+다음 단계에서는 `View Space Normal`의 `XY` 값이 어떤 범위를 가지는지 살펴보고,
+
+이를 실제 Texture에서 사용할 수 있는 `0~1 UV Coordinate`로 어떻게 변환하는지 확인한다.
 
 ---
 
@@ -1627,7 +1694,9 @@ V
 → Texture 위 / 아래
 ~~~
 
-따라서 3D Normal Direction을 2D Coordinate로 바꾸기 위해 `View Space Normal`의 `X`, `Y` 성분을 사용한다.
+따라서 3D Normal Direction을 2D Coordinate로 바꾸기 위해
+
+`View Space Normal`의 `X`, `Y` 성분을 사용한다.
 
 ~~~text
 View Space Normal
@@ -1748,7 +1817,9 @@ V
 0 → 1
 ~~~
 
-즉 Texture의 좌측은 U = 0, 우측은 U = 1에 해당한다.
+즉 Texture의 좌측은 U = 0,
+
+우측은 U = 1에 해당한다.
 
 ~~~text
 U
@@ -1817,7 +1888,9 @@ Output
 → 1
 ~~~
 
-즉 입력 범위에서 가운데였던 `0`은 출력 범위에서도 가운데인 `0.5`가 된다.
+즉 입력 범위에서 가운데였던 `0`은
+
+출력 범위에서도 가운데인 `0.5`가 된다.
 
 그래서 Remap은 단순히 값을 잘라내거나 강제로 제한하는 것이 아니다.
 
@@ -1979,7 +2052,9 @@ Remap
 
 #### Range Conversion
 
-이제 실제 변환 과정을 살펴보자. 현재 값은 다음 범위에 있다.
+이제 실제 변환 과정을 살펴보자.
+
+현재 값은 다음 범위에 있다.
 
 ~~~text
 -1 -------- 0 -------- 1
@@ -2011,7 +2086,9 @@ Value × 0.5
 -0.5 -------- 0 -------- 0.5
 ~~~
 
-범위의 크기는 이제 `0 ~ 1`과 동일한 크기지만, 중심이 아직 0에 있다.
+범위의 크기는 이제 `0 ~ 1`과 동일한 크기지만,
+
+중심이 아직 0에 있다.
 
 Texture UV의 중심은 `0.5`이므로 전체 값을 오른쪽으로 `0.5`만큼 이동시킨다.
 
@@ -2049,7 +2126,7 @@ Value + 0.5
 
 #### MatCap UV Formula
 
-앞의 범위 변환이 해결한 것은 좌표의 크기다. 아직 좌표가 가리키는 방향까지 맞춘 것은 아니다. 아래 식은 Unit View Normal의 XY를 한 Tile 안에 옮기는 기본 관계이며, 사용할 Texture의 좌우·상하 규약은 구현 단계에서 별도로 확인한다.
+Unit Normal의 XY는 사각형 전체가 아니라 Unit Disk 안에 놓인다. 따라서 이 Remap은 Texture 안의 원형 영역을 사용한다. Z 부호를 버리므로 앞/뒤 Hemisphere 구분이 필요한 재질은 별도 정책이 필요하다. 원 가장자리의 Filtering/Texture Padding과 Address Mode도 확인한다.
 
 
 위 과정을 하나로 합치면 매우 간단한 형태가 된다.
@@ -2096,26 +2173,15 @@ MatCap UV
 범위 크기를 절반으로 줄이기
 ~~~
 
-위한 값이고, 두 번째 `0.5`는
+위한 값이고,
+
+두 번째 `0.5`는
 
 ~~~text
 범위의 중심을 0에서 0.5로 이동시키기
 ~~~
 
 위한 값이다.
-
----
-
-<details>
-<summary>Technical Note — Lookup Domain and Texture Edge</summary>
-
-Unit Normal의 XY는 사각형 전체가 아니라 Unit Disk 안에 놓인다. 따라서 이 Remap은 Texture 안의 원형 영역을 사용한다. Z 부호를 버리므로 앞/뒤 Hemisphere 구분이 필요한 재질은 별도 정책이 필요하다. 원 가장자리의 Filtering/Texture Padding과 Address Mode도 확인한다.
-
-Unit Disk는 원점을 중심으로 반지름이 1인 원 안의 영역이다. Unit Normal의 길이가 정해져 있으므로 XY가 모든 사각형 좌표를 독립적으로 가질 수는 없다. 여기서는 XY로 조회하는 방식의 범위를 이해하면 된다. Hemisphere는 구를 앞/뒤로 나눈 반쪽이며, Z 부호를 사용하지 않는 Lookup은 그 두 방향을 구별하는 별도 처리가 없다.
-
-원 가장자리에서는 Filtering이 인접한 Texel을 함께 읽을 수 있다. 따라서 원 밖의 Padding과 Address Mode가 경계 Appearance에 미치는 영향도 실제 Texture와 함께 점검한다. 이 내용은 Normal→XY→Remap이라는 기본 계산에 추가되는 Asset/경계 조건이다.
-
-</details>
 
 ---
 
@@ -2196,7 +2262,9 @@ Normal = 1
 
 #### Applying the Remap to XY
 
-지금까지는 이해를 위해 하나의 Scalar 값처럼 설명했지만, 실제 MatCap에서는 X와 Y 두 값을 동시에 변환한다.
+지금까지는 이해를 위해 하나의 Scalar 값처럼 설명했지만,
+
+실제 MatCap에서는 X와 Y 두 값을 동시에 변환한다.
 
 ~~~text
 View Space Normal
@@ -2226,7 +2294,9 @@ NormalY × 0.5 + 0.5
 
 이다.
 
-예를 들어 Surface가 Camera를 정면으로 향하고 있다고 생각해보자. 이 경우 화면 방향의 기울기가 거의 없다.
+예를 들어 Surface가 Camera를 정면으로 향하고 있다고 생각해보자.
+
+이 경우 화면 방향의 기울기가 거의 없다.
 
 ~~~text
 Normal X ≈ 0
@@ -2339,7 +2409,11 @@ Y 역시 같은 원리로 위와 아래를 결정한다.
 
 #### Generated Lookup Coordinates
 
-이 과정을 통해 처음으로 3차원 Surface Direction을 2차원 Texture Coordinate로 변환할 수 있게 되었다.
+이 과정을 통해 처음으로
+
+3차원 Surface Direction을
+
+2차원 Texture Coordinate로 변환할 수 있게 되었다.
 
 ~~~text
 Surface Normal
@@ -2410,7 +2484,9 @@ MatCap UV
 Texture Sample
 ~~~
 
-아직 실제 Node를 연결하지는 않았지만, 이제 각 Node가 왜 필요한지는 원리적으로 설명할 수 있다.
+아직 실제 Node를 연결하지는 않았지만,
+
+이제 각 Node가 왜 필요한지는 원리적으로 설명할 수 있다.
 
 ~~~text
 Transform
@@ -2429,13 +2505,17 @@ Texture Sample
 → 생성한 UV로 MatCap Lookup
 ~~~
 
-다음 절에서는 이 Data Flow를 Unreal Material Graph에서 실제로 구현하고, Sphere를 이용해 MatCap Texture가 정상적으로 Sampling되는지 확인한다.
+다음 절에서는 이 Data Flow를 Unreal Material Graph에서 실제로 구현하고,
+
+Sphere를 이용해 MatCap Texture가 정상적으로 Sampling되는지 확인한다.
 
 ---
 
 #### Key Takeaways
 
-MatCap Texture는 2D 이미지이기 때문에 3차원 `View Space Normal`에서 화면 평면에 해당하는 `X`, `Y` 성분을 사용한다.
+MatCap Texture는 2D 이미지이기 때문에
+
+3차원 `View Space Normal`에서 화면 평면에 해당하는 `X`, `Y` 성분을 사용한다.
 
 ~~~text
 View Space Normal
@@ -2457,7 +2537,9 @@ Normal의 각 성분은
 -1 ~ 1
 ~~~
 
-범위를 가질 수 있지만, Texture UV는
+범위를 가질 수 있지만,
+
+Texture UV는
 
 ~~~text
 0 ~ 1
@@ -2528,7 +2610,9 @@ MatCap UV
 
 이제 MatCap Texture를 읽기 위한 Coordinate가 준비되었다.
 
-다음 단계에서는 이 과정을 Unreal Material Graph에서 직접 구현하고, 생성된 UV를 사용하여 실제 MatCap Texture를 Sampling한다.
+다음 단계에서는 이 과정을 Unreal Material Graph에서 직접 구현하고,
+
+생성된 UV를 사용하여 실제 MatCap Texture를 Sampling한다.
 
 ---
 
@@ -2540,7 +2624,9 @@ MatCap UV
 
 앞 절에서는 `View Space Normal`의 `XY` 성분을 이용해 MatCap Texture에서 사용할 UV Coordinate를 만드는 원리를 살펴보았다.
 
-이번 절에서는 그 과정을 Unreal Material Graph에 직접 구현하고, 실제로 MatCap Texture를 Sampling했을 때 Camera 기준 Appearance가 유지되는지 확인한다.
+이번 절에서는 그 과정을 Unreal Material Graph에 직접 구현하고,
+
+실제로 MatCap Texture를 Sampling했을 때 Camera 기준 Appearance가 유지되는지 확인한다.
 
 구현의 전체 흐름은 다음과 같다.
 
@@ -2568,8 +2654,6 @@ MatCap Result
 
 #### World-space Normal Input
 
-먼저 필요한 입력을 한 가지로 좁힌다. 밝은 Pattern을 어느 표면에 보여줄지는 그 표면의 방향이 결정하므로 World Space Normal을 준비한다. 현재 계약은 비영 Unit Normal을 전제로 한다. 방향을 올바른 Space에 두는 것은 XY 범위를 옮기기 전에 확인해야 한다.
-
 MatCap Lookup의 기준은 Surface Normal Direction이다.
 
 Unreal에서는 현재 Pixel의 World Space Normal을 `PixelNormalWS`로 가져올 수 있다.
@@ -2580,7 +2664,9 @@ PixelNormalWS
 World Space Normal
 ~~~
 
-하지만 MatCap은 World 기준 방향이 아니라 Camera 기준 Surface Direction이 필요하므로, 이 값을 그대로 Texture UV로 사용하지 않는다.
+하지만 MatCap은 World 기준 방향이 아니라 Camera 기준 Surface Direction이 필요하므로,
+
+이 값을 그대로 Texture UV로 사용하지 않는다.
 
 먼저 World Space Normal을 View Space로 변환한다.
 
@@ -2609,7 +2695,9 @@ World Space → View Space
 View Space Normal
 ~~~
 
-이 단계에서는 아직 Texture를 Sample하지 않고, View Space Normal 자체를 `Emissive Color`에 연결하여 Debug했다.
+이 단계에서는 아직 Texture를 Sample하지 않고,
+
+View Space Normal 자체를 `Emissive Color`에 연결하여 Debug했다.
 
 Normal Vector의 각 성분은 RGB Channel에 대응하여 표시된다.
 
@@ -2624,7 +2712,9 @@ View Space Normal Z
 → Blue
 ~~~
 
-다만 Normal 성분은 `-1 ~ 1` 범위를 가질 수 있으므로, 음수 영역은 일반적인 Color 출력에서 그대로 표현되지 않는다.
+다만 Normal 성분은 `-1 ~ 1` 범위를 가질 수 있으므로,
+
+음수 영역은 일반적인 Color 출력에서 그대로 표현되지 않는다.
 
 따라서 일부 영역이 검게 보이는 것은 오류가 아니라 Raw Normal Data를 Color로 확인했기 때문에 나타나는 결과다.
 
@@ -2634,18 +2724,13 @@ View Space Normal Z
 
 View Space를 사용하는 이유는 MatCap이 Camera 기준 Surface Direction에 따라 동작해야 하기 때문이다.
 
-따라서 단순히 Transform Node를 연결한 것만으로 끝내지 않고, 서로 다른 View에서 같은 Sphere를 확인했다.
+따라서 단순히 Transform Node를 연결한 것만으로 끝내지 않고,
+
+서로 다른 View에서 같은 Sphere를 확인했다.
 
 <img src="../Figures/Chapter08/Fig8_54.png" width="90%">
 
-*Figure 8-54. World→View Transform의 Raw Normal RGB와 두 Camera View를 보여주는 기존 비교.*
-
-<details>
-<summary>Verification Note — Raw Normal and Camera Comparison</summary>
-
 *Figure 8-54. World→View Transform의 Raw Normal RGB Debug와 두 View. 음수 성분은 이 화면에서 직접 읽을 수 없으며, [−1,1]을 [0,1]로 Remap한 시각화와 다르다. 왼쪽 Perspective는 Lit, 오른쪽 CineCamera는 Unlit이므로 Camera 차이만 통제한 비교는 아니다. View Mode와 Exposure/Post Process 조건을 통일한 실제 Unreal 재촬영이 필요하다.*
-
-</details>
 
 Fig8_54에서는
 
@@ -2682,7 +2767,7 @@ World에서 Surface가 어디를 향하고 있는가?
 Surface가 어느 방향으로 기울어져 보이는가?
 ~~~
 
-라는 정보를 읽으려는 비교다. 기존 화면은 방향 분포를 이해하는 자료이며, Camera만 바꾼 통제 비교는 위 Verification Note의 조건을 맞추어 따로 수행한다.
+라는 정보임을 실제 결과로 확인할 수 있다.
 
 ---
 
@@ -2787,9 +2872,11 @@ V 반전은 현재 View Basis와 Texture 제작 방향에 대한 보정이다. �
 
 이 부분은 단순한 예외 상황이 아니라,
 
-**이 예제에서 선택한 View Space 축과 Texture 제작 방향이 서로 달라 생기는 Coordinate Convention 차이**다. 뒤의 계산은 그 조합을 전제로 읽는다.
+**현재 우리가 사용하는 View Space 축 방향과 Unreal Texture UV 축 방향이 서로 다르기 때문에 반드시 발생하는 Coordinate Convention 차이**다.
 
-먼저 View Space의 Y 방향을 다시 보자. View Space에서 화면 기준으로는 다음처럼 해석한다.
+먼저 View Space의 Y 방향을 다시 보자.
+
+View Space에서 화면 기준으로는 다음처럼 해석한다.
 
 ~~~text
 Y 증가
@@ -2866,7 +2953,9 @@ Texture V
 → Texture 아래쪽
 ~~~
 
-따라서 View Space Y를 단순히 `0 ~ 1`로 Remap한 값을 Texture V로 그대로 사용하면, 방향 관계가 정확히 반대로 연결된다.
+따라서 View Space Y를 단순히 `0 ~ 1`로 Remap한 값을 Texture V로 그대로 사용하면,
+
+방향 관계가 정확히 반대로 연결된다.
 
 ~~~text
 View Space 위쪽
@@ -2910,7 +2999,7 @@ Texture 위쪽
 
 결과적으로 MatCap Texture는 세로 방향으로 완전히 뒤집혀 보이게 된다.
 
-다음은 기존 테스트에 기록된 방향 차이다.
+이것이 실제 테스트에서
 
 ~~~text
 원본 Highlight
@@ -2930,7 +3019,7 @@ Texture 위쪽
 
 정도의 문제가 아니라,
 
-**현재 예제의 축 조합에서는 Remap 결과만 사용할 때 상하 대응이 반대가 되는 구조적 이유가 존재한다.** 다른 Texture에서는 같은 이름의 Node를 복사하기 전에 축 표식으로 대응을 확인한다.
+**현재 좌표 변환 방식을 그대로 사용할 경우 V 방향이 반드시 반전되는 구조적 이유가 존재한다.**
 
 ---
 
@@ -3132,7 +3221,7 @@ Texture V 증가
 → 아래쪽
 ~~~
 
-이므로 이 예제의 축 조합에서는 반전해야 한다.
+이므로 반드시 반전해야 한다.
 
 즉 최종적인 축 관계는 다음처럼 정리된다.
 
@@ -3176,7 +3265,9 @@ Texture Sample에는 테스트를 위해 준비한 MatCap Texture를 사용했�
 T_MatCap_LavenderGloss
 ~~~
 
-이 예제의 Texture가 sRGB Encoded Color로 제작되었다면 sRGB Decode를 활성화한다. Linear/HDR Color Asset에는 같은 Decode를 반복하지 않는다. Color라는 이유만으로 항상 sRGB On을 선택하지 않는다(Chapter 04.5). Texture Sample에서 중요한 두 부분은 다음과 같다.
+이 예제의 Texture가 sRGB Encoded Color로 제작되었다면 sRGB Decode를 활성화한다. Linear/HDR Color Asset에는 같은 Decode를 반복하지 않는다. Color라는 이유만으로 항상 sRGB On을 선택하지 않는다(Chapter 04.5).
+
+Texture Sample에서 중요한 두 부분은 다음과 같다.
 
 ~~~text
 UVs
@@ -3186,7 +3277,9 @@ RGB
 → 그 위치에서 읽어온 Color
 ~~~
 
-즉 Shader는 생성한 MatCap UV를 이용하여 Texture의 특정 위치를 Lookup하고, 그 위치에 저장되어 있던 RGB Appearance를 가져온다.
+즉 Shader는 생성한 MatCap UV를 이용하여 Texture의 특정 위치를 Lookup하고,
+
+그 위치에 저장되어 있던 RGB Appearance를 가져온다.
 
 ~~~text
 Surface Normal
@@ -3226,7 +3319,9 @@ Texture Sample RGB
 Emissive Color
 ~~~
 
-이번 테스트 Material은 `Unlit` Shading Model을 사용했기 때문에, 샘플링된 MatCap Color를 `Emissive Color`에 직접 연결하여 결과를 확인했다.
+이번 테스트 Material은 `Unlit` Shading Model을 사용했기 때문에,
+
+샘플링된 MatCap Color를 `Emissive Color`에 직접 연결하여 결과를 확인했다.
 
 여기서 Emissive는 MatCap 자체가 반드시 발광한다는 의미가 아니라,
 
@@ -3242,14 +3337,7 @@ Emissive Color
 
 <img src="../Figures/Chapter08/Fig8_55.png" width="90%">
 
-*Figure 8-55. Remap한 좌표를 U/V로 나누고 V를 보정하여 Texture Sample에 연결한 기존 Graph.*
-
-<details>
-<summary>Verification Note — Texture Orientation Evidence</summary>
-
 *Figure 8-55. Remap→V OneMinus→Append→Texture Sample→Emissive 연결 예시. 원본 Texture가 읽을 수 있게 표시되지 않아 Highlight 방향의 원본 일치를 이 화면만으로 확인할 수 없다. 사용한 원본 Texture와 방향 표시, World→View부터의 전체 Graph를 포함해 실제 Unreal에서 재촬영한다. V Flip은 사용한 View 축과 Texture 규약에 따른다.*
-
-</details>
 
 Fig8_55에서는 다음 구현 흐름과 최종 결과를 함께 확인할 수 있다.
 
@@ -3277,11 +3365,13 @@ RGB
 Emissive
 ~~~
 
-기존 구현 기록에는 원본의 오른쪽 위 Highlight가 Sphere에서도 오른쪽 위에 나타났다고 정리되어 있다. 이 관찰을 현재 Lookup의 검증으로 재사용하려면 원본 Texture와 축 표식을 함께 보여주어 U/V 대응을 확인한다.
+MatCap 원본에서 오른쪽 위에 위치한 Highlight가 실제 Sphere에서도 오른쪽 위에 나타나면서,
+
+U/V 방향이 정상적으로 대응된 것을 확인했다.
 
 즉 V Flip은 임의의 시각적 보정이 아니라,
 
-**이 예제에서 확인한 View Space Y와 Texture V의 증가 방향 차이를 맞추는 Coordinate Conversion**
+**View Space Y와 Texture V가 서로 반대 방향으로 증가하기 때문에 필요한 필수 Coordinate Conversion**
 
 이다.
 
@@ -3289,11 +3379,13 @@ Emissive
 
 #### Camera Comparison
 
-Camera 비교에서는 같은 표면의 방향을 어느 기준으로 읽었는지를 확인한다. 먼저 View Mode·Exposure·Post Process를 같게 고정한 뒤 Camera 방향을 바꾸고, 좌우·상하 표식이 각 화면의 방향과 대응하는지 본다. Sphere는 회전 대칭이므로 이 단계의 관찰과 비대칭 Mesh의 Rotation 검증은 구분한다.
+MatCap은 View Space를 기준으로 동작하므로,
 
-MatCap은 View Space를 기준으로 동작하므로, Camera 위치가 달라졌을 때에도 현재 Camera 기준으로 Surface Direction을 다시 해석한다.
+Camera 위치가 달라졌을 때에도 현재 Camera 기준으로 Surface Direction을 다시 해석한다.
 
-Perspective View와 CineCameraActor View에서 결과를 비교했을 때, 각 View에서 MatCap Appearance가 화면 기준으로 일관된 형태를 유지하는 것을 확인했다.
+Perspective View와 CineCameraActor View에서 결과를 비교했을 때,
+
+각 View에서 MatCap Appearance가 화면 기준으로 일관된 형태를 유지하는 것을 확인했다.
 
 이것은 MatCap Texture가 Object의 World Position이나 기존 Mesh UV에 고정되어 있는 것이 아니라,
 
@@ -3445,7 +3537,7 @@ Emissive Color
 
 이라는 것을 실제 구현으로 확인했다.
 
-이 예제에서 사용한 View Basis와 Texture 제작 방향에서는
+또한 실제 Unreal Texture Coordinate에서는
 
 ~~~text
 View Space Y
@@ -3455,7 +3547,9 @@ Texture V
 → 아래쪽으로 증가
 ~~~
 
-라는 축 방향 차이가 존재하기 때문에, V에 `OneMinus`를 적용해야 원본 MatCap Texture와 동일한 상하 방향을 유지할 수 있다는 점도 확인했다.
+라는 축 방향 차이가 존재하기 때문에,
+
+V에 `OneMinus`를 적용해야 원본 MatCap Texture와 동일한 상하 방향을 유지할 수 있다는 점도 확인했다.
 
 즉 최종 MatCap UV는 단순한 Remap 결과가 아니라,
 
@@ -3467,7 +3561,9 @@ V Axis Direction Correction
 
 을 모두 거쳐 만들어진다.
 
-이제 기본 MatCap Sampling Logic이 검증되었으므로, 다음 절에서는 이 Node 구조를 `MF_MatCap`으로 분리하여 ASF의 다른 Rendering Module과 동일한 형태로 구성한다.
+이제 기본 MatCap Sampling Logic이 검증되었으므로,
+
+다음 절에서는 이 Node 구조를 `MF_MatCap`으로 분리하여 ASF의 다른 Rendering Module과 동일한 형태로 구성한다.
 
 ---
 
@@ -3476,8 +3572,6 @@ V Axis Direction Correction
 ---
 
 ### Creating MF_MatCap
-
-이제 계산이 필요한 입력과 결과를 알고 있으므로 경계를 정할 수 있다. Function에는 **방향으로 UV를 만들고 Texture를 읽는 일**을 모으고, 읽은 Appearance를 얼마나 강하게 쓰거나 다른 결과와 얼마나 섞을지는 Master에 남긴다. 이 기준으로 보면 입력이 두 개이고 출력이 RGB 하나인 이유도 이해할 수 있다.
 
 앞 절에서는 MatCap Sampling의 전체 흐름을 Unreal Material Graph에서 직접 구현하고 검증했다.
 
@@ -3521,14 +3615,7 @@ MatCap을 Material Function으로 분리하는 목적은 단순히 Node 수를 �
 
 <img src="../Figures/Chapter08/Fig8_56.png" width="90%">
 
-*Figure 8-56. Normal과 Texture 입력으로 Lookup 결과를 만드는 기존 MatCap Function Graph.*
-
-<details>
-<summary>Implementation Note — Function Input and Output Contract</summary>
-
 *Figure 8-56. 문서의 `MF_MatCap`에 해당하는 기존 Graph이며, 캡처의 Asset 표기는 `MF_Matcap`이다. Normal 입력은 World Space의 비영 Unit Vector를 전제로 한다. Texture2D 입력은 Texture Object이고, Lookup 후 MatCapResult는 RGB 값이다. 이미지의 V Flip은 사용한 View 축과 Texture 방향 규약에 맞춘 예시이며, Color/Intensity 합성은 Function 밖에서 수행한다.*
-
-</details>
 
 ---
 
@@ -3544,7 +3631,11 @@ Surface Normal
 MatCap Texture
 ~~~
 
-를 받아, 현재 Camera 기준 Surface Direction에 맞는 MatCap Texture 위치를 계산하고, 그 위치의 Color를 Sampling하여 출력한다.
+를 받아,
+
+현재 Camera 기준 Surface Direction에 맞는 MatCap Texture 위치를 계산하고,
+
+그 위치의 Color를 Sampling하여 출력한다.
 
 즉 Function의 책임을 한 문장으로 표현하면 다음과 같다.
 
@@ -3580,7 +3671,9 @@ MatCapResult
 
 테스트 Material에서는 `PixelNormalWS`를 직접 사용했다.
 
-하지만 `MF_MatCap`에서는 `PixelNormalWS` Node를 Function 내부에 고정하지 않고, `Normal`을 Function Input으로 받도록 구성했다.
+하지만 `MF_MatCap`에서는 `PixelNormalWS` Node를 Function 내부에 고정하지 않고,
+
+`Normal`을 Function Input으로 받도록 구성했다.
 
 ~~~text
 Input Normal
@@ -3589,7 +3682,9 @@ Input Normal
 
 이렇게 구성한 이유는 Module의 Data Dependency를 명확하게 만들기 위해서다.
 
-Function 내부에서 `PixelNormalWS`를 직접 가져오면, 겉으로 보았을 때 `MF_MatCap`이 어떤 Normal Data에 의존하는지 확인하기 어렵다.
+Function 내부에서 `PixelNormalWS`를 직접 가져오면,
+
+겉으로 보았을 때 `MF_MatCap`이 어떤 Normal Data에 의존하는지 확인하기 어렵다.
 
 반면 Input으로 Normal을 받으면 Master Material에서 다음 관계가 명확하게 보인다.
 
@@ -3668,8 +3763,6 @@ World Space Normal
 
 #### MatCapTexture Input
 
-Chapter 04에서 Texture와 Sample 값은 구분했다. 이 입력은 읽힌 색 한 점이 아니라 **어떤 Texture를 읽을 것인가**를 전달한다. 그래서 Function이 내부에서 계산한 MatCap UV를 사용하여 매 Surface Sample의 RGB를 읽을 수 있다.
-
 두 번째 Input은 MatCap Texture다.
 
 ~~~text
@@ -3687,7 +3780,9 @@ MatCapTexture
 T_MatCap_LavenderGloss
 ~~~
 
-를 직접 넣어버리면, 다른 MatCap을 사용하고 싶을 때마다 Function 자체를 수정해야 한다.
+를 직접 넣어버리면,
+
+다른 MatCap을 사용하고 싶을 때마다 Function 자체를 수정해야 한다.
 
 이것은 Module로서 좋은 구조가 아니다.
 
@@ -3834,7 +3929,11 @@ ViewNormal.xy × 0.5 + 0.5
 
 #### V Axis Correction
 
-이 예제의 View Basis와 Texture 제작 방향을 사용할 때는 Remap 뒤에 V 방향 보정이 필요하다. 앞 절의 기존 관찰은 그 축 조합의 상하 차이를 보여주는 자료이며, 모든 MatCap Texture에서 반대 방향이 성립한다는 뜻은 아니다. 아래 구현은 같은 축 조합을 전제로 한다.
+Remap만으로는 MatCap UV가 완성되지 않는다.
+
+앞 절에서 실제 Unreal 결과를 통해 확인했듯이,
+
+View Space Y와 Texture V는 증가 방향이 서로 반대다.
 
 ~~~text
 View Space Y 증가
@@ -3844,7 +3943,7 @@ Texture V 증가
 → Texture 아래쪽
 ~~~
 
-따라서 이 예제의 축 조합에서는 Remap된 Y 값을 그대로 V에 사용하면 MatCap Texture가 세로 방향으로 뒤집힌다. 다른 Texture와 View Basis에서는 방향 표식으로 대응을 확인한 뒤 보정 여부를 정한다.
+따라서 Remap된 Y 값을 그대로 V에 사용하면 MatCap Texture가 세로 방향으로 뒤집힌다.
 
 이를 수정하기 위해 `Break Float2`로 U와 V를 분리한다.
 
@@ -4093,7 +4192,9 @@ MF_MatCap
 
 앞의 Module들은 주로 Direction Data를 수학적으로 계산하여 Lighting Contribution이나 Mask를 만든다.
 
-반면 MatCap은 Direction Data를 이용하지만, 최종 Appearance 자체는 Texture에 저장되어 있다.
+반면 MatCap은 Direction Data를 이용하지만,
+
+최종 Appearance 자체는 Texture에 저장되어 있다.
 
 ~~~text
 Lighting Module
@@ -4246,7 +4347,9 @@ M_ASF_Master
 
 이제 MatCap 자체의 계산과 Sampling Logic은 독립 Module로 정리되었다.
 
-다음 단계에서는 `MF_MatCap`을 실제 `M_ASF_Master`에 연결하고, 기존
+다음 단계에서는 `MF_MatCap`을 실제 `M_ASF_Master`에 연결하고,
+
+기존
 
 ~~~text
 Base Lighting
@@ -4266,7 +4369,9 @@ Rim
 
 앞 절에서는 `MF_MatCap`을 독립적인 Material Function으로 구성했다.
 
-이제 마지막 단계는 이 Function을 실제 `M_ASF_Master`에 연결하고, 기존 ASF의
+이제 마지막 단계는 이 Function을 실제 `M_ASF_Master`에 연결하고,
+
+기존 ASF의
 
 - Base Lighting
 - Shadow
@@ -4475,9 +4580,9 @@ Texture Asset 자체
 
 #### Independent Output Validation
 
-합성 전에 결과를 따로 보는 이유는 Lookup 문제와 Blend 문제를 섞지 않기 위해서다. MatCapResult 단독 출력이 기준 결과와 같고 축 방향도 맞은 뒤에 Intensity와 Lerp를 연결하면, 이후 문제가 생겼을 때 어느 단계부터 다시 확인할지 분명해진다. 아래의 완료 관찰은 기존 구현 기록이며, 현재 계약의 실행 확인은 같은 조건으로 재현한다.
+Master Material에 `MF_MatCap`을 연결한 직후에는 기존 Lighting과 바로 합성하지 않고,
 
-Master Material에 `MF_MatCap`을 연결한 직후에는 기존 Lighting과 바로 합성하지 않고, 먼저 MatCapResult만 독립적으로 `Emissive Color`에 연결했다.
+먼저 MatCapResult만 독립적으로 `Emissive Color`에 연결했다.
 
 ~~~text
 PixelNormalWS
@@ -4497,7 +4602,9 @@ Emissive Color
 
 그 결과 이전 `M_MatCapTest`에서 확인했던 MatCap 결과와 동일한 Appearance가 출력되는 것을 확인했다.
 
-또한 Camera View를 변경했을 때에도 View Space Normal 기준으로 MatCap Appearance가 유지되는 것을 다시 확인했다.
+또한 Camera View를 변경했을 때에도
+
+View Space Normal 기준으로 MatCap Appearance가 유지되는 것을 다시 확인했다.
 
 즉 다음 두 가지가 검증되었다.
 
@@ -4509,7 +4616,9 @@ M_ASF_Master에서 Function 호출
 → 동일한 결과 유지
 ~~~
 
-따라서 이후 단계에서는 `MF_MatCap` 내부 Logic을 다시 수정할 필요 없이, Master Material에서 최종 Composition만 결정하면 된다.
+따라서 이후 단계에서는 `MF_MatCap` 내부 Logic을 다시 수정할 필요 없이,
+
+Master Material에서 최종 Composition만 결정하면 된다.
 
 ---
 
@@ -4604,7 +4713,9 @@ MatCap Result
 
 가 되면서 전체 Brightness가 크게 증가할 수 있다.
 
-또한 MatCap이 원래 가지고 있던 명암 구조가 기존 Lighting 위에 단순히 겹쳐져, 의도한 Material Appearance보다 과도하게 밝아질 가능성도 있다.
+또한 MatCap이 원래 가지고 있던 명암 구조가 기존 Lighting 위에 단순히 겹쳐져,
+
+의도한 Material Appearance보다 과도하게 밝아질 가능성도 있다.
 
 따라서 이번 기본 구현에서는 MatCap을
 
@@ -4618,7 +4729,9 @@ MatCap Result
 대체 가능한 Appearance Source
 ~~~
 
-로 보고, 기존 ASF Result와 MatCap Result 사이를 혼합하는 방식을 선택했다.
+로 보고,
+
+기존 ASF Result와 MatCap Result 사이를 혼합하는 방식을 선택했다.
 
 이때 사용하는 Node가 `Lerp`다.
 
@@ -4820,13 +4933,11 @@ Emissive Color
 
 ---
 
-두 입력의 역할을 구분한 뒤에는 끝점부터 확인한다. Alpha=0에서 기존 ASF가 그대로 남는지, Alpha=1에서 Intensity를 적용한 MatCap이 선택되는지 확인한 다음 중간 비율을 비교한다. 비교할 동안 Texture·Intensity·Camera·Fixed Exposure 조건은 고정한다. Display의 밝기만으로 Lerp 내부 RGB를 수치 측정했다고 판단하지 않는다.
-
----
-
 #### Alpha Comparison
 
-Lerp의 동작을 확인하기 위해 Alpha 값을 Parameter로 만들기 전에, Constant Scalar를 사용하여 다음 네 단계로 비교했다.
+Lerp의 동작을 확인하기 위해 Alpha 값을 Parameter로 만들기 전에,
+
+Constant Scalar를 사용하여 다음 네 단계로 비교했다.
 
 ~~~text
 Alpha = 0
@@ -4873,7 +4984,9 @@ ASF Result 50%
 MatCap 50%
 ~~~
 
-MatCap Appearance가 훨씬 강하게 나타나고, 기존 Lighting과 MatCap이 거의 동일한 비율로 혼합된다.
+MatCap Appearance가 훨씬 강하게 나타나고,
+
+기존 Lighting과 MatCap이 거의 동일한 비율로 혼합된다.
 
 ---
 
@@ -4884,7 +4997,9 @@ ASF Result 0%
 MatCap 100%
 ~~~
 
-기존 ASF Lighting은 완전히 사라지고, `MF_MatCap`의 결과만 출력된다.
+기존 ASF Lighting은 완전히 사라지고,
+
+`MF_MatCap`의 결과만 출력된다.
 
 이는 앞에서 MatCap 단독 테스트를 했던 결과와 동일하다.
 
@@ -4981,7 +5096,9 @@ Alpha ↑
 MatCap 자체의 Strength
 ~~~
 
-이고, 다른 하나는
+이고,
+
+다른 하나는
 
 ~~~text
 ASF와 MatCap 사이의 Blend Ratio
@@ -5013,7 +5130,9 @@ MatCap을 얼마나 사용할 것인가
 
 이다.
 
-따라서 테스트에서는 `Lerp Alpha`를 Scalar Parameter로 만들지 않고, Constant 값을 직접 변경하면서 결과를 비교했다.
+따라서 테스트에서는 `Lerp Alpha`를 Scalar Parameter로 만들지 않고,
+
+Constant 값을 직접 변경하면서 결과를 비교했다.
 
 ~~~text
 0
@@ -5032,7 +5151,9 @@ MatCapBlend
 
 와 같은 Scalar Parameter로 교체할 수 있다.
 
-즉 지금의 Constant Alpha는 테스트용이며, 최종적으로는 외부에서 조절 가능한 Parameter로 확장할 수 있다.
+즉 지금의 Constant Alpha는 테스트용이며,
+
+최종적으로는 외부에서 조절 가능한 Parameter로 확장할 수 있다.
 
 ---
 
@@ -5042,14 +5163,7 @@ MatCap 통합이 끝난 `M_ASF_Master`의 전체 구조는 다음과 같다.
 
 <img src="../Figures/Chapter08/Fig8_58.png" width="90%">
 
-*Figure 8-58. 기존 ASF 결과와 MatCap Appearance를 Lerp로 결합한 Master Graph의 참고 화면.*
-
-<details>
-<summary>Verification Note — Integration Capture and Valid Inputs</summary>
-
 *Figure 8-58. 기존 통합 Graph의 참고 화면이며 현재 계약의 완료 증거는 아니다. ShadowVisibility=1은 수동 시험 값이고 Renderer Visibility 연동을 뜻하지 않는다. Lerp Alpha=1은 MatCap 경로만 선택한다. RimWidth=0.3/RimSoftness=0.5는 현재 유효 범위(Softness≤Width)를 벗어나며, 하단 Normal 배선이 Texture Node와 겹쳐 MF_Matcap의 Normal 입력까지 이어지는 경로를 명확하게 추적하기 어렵다. 올바른 World Normal 연결과 유효 Parameter, 명시적 LightDirection 또는 검증된 Adapter 조건으로 실제 Unreal 재촬영이 필요하다. 캡처의 MF_Matcap은 문서 MF_MatCap에 해당하는 기존 표기다.*
-
-</details>
 
 Fig8_58에서는 기존 ASF Module과 MatCap Module이 하나의 Master Material 안에서 결합된 구조를 확인할 수 있다.
 
@@ -5165,7 +5279,9 @@ Unlit
 
 을 사용한다.
 
-Base Lighting, Specular, Rim, MatCap 모두 Unreal의 기본 Lit Shading 결과를 사용하는 것이 아니라, ASF 내부에서 직접 계산하거나 Lookup한 결과다.
+Base Lighting, Specular, Rim, MatCap 모두 Unreal의 기본 Lit Shading 결과를 사용하는 것이 아니라,
+
+ASF 내부에서 직접 계산하거나 Lookup한 결과다.
 
 따라서 최종 Color를
 
@@ -5206,7 +5322,9 @@ MF_MatCap
 → View Space Normal 기반 Texture Appearance Lookup
 ~~~
 
-MatCap은 기존 Module과 동일하게 Surface Direction Data를 사용하지만, 최종 Result를 만드는 방식은 다르다.
+MatCap은 기존 Module과 동일하게 Surface Direction Data를 사용하지만,
+
+최종 Result를 만드는 방식은 다르다.
 
 ~~~text
 Base / Specular / Rim
@@ -5227,8 +5345,6 @@ MatCap
 
 #### Integration Result
 
-통합을 점검할 때는 입력 Resource → MatCapResult → Intensity 적용 → Lerp의 순서로 따라간다. Texture를 바꾸었는데 단독 MatCapResult부터 잘못 보이면 Lookup을, 단독 결과는 맞지만 최종 결과만 다르면 Intensity·Blend 연결을 확인한다. 다음 정리는 기존 구현 과정의 회고이며 위 Figure가 현재 계약의 실행 완료를 증명하는 것은 아니다.
-
 이번 단계에서 `MF_MatCap`을 `M_ASF_Master`에 최종적으로 연결했다.
 
 통합 과정에서 다음 내용을 확인했다.
@@ -5239,7 +5355,9 @@ Texture Sample Parameter2D
 Texture Object Parameter
 ~~~
 
-`MF_MatCap`은 내부에서 Texture Sampling을 수행하므로, Master에서는 Sampling된 RGB가 아니라 Texture Object 자체를 전달해야 한다.
+`MF_MatCap`은 내부에서 Texture Sampling을 수행하므로,
+
+Master에서는 Sampling된 RGB가 아니라 Texture Object 자체를 전달해야 한다.
 
 또한 기존 ASF Result와 MatCap Appearance를 `Lerp`를 사용해 혼합했다.
 
@@ -5564,7 +5682,7 @@ V Axis Direction Correction
 
 #### MatCap Texture Sampling
 
-MatCap UV는 Texture Sample의 읽을 위치이고 RGB는 그 위치의 Color다. Decode 설정은 저장된 원본 Encoding을 따른다. sRGB Encoded Color이면 sRGB Decode를 활성화하고, Linear/HDR Color Asset이면 같은 Decode를 반복하지 않는다. Appearance Color라는 용도만으로 sRGB On을 결정하지 않는다.
+MatCap UV는 Texture Sample의 읽을 위치이고 RGB는 그 위치의 Color다. 이 테스트의 MatCap은 Appearance Color를 저장하므로 Color Texture로 sRGB를 활성화했다.
 
 ~~~text
 MatCap UV

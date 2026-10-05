@@ -8,8 +8,6 @@
 
 8.2에서는 광원과 표면의 방향 관계를 이용해 직접광의 기본적인 기여량을 계산했다.
 
-예를 들어 바닥을 Light 방향으로 놓았더라도 그 위에 책을 두면 책 아래에는 같은 직접광이 도달하지 않는다. 바닥의 Normal을 바꾸지 않았는데 결과가 달라지는 이유를 설명하려면, 방향 계산에 더해 Light까지의 경로를 살펴봐야 한다.
-
 표면의 Normal과 Light Direction이 같은 방향에 가까울수록 표면은 더 많은 빛을 받는다. 이를 통해 표면의 기본적인 밝기를 결정할 수 있었다.
 
 하지만 실제 장면에서는 **표면이 광원을 향하고 있음에도 불구하고 어두워지는 경우**가 존재한다.
@@ -419,7 +417,7 @@ Surface
 경로 중간에 물체가 존재하는가?
 ~~~
 
-이러한 접근은 Surface에서 Light까지 검사 경로를 만드는 **Shadow Ray**와, 그 경로가 열렸는지 판단하는 **Visibility Test**로 이어진다. 경로 자체의 표현과 검사 결과를 구분한 뒤 아래에서 자세히 살펴본다.
+이러한 접근은 **Shadow Ray와 Visibility Test**라는 개념으로 이어진다.
 
 하지만 실제 실시간 렌더링에서는 매 픽셀마다 이러한 경로를 직접 계산하는 것이 비용 문제가 될 수 있다.
 
@@ -1649,7 +1647,7 @@ Visible / Occluded 판단
 
 #### Depth Data and Baked Lighting
 
-앞의 Shadow Map and Lightmap 구분을 떠올려 보자. 여기서는 저장 시점 때문에 두 Data를 혼동하기 쉽다. 같은 "미리 저장"이라는 말이 이 Frame의 비교 전에 Depth를 만든다는 뜻인지, 실행 전에 Lighting을 Bake했다는 뜻인지 구분한다.
+여기서 Shadow Map을 Lightmap과 혼동하지 않는 것이 중요하다.
 
 Lightmap은 일반적으로 게임 실행 전에 조명 결과를 계산하고 저장하는 **Baked Lighting 데이터**다.
 
@@ -1836,16 +1834,7 @@ Shadow Map에 저장된 Depth
 
 > **현재 Surface가 Light에서 보이는지, 다른 Geometry에 의해 가려졌는지를 판단하는 것**이 목적이다.
 
-아래 10/15 예제는 멀어질수록 값이 커지는 동일한 선형 Depth 표현의 개념 예이다. 실제 GPU의 0–1 Projected Depth를 그대로 나타내지는 않는다. 이 기준에서 저장된 위치보다 멀리 있는 Surface를 가려진 것으로 판단한다.
-
-<details>
-<summary>Depth Convention Note</summary>
-
-**Bias**는 작은 Depth 오차 때문에 같은 Surface를 잘못 가려졌다고 판단하지 않도록 비교 기준에 적용하는 Offset이다. Reversed-Z 등 반대 Convention에서는 비교 방향과 Bias 부호가 달라진다. 숫자가 큰 쪽이 더 먼 쪽이라는 이번 예제의 규칙을 실제 GPU Depth에 그대로 적용하지 않는다. Bias가 해결하는 오류와 지나칠 때의 문제는 아래 Quality 설명에서 이어 살펴본다.
-
-</details>
-
-예를 들어 Shadow Map의 해당 위치에 Depth가 `10`이라고 하자.
+아래 10/15 예제는 멀어질수록 값이 커지는 동일한 선형 Depth 표현의 개념 예이다. 실제 GPU의 0–1 Projected Depth를 그대로 나타내지는 않는다. Reversed-Z 등 반대 Convention에서는 비교 방향과 Bias 부호가 달라진다. 예를 들어 Shadow Map의 해당 위치에 Depth가 `10`이라고 하자.
 
 현재 Surface의 Light-space Depth가 `10`과 같거나 더 가까우면, 해당 Surface보다 앞에 다른 Geometry가 존재하지 않는다.
 
@@ -2399,7 +2388,7 @@ Shadow Map은 효율적으로 실시간 그림자를 계산할 수 있다는 장
 
 #### Texture Reminder
 
-Chapter 04에서 Texture는 Color뿐 아니라 Data를 저장하는 Resource라고 배웠다. Shadow Map에서도 같은 구조를 사용하지만, 이번에는 색이 아닌 Depth를 읽는다. 아래 회고에서는 저장 단위와 최종 화면 단위를 연결하여 해상도 문제로 이어간다.
+Shadow Map과 Texel을 이해하기 전에 먼저 **Texture**라는 개념을 정확하게 정의할 필요가 있다.
 
 Texture는 단순히 "이미지"를 의미하는 것이 아니다.
 
@@ -2505,7 +2494,7 @@ Shadow Map
 
 #### Pixel and Texel
 
-Chapter 01의 화면 단위인 **Pixel**과 Chapter 04의 Texture 저장 단위인 Texel을 다시 연결해 보자.
+Texel을 이해할 때 함께 알아야 하는 개념이 **Pixel**이다.
 
 둘은 비슷해 보이지만 서로 다른 대상을 구성한다.
 
@@ -2880,14 +2869,7 @@ Depth를 표현할 수 있는 정밀도가 충분하지 않으면 서로 가까�
 <img src="../Figures/Chapter08/Fig8_32.png" width="90%">
 
 > **Figure 8-32. Shadow Map 품질 문제의 기존 비교 자료.**
-Depth의 수치 오차와 공간을 나누는 Texel의 크기는 서로 다른 품질 문제를 만든다. 아래에서는 먼저 잘못된 Self-shadowing 판정에서 Bias가 필요한 이유를 살펴보고, 이어 제한된 Texel 때문에 경계가 거칠어지는 문제에서 Filtering이 필요한 이유를 연결한다.
-
-<details>
-<summary>Figure 8-32 Verification Note</summary>
-
-이미지 안의 Rendering 결과 영역은 출처와 촬영 조건이 확인되지 않았으므로 현재 Unreal 구현의 검증 증거로 사용하지 않는다. 동일 해상도에서 Texel이 담당하는 World 영역은 Light Projection과 Coverage에 따라 달라지며, Camera 거리만으로 항상 증가한다고 일반화하지 않는다. Shadow Acne는 실제 자기 그림자 자체가 아니라 잘못된 Self-shadowing 판정이다. Peter Panning은 Geometry가 움직이는 현상이 아니라 Shadow가 접촉부에서 분리되는 오류이므로, 물체가 떠 있는 것처럼 보이는 비교는 부적절하다. 이 그림에는 Filtering 비교가 포함되어 있지 않으며 Filtering은 본문의 별도 설명을 따른다. 결과 영역을 보존한 설명 수정과 동일 접지 Geometry의 비교 자료 확인이 필요하다.
-
-</details>
+> 이미지 안의 Rendering 결과 영역은 출처와 촬영 조건이 확인되지 않았으므로 현재 Unreal 구현의 검증 증거로 사용하지 않는다. 동일 해상도에서 Texel이 담당하는 World 영역은 Light Projection과 Coverage에 따라 달라지며, Camera 거리만으로 항상 증가한다고 일반화하지 않는다. Shadow Acne는 실제 자기 그림자 자체가 아니라 잘못된 Self-shadowing 판정이다. Peter Panning은 Geometry가 움직이는 현상이 아니라 Shadow가 접촉부에서 분리되는 오류이므로, 물체가 떠 있는 것처럼 보이는 비교는 부적절하다. 이 그림에는 Filtering 비교가 포함되어 있지 않으며 Filtering은 본문의 별도 설명을 따른다. 결과 영역을 보존한 설명 수정과 동일 접지 Geometry의 비교 자료 확인이 필요하다.
 
 ---
 
@@ -4449,22 +4431,13 @@ Shadow Mask는 그 데이터를 기반으로 만들어지는 **빛의 가시성 
 
 #### Shadow Debug View
 
-보통의 Lit 화면은 최종 명암을 보여주므로 저장된 Depth인지 비교 후 Visibility인지 그 색만으로 알 수 없다. Debug View를 사용하는 목적은 최종 모습 뒤에 있는 특정 Data를 골라 관찰하는 것이다. 먼저 무엇을 표시하는 View인지 확인한 뒤 그 Data의 의미를 읽는다.
-
 지원되는 Debug View는 Engine 버전과 Shadow Method에 따라 다르다. 사용한 정확한 View/Command와 Buffer의 의미를 확인한 경우에만 Depth 또는 Visibility 관찰로 해석한다.
 
 Debug View에서는 일반적인 Lit 결과와 달리 Shadow Map의 Depth 또는 Shadow 관련 정보를 색상으로 표현할 수 있다.
 
 <img src="../Figures/Chapter08/Fig8_35.png" alt="사용한 Debug Mode가 확인되지 않은 기존 Shadow 관찰 화면">
 
-*Figure 8-35. 사용한 Debug Mode와 Buffer 의미가 확인되지 않은 기존 화면.*
-
-<details>
-<summary>Verification Note</summary>
-
-Depth, Visibility 또는 Shadow Mask 중 무엇을 표시하는지 특정할 수 없으므로 현재 Debug View 검증 자료로는 불충분하다. 실제 View/Command와 값의 범례가 보이는 캡처로 재촬영한다.
-
-</details>
+*Figure 8-35. 사용한 Debug Mode와 Buffer 의미가 확인되지 않은 기존 화면. Depth, Visibility 또는 Shadow Mask 중 무엇을 표시하는지 특정할 수 없으므로 현재 Debug View 검증 자료로는 불충분하다. 실제 View/Command와 값의 범례가 보이는 캡처로 재촬영한다.*
 
 이 화면에서 중요한 것은 색상 자체가 아니다.
 
@@ -4495,14 +4468,7 @@ Sphere의 위치를 변경하면 Plane에 만들어지는 그림자의 위치와
 
 <img src="../Figures/Chapter08/Fig8_36.png" alt="이동 전후 비교가 없는 기존 Shadow 관찰 화면">
 
-*Figure 8-36. 기존 관찰 화면.*
-
-<details>
-<summary>Verification Note</summary>
-
-선택 Gizmo는 Light에 있으며 Sphere의 이동 전후 또는 위치값은 보이지 않는다. 파란색 영역의 Debug Mode/범례도 확인되지 않는다. Sphere 이동에 따른 Shadow 갱신 실습에는 동일 Camera/Light에서 Sphere 위치만 바꾼 전후 캡처가 필요하다.
-
-</details>
+*Figure 8-36. 기존 관찰 화면. 선택 Gizmo는 Light에 있으며 Sphere의 이동 전후 또는 위치값은 보이지 않는다. 파란색 영역의 Debug Mode/범례도 확인되지 않는다. Sphere 이동에 따른 Shadow 갱신 실습에는 동일 Camera/Light에서 Sphere 위치만 바꾼 전후 캡처가 필요하다.*
 
 Figure는 이동 관찰의 예이다. 실제 갱신을 검증하려면 동일한 Light/Camera 조건에서 이동 전후를 비교하고 사용 Shadow Method와 Cache/Mobility 조건을 기록한다. 정지 이미지 하나로 갱신 동작을 입증하지 않는다.
 
@@ -4573,14 +4539,7 @@ Sphere의 크기가 변경되면 라이트에서 바라본 Surface의 위치와 
 
 <img src="../Figures/Chapter08/Fig8_38.png" alt="Sphere의 비균일 Scale 1,1,2 설정">
 
-*Figure 8-38. Sphere의 비균일 Scale `(1,1,2)` 설정 예시.*
-
-<details>
-<summary>Verification Note</summary>
-
-Transform과 길어진 Geometry를 확인할 수 있다. 표면의 큰 계단형 경계는 정상적인 Scale 효과로 단정하지 않고 별도 Artifact로 진단한다. Plane의 Shadow 일부가 잘려 있어 전체 Shadow 형태나 동일 조건의 변화량을 검증하는 비교 자료로는 사용하지 않는다.
-
-</details>
+*Figure 8-38. Sphere의 비균일 Scale `(1,1,2)` 설정 예시. Transform과 길어진 Geometry를 확인할 수 있다. 표면의 큰 계단형 경계는 정상적인 Scale 효과로 단정하지 않고 별도 Artifact로 진단한다. Plane의 Shadow 일부가 잘려 있어 전체 Shadow 형태나 동일 조건의 변화량을 검증하는 비교 자료로는 사용하지 않는다.*
 
 이 역시 Shadow Map의 중요한 특징을 보여준다.
 
@@ -4607,14 +4566,7 @@ Shadow Map 자체도 결국 **텍스처 형태의 유한한 해상도를 가진 
 
 <img src="../Figures/Chapter08/Fig8_39.png" alt="변경 조건이 확인되지 않은 두 Sphere의 Shadow 비교">
 
-*Figure 8-39. 설정값과 변경 조건이 없는 기존 비교 화면.*
-
-<details>
-<summary>Verification Note</summary>
-
-두 Sphere의 차이를 Shadow Map 해상도만의 영향으로 특정할 수 없다. 같은 Geometry·Normal·Material·Camera·Light·Exposure와 Bias/Filtering 조건에서 해상도 관련 설정 하나만 바꾸고, 실제 값과 기준/변경 라벨을 포함해 재촬영한다.
-
-</details>
+*Figure 8-39. 설정값과 변경 조건이 없는 기존 비교 화면. 두 Sphere의 차이를 Shadow Map 해상도만의 영향으로 특정할 수 없다. 같은 Geometry·Normal·Material·Camera·Light·Exposure와 Bias/Filtering 조건에서 해상도 관련 설정 하나만 바꾸고, 실제 값과 기준/변경 라벨을 포함해 재촬영한다.*
 
 Shadow Map의 해상도가 충분하지 않으면 라이트 공간에서 기록된 Depth 정보가 제한된 Texel 단위로 표현된다.
 
@@ -4878,8 +4830,6 @@ Shadowed Lighting
 
 `MF_Shadow`의 구조는 의도적으로 단순하게 유지한다.
 
-앞에서 Depth 비교와 Filtering을 자세히 배운 이유는 Visibility가 어떤 질문의 답인지 이해하기 위해서다. 여기서 구현하는 Function은 그 답을 받아 Lighting에 적용한다. 따라서 Input을 연결하기 전에, 수동 Visibility로 Application 계산을 확인하는 실습과 실제 Renderer에서 Visibility를 얻는 실습을 분리한다.
-
 Input은 다음 두 가지다.
 
 ~~~text
@@ -5069,8 +5019,6 @@ ASF Material에서 어떻게 가져올 것인가?
 ---
 
 **Validation with Manual Visibility**
-
-먼저 확인할 질문은 "Shadow가 Scene과 맞는가?"보다 작은 범위다. 같은 LightingResult에 Visibility만 바꿨을 때 그 Light의 기여가 예상 비율로 남는지를 확인한다. 이 테스트를 통과해야 이후 Visibility의 공급 경로를 연결할 때 계산 오류와 공급 오류를 구분할 수 있다.
 
 실제 Renderer Visibility를 연결하기 전에 `MF_Shadow` 자체의 동작은 Scalar 값을 이용하여 검증할 수 있다.
 

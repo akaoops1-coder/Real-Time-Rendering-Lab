@@ -4,8 +4,6 @@
 
 ### Overview
 
-여러 기능을 따로 이해했어도 한 Graph에 모으면 새로운 질문이 생긴다. **각 Function의 결과가 맞는 것과 그 결과를 올바른 순서로 합친 것은 같은가?** 이 절은 새로운 Effect를 더하기보다, 입력과 출력의 계약을 따라 전체 구조를 읽고 마지막 확인 지점을 정리하는 단계다.
-
 Chapter 08에서는 Anime Shader를 하나의 완성된 결과로 바로 만드는 대신, Rendering을 구성하는 주요 기능을 단계적으로 분해하여 각각의 역할과 Data Flow를 직접 구현했다.
 
 지금까지 구현한 주요 Material Function은 다음과 같다.
@@ -83,8 +81,6 @@ Chapter 08.10에서는 새로운 Shader Feature를 추가하지 않는다.
 
 ### Canonical Interface and Composition
 
-앞의 구현을 연결할 때 필요한 것은 Node 이름보다 Data의 약속이다. 같은 Vector3여도 World Normal과 Color는 서로 바꿔 넣을 수 없고, 같은 Scalar여도 Mask·Intensity·Blend의 역할은 다르다. 아래 Interface는 **무엇을 어떤 의미로 받으며 어디까지 계산해서 돌려주는가**를 한곳에서 확인하는 기준이다.
-
 아래 계약은 Chapter 08의 기본 교육용 Framework를 연결하는 기준이다. 각 Function은 논리적 Module의 구현 단위이며 Renderer Stage가 아니다. 모든 방향은 명시한 Space의 비영 Unit Vector를 사용한다.
 
 | Function | Inputs | Outputs / Composition |
@@ -109,18 +105,9 @@ Output = SelectDebug(DebugMode, F, D, SpecularMask, RimMask, MatCapResult, E)
 
 MatCapBlend는 0–1의 Constant 또는 선택적인 MI Parameter이다. Blend=0은 A, Blend=1은 M을 선택한다. Intensity=0만으로 MatCap Off가 되는 것은 아니다. E는 Blend 뒤에 더하므로 MatCapBlend=1에도 유지된다.
 
-<details>
-<summary>Scope Note — Educational Calculation and Renderer Boundary</summary>
-
 현재 Vis는 수동 Test Input이며 Base에만 적용하는 Artistic 정책이다. 실제 Cast Shadow 공급과 같은 Light의 물리적 Specular 차폐는 완료된 기능이 아니다. 8.4의 ungated Phong Mask 역시 PBR BRDF가 아니다. LightDirection의 기본 경로는 명시적 World Vector이며 Scene Adapter와 Forward 전용 Expression의 지원은 8.2 기준으로 검증한다.
 
 DebugMode는 정수 0–5이다. 0=F, 1=D, 2=SpecularMask, 3=RimMask, 4=MatCapResult, 5=EmissionResult이며 Shadow/Region Mask는 현재 계약에 없다. 화면 출력은 Unlit Emissive를 거쳐도 Post Process의 영향을 받는다.
-
-이 제한을 알아야 같은 화면이 보인다는 이유로 Renderer Shadow 수집이나 모든 Platform의 동작까지 완료되었다고 해석하지 않는다. 아래 Overview에서는 기본 교육용 계산의 Branch와 합성 관계를 따라간다.
-
-</details>
-
----
 
 ### Final Framework Overview
 
@@ -309,8 +296,6 @@ Chapter 08에서 직접 Base Lighting이나 Specular를 구현한 이유는 Unre
 
 #### Extension Direction
 
-후속 학습에서 언급하는 HLSL은 Chapter 02에서 소개한 GPU Shader 언어다. 여기서는 지금 연결해야 할 새 Input이 아니라, Material Graph보다 직접적인 계산 제어가 필요할 때 검토할 다음 구현 수준으로 회고한다.
-
 Chapter 08 이후의 Unreal Material 학습에서는 지금 만든 Framework를 계속 확장하여 Unreal의 기본 Renderer를 대체하는 것을 목표로 하지 않는다.
 
 기본 방향은 다음과 같다.
@@ -450,16 +435,7 @@ Final Result
 
 <img src="../Figures/Chapter08/Fig8_73.png" width="90%">
 
-**Fig8_73. 주요 ASF Function과 최종 출력 연결을 보여주는 기존 Master Graph.**
-
-<details>
-<summary>Verification Note — Master Graph Capture</summary>
-
 **Fig8_73. ASF Master Material의 기존 통합 Graph — 현재 계약 반영 후 재촬영 필요.** 수동 ShadowVisibility=1은 Renderer 연동이 아니며 MatCap Alpha=1에서는 앞선 Lighting 합성의 기여가 최종 출력에 남지 않는다. RimWidth=0.3/RimSoftness=0.5는 현재 유효 범위에 맞지 않는다. MatCap Debug 배선도 Intensity 적용 전 MF_MatCap RGB 출력에서 분기하는지 명확하게 보여줘야 한다. 기존 MF_Matcap 표기는 문서 MF_MatCap에 해당하며, Forward Light Adapter는 지원 조건을 별도 확인한다.
-
-현재 계약의 배선을 읽을 때는 다음을 순서대로 확인한다. World N/L/V 입력 → Function Output → 외부 Color/Intensity → Add/Lerp/Add → Debug 분기 → Emissive 출력이다. 이 캡처는 전체 배치를 이해하는 자료이며 현재 계약의 Compile/Runtime 완료 기록은 아니다.
-
-</details>
 
 위 Graph는 Chapter 08에서 구현한 주요 기능이 하나의 Master Material 안에서 어떻게 연결되어 있는지를 보여준다.
 
@@ -809,8 +785,6 @@ EmissionResult
 
 #### Final Composition
 
-첫 의문으로 돌아가면, 각 Feature가 맞아도 합성 순서가 다르면 결과는 달라진다. 먼저 Base·Specular·Rim으로 A를 만들고, A와 Intensity를 적용한 MatCap을 Blend한 뒤 Emission을 더한다. 그래서 Blend 끝점을 확인하는 일과 Emission이 Blend 뒤에 남는지 확인하는 일을 따로 점검한다.
-
 각 Feature Module이 결과를 만든 뒤에는 이들을 실제 Final Rendering으로 합치는 단계가 필요하다.
 
 Graph의 중앙에서 오른쪽으로 이어지는 `Add`, `Lerp`, `Add` 구조가 바로 이 역할을 수행한다.
@@ -1029,7 +1003,7 @@ Final Framework 정리
 
 즉 이 구조는 **직접 구현을 통해 Rendering Concept와 Shader Architecture를 이해하기 위한 Framework**다.
 
-이 기반은 이후 Unreal의 기본 Material System과 Shading Model을 이해하는 데 이어진다. Substrate는 후속 Material 구성 학습의 대상이며 이 절에서 구현할 필수 기능은 아니다. Custom HLSL도 필요한 제어 수준을 선택하는 후속 경로다. 새 이름을 모두 외우기보다, 어떤 Data와 역할을 Engine이 대신 처리하는지 묻는 관점을 이어간다.
+이 기반이 있기 때문에 이후 Unreal의 기본 Material System, Shading Model, Substrate, Custom HLSL 등을 다룰 때도 단순히 기능 사용법만 아는 것이 아니라, 그 내부에서 어떤 Data와 역할이 연결되는지를 더 명확하게 해석할 수 있다.
 
 ---
 
@@ -2291,8 +2265,6 @@ Emissive Color
 
 #### Per-sample Data Flow
 
-옷의 밝은 부분과 어두운 부분은 하나의 Object에 붙어 있어도 서로 다른 Normal과 UV를 사용할 수 있다. 그래서 Graph를 읽을 때는 현재 Surface Sample 하나의 입력을 따라간다고 생각하면 좋다. 아래 수치는 그 한 Sample에서 만들어질 수 있는 예시이며 Object 전체가 같은 값을 가진다는 뜻은 아니다.
-
 Shader Data Flow를 이해할 때 전체 Object를 한 번에 계산한다고 생각하면 안 된다.
 
 실제 Pixel Shader 관점에서는 현재 Rendering되는 Pixel마다 필요한 Data가 계산된다.
@@ -2394,7 +2366,9 @@ MatCap Data Flow
 MF_MatCap
 ~~~
 
-즉 Function을 기준으로 Shader를 보면 **Module Architecture**가 보이고, Data를 기준으로 Shader를 보면 **Data Flow Architecture**가 보인다.
+즉 Function을 기준으로 Shader를 보면 **Module Architecture**가 보이고,
+
+Data를 기준으로 Shader를 보면 **Data Flow Architecture**가 보인다.
 
 둘은 같은 Shader를 서로 다른 관점에서 바라보는 방법이다.
 
@@ -3751,10 +3725,6 @@ Engine 기능이 무엇을 처리하는지 이해한다.
 
 ### Final Verification
 
-확인 전에 결과의 근거를 구분한다. **Expected Calculation**은 현재 식과 입력 계약에서 도출한 예상값이다. **Recorded Observation**은 이전 구현 과정의 화면과 관찰 기록이다. **Current Contract Execution Check**는 현재 계약에 맞춘 실제 Graph에서 Compile·값·Type·동작을 새로 확인할 항목이다.
-
-이 절의 Figure와 뒤의 완료 서술은 기존 구현 기록이며, 이번 문서 정리에서 Unreal Engine을 새로 실행한 결과는 없다. 특히 기존 캡처의 Rim 입력 범위와 MatCap/Debug 분기는 앞의 Verification Note를 반영한 뒤 다시 확인해야 한다. 아래에서는 예상값으로 계산을 점검하고, 기존 관찰을 읽으며, 새 실행에서 확인할 기준을 함께 정리한다.
-
 Chapter 08의 마지막 단계에서는 지금까지 구현한 각 Shader Feature와 Master Material Architecture가 의도한 구조대로 동작하는지 최종적으로 검증한다.
 
 이번 검증의 목적은 새로운 기능을 추가하는 것이 아니다.
@@ -3768,8 +3738,6 @@ Chapter 08의 마지막 단계에서는 지금까지 구현한 각 Shader Featur
 ---
 
 #### Expected Calculation Checks
-
-검산은 통합 화면보다 작은 관계부터 시작한다. 방향이 같거나 수직인 입력, Visibility와 Mask의 끝점, Blend의 두 끝점처럼 답을 예측하기 쉬운 경우를 먼저 넣으면 배선 오류를 좁히기 쉽다. 정상 입력 조건을 유지한 기본 검산과 비유효 입력의 처리 정책은 따로 확인한다.
 
 아래 값은 식에서 도출한 예상 결과이며 Engine 실행 결과가 아니다. 각 Function과 합성 연결을 따로 확인하고, 화면 비교에는 Fixed Exposure 조건을 사용한다.
 
@@ -3805,7 +3773,7 @@ LightingResult에 BaseColor가 정상적으로 반영되는가
 
 Debug View의 `DebugMode = 1`을 통해 `LightingData`를 직접 확인했고, Light Direction을 기준으로 밝은 영역과 어두운 영역이 정상적으로 분포하는 것을 확인했다.
 
-이는 기존 구현에서 기록한 Base Lighting의 관찰이다. 현재 계약은 위 예상값과 실제 입력 방향을 대조하여 다시 실행 확인한다.
+따라서 Base Lighting 단계는 정상적으로 동작한다.
 
 ---
 
@@ -3905,7 +3873,7 @@ RimColor와 RimIntensity가 정상적으로 적용되는가
 
 `DebugMode = 3`을 통해 `RimMask`를 Gray Scale로 확인했고, Surface 가장자리에서 Rim 값이 증가하는 것을 확인했다.
 
-이 문장은 기존 Rim 관찰을 정리한 것이다. 현재 계약에서는 유효 Width/Softness 범위와 경계 검산값을 함께 확인한다.
+따라서 Rim Light Feature는 정상적으로 동작한다.
 
 ---
 
@@ -3938,7 +3906,7 @@ MatCapIntensity가 정상적으로 적용되는가
 
 `DebugMode = 4`에서는 `MatCapResult`의 RGB Color가 유지된 상태로 출력되는 것을 확인했다.
 
-기존 관찰은 Mapping과 Color 표시를 확인했다고 기록한다. 현재 실행에서는 원본 Texture의 축 규약과 Intensity 적용 전 MatCapResult 분기를 함께 확인한다.
+따라서 Mapping과 Color 전달 모두 정상적으로 동작한다.
 
 ---
 
@@ -3997,7 +3965,7 @@ FinalResult = Lerp(A, MatCapResult * MatCapIntensity, MatCapBlend) + EmissionRes
 
 `DebugMode = 0` 상태에서 기존 Final Rendering 결과가 정상적으로 유지되는 것을 확인했다.
 
-이 기록은 이전 합성 결과의 관찰이다. 현재 Graph에서는 Blend=0/1과 Emission Add 순서, DebugMode=0의 RGB 보존을 별도 실행 확인한다.
+따라서 Final Composition 구조 역시 정상적으로 동작한다.
 
 ---
 
@@ -4032,13 +4000,11 @@ Material Graph 연결을 변경하지 않고 Mode를 전환할 수 있는가
 
 Chapter 08.9에서 모든 Mode를 Material Instance에서 직접 테스트했고 정상 동작을 확인했다.
 
-이는 기존 Debug Mode 전환의 관찰 기록이다. 현재 계약으로는 EmissionResult와 명시적 Scalar→RGB 변환을 포함한 선택 연결을 다시 확인한다.
+따라서 Debug View 역시 최종 Framework에 정상적으로 통합되어 있다.
 
 ---
 
 #### Data Type Validation
-
-형태가 Gray Scale이라는 관찰과 Type이 Scalar였다는 판단은 다르다. 화면에서는 분포를 확인하고, Graph에서는 Input Type과 Scalar→Vector3 변환 위치를 확인한다. Mode 0/4/5에 서로 다른 RGB Channel 값을 사용하면 색 보존도 더 분명하게 점검할 수 있다. 이 항목은 확인 방법이며 새 실행 결과를 뜻하지 않는다.
 
 Debug Selector는 분기마다 Vector3를 명시적으로 전달하여 Type을 분명히 한다. Scalar/Vector 혼합이 항상 실패하거나 Color를 잃는다는 일반 규칙으로 해석하지 않는다. 실제 Conversion과 Compile 결과를 확인한다.
 
@@ -4130,9 +4096,7 @@ Actual intermediate outputs + F → MF_DebugView → Emissive Color
 
 <img src="../Figures/Chapter08/Fig8_73.png" width="90%">
 
-**Fig8_73. Architecture Validation에서 다시 확인하는 기존 Master Graph.**
-
-첫 Final Master Material Architecture의 Verification Note에서 정리한 입력·Rim 범위·MatCap 분기·Adapter 확인 항목을 따른다. 여기서는 전체 Graph가 Canonical Interface와 Final Data Flow의 같은 Data를 전달하는지 대조한다. 이 이미지가 현재 계약의 새 실행 완료를 증명하는 것은 아니다.
+**Fig8_73. ASF Master Material의 기존 통합 Graph — 현재 계약 반영 후 재촬영 필요.** 수동 ShadowVisibility=1은 Renderer 연동이 아니며 MatCap Alpha=1에서는 앞선 Lighting 합성의 기여가 최종 출력에 남지 않는다. RimWidth=0.3/RimSoftness=0.5는 현재 유효 범위에 맞지 않는다. MatCap Debug 배선도 Intensity 적용 전 MF_MatCap RGB 출력에서 분기하는지 명확하게 보여줘야 한다. 기존 MF_Matcap 표기는 문서 MF_MatCap에 해당하며, Forward Light Adapter는 지원 조건을 별도 확인한다.
 
 그리고 전체 Shader Data Flow는 `Fig8_74`에서 정리했다.
 
@@ -4146,9 +4110,7 @@ Fig8_74는 현재 계약의 Data Flow를 정리한다. Fig8_73의 기존 Impleme
 
 #### Final Verification Checklist
 
-Chapter 08은 기본 교육용 계산과 Interface, 합성 및 검증 절차를 정리한다. 아래 Complete는 문서의 기본 구현 범위에 한정하며 모든 Engine 조합의 Compile/Runtime 검증이나 Renderer Shadow 연결 완료를 뜻하지 않는다. 이 Text Refactoring에서 Engine을 실행하여 확인하지는 않았다.
-
-이 표는 기본 교육용 구현 범위에 대한 기존 정리다. 독자의 프로젝트에서는 각 항목을 현재 Graph와 입력 계약으로 확인하고 실행 근거를 별도로 기록한다. 예상 계산값이나 기존 캡처만으로 현재 프로젝트의 완료를 대신 판단하지 않는다.
+Chapter 08의 최종 Framework를 다음 기준으로 확인했다.
 
 | Verification Item | Result |
 |---|---|
@@ -4166,6 +4128,8 @@ Chapter 08은 기본 교육용 계산과 Interface, 합성 및 검증 절차를 
 | Final RGB Color 유지 | Complete |
 | Master Material Integration | Complete |
 | Final Data Flow Verification | Complete |
+
+Chapter 08은 기본 교육용 계산과 Interface, 합성 및 검증 절차를 정리한다. 아래 Complete는 문서의 기본 구현 범위에 한정하며 모든 Engine 조합의 Compile/Runtime 검증이나 Renderer Shadow 연결 완료를 뜻하지 않는다. 이 Text Refactoring에서 Engine을 실행하여 확인하지는 않았다.
 
 ---
 

@@ -10,8 +10,6 @@
 
 첫 번째 Module은 **Base Lighting**이다.
 
-8.1에서 Input과 Output의 경계를 정했다면, 여기서는 그 경계 안에 첫 계산을 넣는다. 같은 분홍색 구에서 정면을 향한 부분과 옆을 향한 부분의 밝기가 왜 달라지는지 생각하고, 그 차이를 먼저 한 숫자로 만든 뒤 Color에 적용한다.
-
 Base Lighting은 표면이 현재 조명으로부터 얼마나 직접적인 영향을 받는지를 계산하는 가장 기본적인 Lighting Module이다.
 
 표면의 최종 색상은 단순히 `Base Color`만으로 결정되지 않는다.
@@ -177,14 +175,7 @@ Output
 └── Lighting Result
 ~~~
 
-먼저 **Lighting Data**는 표면과 Light의 방향 관계를 한 숫자로 표현한 값이다. Chapter 03의 Scalar를 여기서는 Direction Factor로 사용하며, 계산은 D=saturate(dot(N,L))이다. 이 한 값에 Base Color를 곱하면 RGB 각 성분에 같은 방향 비율을 적용한 **Lighting Result**가 된다. 따라서 Lighting Result는 BaseColor·D인 Vector3이다.
-
-<details>
-<summary>Lighting Data Scope Note</summary>
-
-Lighting Data는 광량·거리 감쇠·Shadow·BRDF 정규화를 포함한 Irradiance가 아니다. Chapter 05에서 배운 물리적 Light 양과 이 실습의 방향 Factor를 구분한다.
-
-</details>
+**Lighting Data**는 D=saturate(dot(N,L))인 Scalar Direction Factor이다. 광량·거리 감쇠·Shadow·BRDF 정규화를 포함한 Irradiance가 아니다. **Lighting Result**는 BaseColor·D인 Vector3이다.
 
 이 값은 이후 다른 Rendering Module에서 추가적인 계산에 사용할 수 있는 **Lighting 정보**로 볼 수 있다.
 
@@ -247,20 +238,11 @@ Master Material이나 다른 Module에서는 `MF_BaseLighting` 내부의 구체�
 
 먼저 Module의 **Input과 Output을 정의하고 데이터가 들어오고 나갈 수 있는 구조를 만드는 것**이 목적이다.
 
-`MF_BaseLighting` Material Function Asset을 만든 뒤 Light Direction과 Normal에는 방향 입력, Base Color에는 Color 입력을 둔다. 출력은 방향 비율을 전달할 Scalar Lighting Data와 그 비율을 Color에 적용한 Vector3 Lighting Result로 나눈다. 이 단계에서는 두 출력의 역할을 구분하여 이름과 Type을 확인하는 것이 먼저다.
-
-아래 Figure는 기존 연결 상태를 읽는 참고이며, 현재 Interface는 앞의 Input/Output 계약을 기준으로 구성한다.
+실제 `MF_BaseLighting`의 Interface는 다음과 같은 형태로 구성된다.
 
 <img src="../Figures/Chapter08/Fig8_24.png" width="90%">
 
-*Figure 8-24. 기존 Master Material 연결 화면 — 현재 Function Interface의 검증 자료로는 불충분하다.*
-
-<details>
-<summary>Verification Note</summary>
-
-화면에는 Lighting Result 출력만 있고 Lighting Data 출력은 없으며, Light Direction/Normal 입력도 연결되어 있지 않다. MF_Shadow와 Lit Base Color를 거친 결과는 여기서 정의한 Interface 단독 검증이 아니다. 세 입력과 Lighting Data(Scalar)/Lighting Result(Vector3) 두 출력을 갖춘 실제 MF_BaseLighting 화면으로 재촬영한다.
-
-</details>
+*Figure 8-24. 기존 Master Material 연결 화면 — 현재 Function Interface의 검증 자료로는 불충분하다. 화면에는 Lighting Result 출력만 있고 Lighting Data 출력은 없으며, Light Direction/Normal 입력도 연결되어 있지 않다. MF_Shadow와 Lit Base Color를 거친 결과는 여기서 정의한 Interface 단독 검증이 아니다. 세 입력과 Lighting Data(Scalar)/Lighting Result(Vector3) 두 출력을 갖춘 실제 MF_BaseLighting 화면으로 재촬영한다.*
 
 이 단계에서 중요한 것은 노드의 연결 자체가 아니라 **Module이 어떤 데이터를 요구하고 어떤 결과를 반환하도록 설계되었는가**이다.
 
@@ -554,35 +536,21 @@ LightDirection_Test
  PixelNormalWS
 ~~~
 
-계산의 변화만 보려면 Scene Light가 추가로 만드는 명암을 함께 섞지 않아야 한다. Chapter 04의 Unlit 출력 역할을 떠올려 Master Material의 Shading Model을 **Unlit**으로 설정하고 `Lighting Result`를 `Emissive Color`에 연결한다. 비교 시 Exposure와 Post Process 조건을 고정한다(Chapter 06.6).
-
-<details>
-<summary>Display Verification Note</summary>
-
-Emissive에 연결했다는 사실만으로 Lit Material의 다른 조명 기여가 사라지는 것은 아니다. Material의 Unlit Shading Model은 계산 경로를 정하고, Viewport의 Lit 표시 모드는 Scene을 보여주는 방식이다. 두 설정을 따로 확인한다.
-
-</details>
+Master Material의 Shading Model을 **Unlit**으로 설정하고 `Lighting Result`를 `Emissive Color`에 연결한다. Emissive에 연결했다는 사실만으로 Lit Material의 다른 조명 기여가 사라지는 것은 아니다. Viewport의 Lit 표시 모드와 Material의 Unlit Shading Model도 구분한다. 비교 시 Exposure와 Post Process 조건을 고정한다(Chapter 06.6).
 
 실제 Directional Light의 영향을 제거하면 우리가 직접 만든 Lighting 계산만 확인할 수 있다.
 
-테스트에서 먼저 예상할 것은 Light Direction을 향하는 면과 등지는 면의 방향 Factor 차이다. 현재 연결한 출력이 Lighting Data인지 Lighting Result인지에 따라 방향 분포만 보는지 Base Color의 적용까지 보는지가 달라진다.
+테스트 결과, 구의 표면에 Light Direction과 Normal의 관계에 따라 밝고 어두운 영역이 형성되는 것을 확인할 수 있다.
 
 <img src="../Figures/Chapter08/Fig8_25.png" width="90%">
 
-*Figure 8-25. 기존 Lighting Data 표시 화면.*
-
-<details>
-<summary>Verification Note</summary>
-
-연결된 출력은 Scalar Lighting Data이며 Vector3 Lighting Result는 미연결이다. 따라서 분홍색 Base Color가 적용된 결과의 검증 화면이 아니다. Material의 Unlit Shading Model과 고정 Exposure도 이 캡처만으로 확인할 수 없다. 현재 절의 검증 목적에 맞게 Lighting Result→Unlit Emissive 연결과 색상 적용 결과를 실제 Unreal에서 재촬영한다.
-
-</details>
+*Figure 8-25. 기존 Lighting Data 표시 화면. 연결된 출력은 Scalar Lighting Data이며 Vector3 Lighting Result는 미연결이다. 따라서 분홍색 Base Color가 적용된 결과의 검증 화면이 아니다. Material의 Unlit Shading Model과 고정 Exposure도 이 캡처만으로 확인할 수 없다. 현재 절의 검증 목적에 맞게 Lighting Result→Unlit Emissive 연결과 색상 적용 결과를 실제 Unreal에서 재촬영한다.*
 
 이 캡처에서 확인 가능한 것은 Lighting Data 출력의 Emissive 연결이다. `Normalize → Dot Product → Saturate` 내부 계산과 Lighting Result의 색상 적용은 해당 Graph 및 통제된 결과로 별도 확인한다.
 
-`LightDirection_Test`의 방향을 변경했을 때 밝은 영역의 위치가 함께 변화하는지 확인한다. 먼저 Lighting Data의 분포를 보고, 다음으로 Lighting Result에서 Base Color의 적용을 확인하면 두 출력의 의미를 분리해 검증할 수 있다.
+또한 `LightDirection_Test`의 방향을 변경하면 밝은 영역의 위치도 함께 변화한다.
 
-실제 프로젝트에서 확인할 항목은 다음 두 가지다.
+이를 통해 다음 두 가지를 확인할 수 있다.
 
 1. Surface Normal과 Light Direction의 방향 관계가 Lighting Data에 반영된다.
 2. 계산된 Lighting Data가 Base Color에 적용되어 Lighting Result를 만든다.
@@ -636,8 +604,6 @@ Chosen Directional Light orientation
 Blueprint나 Material Parameter Collection 등 구체적 공급 수단은 프로젝트 환경에서 구현·확인해야 한다. 이 문서는 계산 Interface를 정의하며 실제 Asset 구현이 생성되었다고 주장하지 않는다.
 
 #### Conditional Engine Expression
-
-Engine Expression을 사용하면 수동 Parameter 대신 Engine이 제공하는 Light Data를 읽을 수 있는 경우가 있다. 다만 Data를 읽는 Node가 있다는 것과 현재 프로젝트의 Rendering Path에서 그 Node를 사용할 수 있다는 것은 별개의 조건이다. 따라서 아래 경로는 기본 명시 입력의 대체 가능성을 확인하는 단계로 읽는다.
 
 기존 예제의 `Forward Selected Directional Light`는 Forward 계열 경로에서 선택된 Light 데이터를 읽는 용도로 제시되어 있다. **8.0의 Deferred 설정에서 그대로 지원된다고 가정하지 않는다.** 정확한 Engine 버전, Material Domain/Shading Model, Rendering Path, 선택되는 Light, Direction 부호를 확인하고 Compile 및 Light 회전 테스트를 통과한 경우에만 Adapter로 사용한다.
 

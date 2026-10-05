@@ -21,7 +21,7 @@ Chapter 8부터는 이러한 이론을 실제 프로젝트에 적용하여 **Ani
 이 장을 완료하면 다음 내용을 이해할 수 있다.
 
 - Anime Shader Framework의 전체 구조
-- 입력과 출력이 있는 재사용 계산 단위인 **Material Function**을 이용한 셰이더 아키텍처
+- Material Function 기반의 셰이더 아키텍처
 - 셀 셰이딩을 구성하는 주요 렌더링 모듈
 - 모듈 간의 데이터 흐름(Data Flow)
 - 유지보수와 확장을 고려한 셰이더 설계 방법
@@ -38,18 +38,7 @@ Chapter 8부터는 이러한 이론을 실제 프로젝트에 적용하여 **Ani
 
 ASF는 이러한 문제를 해결하기 위해 **Material Function 기반의 모듈형 아키텍처**를 사용한다.
 
-예를 들어 Rim의 폭만 바꾸고 싶은데 하나의 큰 Graph에서 Lighting과 Rim의 연결을 함께 따라가야 한다면 수정 범위를 판단하기 어렵다. 기능별로 입력과 출력을 정해두면, Rim을 만드는 계산 안에서 바꿀 부분과 다른 기능에 전달되는 값을 구분할 수 있다.
-
-각 **Module**은 이러한 논리적 책임을 맡는다. 그 계산을 재사용할 수 있도록 묶은 구현 단위가 앞서 소개한 Material Function이다. 여러 Module은 앞에서 배운 Normal·Light Direction·View Direction(N/L/V)과 Material Data를 공유하므로, 별도 Function으로 나누어도 필요한 Data의 관계는 이어진다.
-
-**Master Material**은 필요한 Function을 호출하고 그 결과를 최종 Material 출력으로 모으는 조합 위치다. Multiply는 값을 곱하고 Add는 기여를 더하며, **Lerp(Linear Interpolation)**는 두 값을 비율에 따라 섞는다. Chapter 01의 Interpolation에서 Vertex 사이의 값을 준비했다면, 여기서는 두 Shader 결과 사이의 중간값을 만드는 데 사용한다.
-
-<details>
-<summary>Architecture Scope Note</summary>
-
-Material Function을 분리하는 것만으로 실행 비용이나 Renderer 데이터 접근 문제가 해결되지는 않는다. Module은 논리적 책임이고 Function은 구현 단위이므로 Renderer Stage/Pass와 일대일 관계로 해석하지 않는다.
-
-</details>
+각 Module은 명확한 책임을 가진다. 여러 Module이 N/L/V와 Material Data를 공유하고, Master Material은 필요한 계산 결과를 Multiply·Add·Lerp로 결합한다. Material Function을 분리하는 것만으로 실행 비용이나 Renderer 데이터 접근 문제가 해결되지는 않는다.
 
 이러한 구조는 기능 추가와 수정이 용이하며, 프로젝트 규모가 커져도 일관된 구조를 유지할 수 있다.
 
@@ -85,8 +74,6 @@ Final Showcase
 
 Chapter 8은 다음과 같은 순서로 진행된다.
 
-앞부분에서는 환경과 공통 Data 경계를 준비한다. 그 다음 방향에서 Lighting·Specular·Rim 값을 만들고, Texture와 Emission을 합성한 뒤 Debug와 최종 통합으로 확인한다. 아래 목록은 기능 이름만 외우는 순서가 아니라, 한 결과가 다음 구현에서 어떤 역할을 맡는지 따라가는 순서다.
-
 | Section | Description |
 |---------|-------------|
 | 8.0 | [Preparing the ASF Project](<./Chapter08.0_PreparingTheASFProject.md>) |
@@ -109,7 +96,7 @@ Chapter 8은 다음과 같은 순서로 진행된다.
 
 Chapter 8에서는 다음 원칙을 따른다.
 
-- 문서의 목표 환경은 Unreal Engine 5.8이며 실제 설치 버전·Rendering Path·Node 지원 여부를 기록하고 확인한다. 문서를 읽거나 Graph 예시를 보는 것과 실제 Engine에서 실행하여 검증하는 것은 구분한다.
+- 문서의 목표 환경은 Unreal Engine 5.8이며 실제 설치 버전·Rendering Path·Node 지원 여부를 기록하고 확인한다. 이 Text Refactoring은 Engine 실행 검증이 아니다.
 - 하나의 프로젝트(`ASF_Demo`)를 끝까지 유지한다.
 - Rendering Module의 계산을 Material Function으로 구현한다. Module은 논리적 책임, Material Function은 구현 단위이며 Renderer Stage/Pass와 일대일 관계가 아니다.
 - 구현보다 Data Flow를 먼저 이해한다.

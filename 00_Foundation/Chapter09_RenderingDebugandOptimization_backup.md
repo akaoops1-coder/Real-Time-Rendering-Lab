@@ -1,35 +1,52 @@
 # Chapter 09 — Rendering Debug and Optimization
 
-같은 Character를 그려도 Camera가 가까워지거나 Hair가 화면을 크게 덮으면 Frame이 느려질 수 있다. 반대로 화면이 단순해 보여도 CPU가 많은 Object의 상태를 갱신하거나 그리기 명령을 준비하느라 늦을 수 있다. 화면에서 복잡해 보이는 부분과 실제로 시간을 쓰는 부분을 연결하려면 먼저 측정이 필요하다.
+Rendering Optimization은 단순히 Polygon 수를 줄이거나 Texture Resolution을 낮추는 작업이 아니다.
 
-한 Frame을 처리하는 데 걸리는 시간을 **Frame Time**, 한 초에 처리하는 Frame 수를 **FPS(Frames Per Second)**라고 한다. 지금 Frame의 진행을 제한하는 작업이나 대기 경로를 **Bottleneck**, 즉 병목이라고 부른다. 이 세 말을 연결하면 이번 Chapter의 첫 질문이 정해진다. **현재 Frame Time을 실제로 제한하고 있는 원인은 무엇인가?**
+실제 Rendering Performance는 Geometry, Material, Shader, Transparency, Draw Call, Lighting, Animation, Post Process 등 여러 요소가 동시에 영향을 주면서 결정된다.
 
-이 질문에 답하기 위해 작업별 시간과 실행 흐름을 기록하고 분석하는 과정이 **Profiling**이다. CPU와 GPU의 시간을 먼저 보고, Geometry, Material, Shader, Transparency, Draw Call, Lighting, Animation, Post Process 중 어떤 영역을 더 조사할지 좁혀 간다. Chapter 01에서 본 Rendering Pipeline을 이제는 실제 비용을 찾는 지도처럼 사용하는 것이다.
+따라서 화면이 느리다고 해서 눈에 보이는 복잡한 요소부터 무작정 줄이는 방식으로는 정확한 Optimization이 어렵다.
 
-따라서 이 Chapter에서는 **증상 → 측정 목적 → 지표 이해 → 측정 → 원인 분리 → 개선 → 재측정**의 순서로 설명한다. 각 지표가 무엇을 알려주는지 이해한 뒤 도구를 선택하고, 한 가지 변경이 화면 품질과 시간에 어떤 영향을 주었는지 비교한다.
+먼저 필요한 것은
 
-`Measure` → `Identify Bottleneck` → `Isolate Cause` → `Optimize` → `Measure Again`은 이 과정을 짧게 적은 Workflow이다. **Rendering Cost가 어디에서 발생하는지 이해하고, Visual Quality와 Performance 사이에서 더 효율적인 선택을 하는 것**이 Optimization의 목적이다.
+**현재 Frame Time을 실제로 제한하고 있는 원인이 무엇인지 찾는 것**
+
+이다.
+
+예를 들어 같은 낮은 FPS라도 원인은 전혀 다를 수 있다.
+
+어떤 경우에는 CPU가 많은 Object와 Draw Call을 처리하느라 늦을 수 있고, 다른 경우에는 GPU가 복잡한 Pixel Shader나 Overdraw를 처리하느라 시간이 오래 걸릴 수 있다.
+
+또 Geometry가 매우 많아 보여도 실제 Bottleneck은 Pixel Cost일 수 있고, 반대로 단순한 화면처럼 보여도 Draw Call이나 Shader Cost 때문에 Performance가 떨어질 수 있다.
+
+따라서 Optimization에서는 먼저 문제를 측정하고, Bottleneck을 구분하고, 원인을 좁힌 뒤 필요한 부분만 수정해야 한다.
+
+이번 Chapter에서는 다음과 같은 흐름을 중심으로 Rendering Debug와 Optimization의 기본 구조를 살펴본다.
+
+`Measure` → `Identify Bottleneck` → `Isolate Cause` → `Optimize` → `Measure Again` 이 과정의 목적은 단순히 FPS 숫자를 높이는 것이 아니다.
+
+**현재 Rendering Cost가 어디에서 발생하는지를 이해하고, Visual Quality와 Performance 사이에서 더 효율적인 선택을 하는 것**이 Optimization의 핵심이다.
 
 <img src="Figures/Chapter09/Fig9_01.png" width="90%">
 
-*Figure 9-01. 측정하고 원인 후보를 좁힌 뒤, 한 가지 변경을 재측정하는 Workflow. 이미지 수치는 설명용 예시이며 ASF 실측 결과가 아니다.*
-
-<details>
-<summary>Figure Reading Note — Values and Labels</summary>
-
 *Figure 9-01. 측정→병목 후보 분리→원인 분석→한 변수 수정→재측정의 기존 합성 도식. 42→120 FPS 등의 수치는 측정 출처가 없는 예시이며 ASF 실측 성과가 아니다. 그래프 후반은 GPU 약 21 ms가 CPU 표시값보다 길므로 CPU 병목 Label은 해당 수치와 맞지 않는다. Thread/GPU 시간은 겹칠 수 있어 단순 합산하지 않으며 실제 병목은 동기화·대기·VSync/Frame Cap을 함께 확인한다. 이미지 내부 하단의 Fig9_02 표기도 이 Figure의 일부를 뜻하는 잘못된 번호다. 장면/Character 이미지 출처 확인 전에는 원본을 보존하며, Before/After 품질 비교의 실증 자료로 사용하지 않는다.*
-
-</details>
 
 ---
 
 ## 9.1 Why Optimization Starts with Measurement
 
-Optimization을 시작할 때는 **현재 Frame에서 실제로 무엇이 Performance를 제한하고 있는가?**를 먼저 확인한다. 눈에 띄는 요소를 줄이더라도 Frame을 기다리게 만드는 원인이 그대로라면 최종 결과는 거의 달라지지 않을 수 있기 때문이다.
+Rendering Optimization에서 가장 중요한 것은 무조건 Cost를 줄이는 것이 아니다.
 
-Rendering Pipeline에는 여러 작업이 있다. CPU는 Game Logic, Animation, Physics, Scene Management와 Rendering Command 준비를 수행하고, GPU는 Geometry Processing, Rasterization, Pixel Processing, Material, Lighting, Shadow, Transparency, Post Process 등을 처리한다. 각 작업이 걸리는 시간은 서로 다르다.
+먼저 확인해야 하는 것은 다음과 같다.
 
-따라서 측정의 목적은 **현재 Frame Time을 실제로 제한하는 부분을 찾아 개선할 대상을 고르는 것**이다. 먼저 FPS와 Frame Time의 관계부터 읽어 보자.
+> **현재 Frame에서 실제로 무엇이 Performance를 제한하고 있는가?**
+
+Rendering Pipeline은 하나의 작업으로 구성되어 있지 않다.
+
+CPU에서는 Game Logic, Animation, Physics, Scene Management, Rendering Command 준비 등이 수행되고, GPU에서는 Geometry Processing, Rasterization, Pixel Processing, Material, Lighting, Shadow, Transparency, Post Process 등의 작업이 수행된다.
+
+이 중 어떤 작업은 매우 빠르게 끝날 수 있고, 어떤 작업은 전체 Frame에서 가장 많은 시간을 차지할 수 있다.
+
+Optimization의 목적은 모든 작업을 동일하게 줄이는 것이 아니라, **현재 Frame Time을 실제로 제한하고 있는 부분을 찾아 개선하는 것**이다.
 
 ---
 
@@ -73,7 +90,7 @@ Optimization에서는 이 둘을 구분해야 한다.
 
 ### Frame Rate Is the Result
 
-한 초 동안 얼마나 많은 Frame을 처리했는지 알고 싶을 때 사용하는 숫자가 `FPS`이다. 앞에서 소개한 이름을 풀어 쓰면 다음과 같다.
+Realtime Rendering Performance를 이야기할 때 가장 익숙한 숫자는 `FPS`이다.
 
 ```text
 FPS = Frames Per Second
@@ -91,7 +108,7 @@ FPS = Frames Per Second
 
 FPS는 Performance 결과를 이해하기에는 편리하지만, 내부 Cost를 분석하기에는 적합하지 않다.
 
-FPS가 최종 처리량을 보여준다면, **Frame Time**은 한 Frame에 쓸 수 있는 시간과 개선으로 줄어든 시간을 비교하는 데 사용한다.
+Optimization에서는 일반적으로 **Frame Time**을 함께 확인하는 것이 중요하다.
 
 Frame Time은 한 Frame을 처리하는 데 필요한 시간을 의미하며 보통 `ms` 단위로 표현한다.
 
@@ -153,7 +170,7 @@ Difference ≈ 16.67 ms
 
 FPS 숫자만 보면 두 경우 모두 10 FPS 차이이지만 실제 Rendering Cost 변화는 완전히 다르다.
 
-앞에서 소개한 Profiling은 작업별 시간을 분석하는 과정이다. 따라서 개선을 비교할 때는 다음과 같은 결과 표현
+따라서 Profiling과 Optimization에서는
 
 ```text
 몇 FPS가 나오는가?
@@ -230,15 +247,11 @@ GPU : 11.6 ms
 
 ### Measurement Conditions Must Be Consistent
 
-같은 Material을 바꾸기 전과 후를 비교한다고 생각해 보자. Camera가 이동하거나 화면 해상도가 달라지면 Material 변경의 효과와 화면에서 처리하는 양의 변화가 섞인다. **같은 대상을 같은 조건에서 반복 측정해야 변경의 효과를 읽을 수 있다.**
+Performance를 비교할 때는 가능한 한 동일한 조건에서 측정해야 한다.
 
-먼저 실행 환경을 기록한다. Editor 안에서 실행했는지, Standalone으로 실행했는지, Packaged Build를 실행했는지 구분하고 Engine Version, Build Configuration, Hardware, RHI, Scene, Camera를 함께 남긴다. RHI는 Chapter 08에서 살펴본 Engine과 Graphics API 사이의 연결 계층이며, 여기서는 측정 환경을 구분하는 항목이다.
+Engine Version, Build Configuration, Editor/Standalone/Packaged 실행 방식, Hardware, RHI, Scene, Camera를 기록한다. Output Resolution뿐 아니라 Internal Rendering Resolution, Screen Percentage, Dynamic Resolution, Scalability, Anti-Aliasing, Light/Shadow 설정을 고정한다. VSync와 Frame Cap의 상태도 기록하여 대기 시간을 실제 처리 비용으로 오해하지 않도록 한다.
 
-그 다음 화면에서 처리하는 양을 고정한다. **Output Resolution**은 출력 화면의 해상도이고, **Internal Rendering Resolution**은 내부에서 Rendering하는 해상도이다. Screen Percentage와 Dynamic Resolution 설정에 따라 둘은 다를 수 있다. Output Resolution, Internal Rendering Resolution, Screen Percentage, Dynamic Resolution, Scalability, Anti-Aliasing, Light/Shadow 설정을 같은 조건으로 유지한다.
-
-마지막으로 처리 시간과 대기 시간을 구분할 준비를 한다. **VSync(Vertical Synchronization)**는 화면 표시 주기에 맞추는 동기화이고, **Frame Cap**은 Frame Rate의 상한 설정이다. 이들의 상태를 기록해 화면 표시나 제한을 기다린 시간을 실제 처리 비용으로 오해하지 않도록 한다.
-
-Shader Compilation과 Asset Streaming 같은 초기 준비가 끝난 뒤 같은 길이의 구간을 여러 번 측정한다. 처음 준비하는 비용은 정상 상태의 비용과 분리하고, 평균뿐 아니라 Frame Time 분포와 큰 지연 구간도 함께 본다. 한 번에 하나의 조건만 변경하며, 화면 품질 비교에서는 Chapter 06과 08에서 사용한 Fixed Exposure 조건도 유지한다.
+Shader Compilation과 Asset Streaming 등 초기 준비가 끝난 뒤 같은 길이의 구간을 여러 번 측정한다. 평균과 함께 Frame Time 분포와 큰 지연 구간을 확인하고, 최초 실행 비용은 정상 상태의 비용과 분리한다. 한 번에 하나의 조건만 변경한다. 화면 품질 비교에서는 Chapter 06과 08에서 사용한 Fixed Exposure 조건도 유지한다.
 
 예를 들어 다음 조건이 달라지면 결과도 달라질 수 있다.
 
@@ -290,7 +303,7 @@ Frame 5 : 12.2 ms
 
 한 Frame만 보면 18.7 ms라는 큰 값이 나타났지만 대부분의 Frame은 약 12 ms 수준이다.
 
-반대로 평균 값이 괜찮아 보여도 일부 Frame의 시간이 갑자기 커지는 **Spike**가 일정 간격으로 나타날 수 있다. 다음 예시에서는 평균과 함께 이런 지연을 찾아야 한다.
+반대로 평균 값은 괜찮아 보여도 일정 간격으로 큰 Spike가 발생할 수도 있다.
 
 ```text
 12 ms
@@ -427,7 +440,7 @@ Rendering Optimization의 첫 번째 분기점은 **현재 Frame을 CPU와 GPU �
 
 화면이 느리다고 해서 항상 GPU가 원인인 것은 아니다.
 
-Scene의 Object인 Actor가 많거나 Animation 갱신이 복잡하면 CPU 작업이 늦어질 수 있다. 높은 Resolution이나 복잡한 Material은 GPU Rendering 시간을 늘릴 수 있다. 같은 낮은 FPS라도 조사할 작업이 달라지는 이유이다.
+많은 Actor와 Animation을 CPU에서 처리하느라 Frame이 늦어질 수도 있고, 높은 Resolution이나 복잡한 Material 때문에 GPU Rendering 시간이 길어질 수도 있다.
 
 따라서 Optimization의 첫 번째 질문은 다음과 같다.
 
@@ -495,7 +508,7 @@ CPU Bottleneck
 
 라고 볼 수 있다.
 
-예를 들어 Character의 상태를 갱신하려면 움직임, 물리 반응, Animation과 행동 판단을 계산해야 한다. 행동 판단에 사용하는 **AI(Artificial Intelligence)**도 이 흐름에 관련된다. 아래 목록을 Game World 갱신에 필요한 작업으로 읽어 보자.
+대표적으로 다음과 같은 작업이 관련된다.
 
 ```text
 Game Logic
@@ -636,14 +649,7 @@ Game Time
 
 각 영역이 병렬적으로 처리되기 때문에 대기와 동기화가 없는 단순한 정상 상태에서는 **가장 오래 걸리는 Processing 영역이 Frame 처리 속도를 제한**할 수 있다.
 
-앞의 도식은 여러 Frame의 작업이 겹칠 수 있다는 점을 보여준다. 실제로는 실행 중인 작업뿐 아니라 다른 작업이 끝나기를 기다리는 시간도 있다. **가장 큰 `stat unit` 숫자는 첫 조사 대상이며 원인 확정이 아니다.** Unreal Insights의 Timeline에서 실제 실행과 대기, Frame 진행을 지연시키는 의존 경로를 구분한다. 아래의 CPU/GPU 예시는 대기보다 실제 처리 시간이 우세한 경우를 가정한다.
-
-<details>
-<summary>Timing Note — Waiting and Dependencies</summary>
-
-실제 Timing에는 RHI 작업, Queue, Thread 간 의존성, GPU 대기, VSync 또는 Frame Cap 대기가 포함될 수 있다. Queue는 처리할 작업이 기다리는 열이고, 의존성은 다음 작업을 시작하려면 앞선 결과가 필요한 관계이다. 숫자를 비교한 뒤 Timeline에서 이 관계를 확인해야 병목 후보를 실제 원인으로 좁힐 수 있다.
-
-</details>
+실제 Timing에는 RHI 작업, Queue, Thread 간 의존성, GPU 대기, VSync 또는 Frame Cap 대기가 포함될 수 있다. 따라서 가장 큰 `stat unit` 숫자는 첫 조사 대상이며 원인 확정이 아니다. Unreal Insights의 Timeline에서 실제 실행과 대기, Frame 진행을 지연시키는 의존 경로를 구분한다. 아래의 CPU/GPU 예시는 대기보다 실제 처리 시간이 우세한 경우를 가정한다.
 
 예를 들어,
 
@@ -1446,19 +1452,17 @@ Vertex Count
 → Attribute·Deformation·Vertex Shader가 처리할 작업량의 단서
 ```
 
-Chapter 01에서 본 UV Seam과 Hard Edge를 떠올려 보자. Hard Edge에서 Vertex Normal을 분리하는 경계는 여기서 Hard Normal 경계로 연결해 읽는다. 이러한 경계에서는 같은 위치의 Vertex가 Rendering Data에서 분리될 수 있다. 따라서 Triangle Count와 실제 처리되는 Vertex Count를 함께 확인한다. 같은 Triangle Count라도 Vertex를 얼마나 처리하는지는 달라질 수 있기 때문이다.
-
-Vertex Cache, Skinning, Vertex Shader 복잡도와 Shadow 등 여러 Pass에서의 반복 처리도 비용에 영향을 준다. 어느 Count를 항상 주 지표나 보조 지표로 고정하기보다 **실제 Pass Timing으로 판단한다.**
+Triangle Count와 실제 처리되는 Vertex Count를 함께 확인해야 한다. UV Seam과 Hard Normal에 따른 Vertex 분리, Vertex Cache, Skinning, Vertex Shader 복잡도, Shadow 등 여러 Pass에서의 반복 처리에 따라 비용이 달라진다. 어느 Count를 항상 주 지표 또는 보조 지표로 고정하기보다 실제 Pass Timing으로 판단한다.
 
 ---
 
 ### Skeletal Mesh and Skinning Cost
 
-Character가 Animation에 맞춰 형태를 바꾸려면 Vertex Position도 Bone의 움직임을 따라 갱신해야 한다. Chapter 01에서 살펴본 이 변형 계산이 **Skinning**이며, Static Mesh와 비교할 때 **Skeletal Mesh Skinning**의 비용을 함께 보는 이유이다.
+Character Asset에서는 Static Mesh와 달리 **Skeletal Mesh Skinning**이 추가된다.
 
 Skeletal Mesh의 Vertex는 Bone과 연결되어 있고, Animation에 따라 매 Frame Position이 변화한다.
 
-각 Vertex에 영향을 주는 Bone의 관계를 **Bone Influence**라고 한다. 하나의 Vertex는 여러 Bone Influence를 가질 수 있고, 각 Weight가 해당 Bone의 영향을 얼마나 받을지 정한다.
+각 Vertex는 하나 이상의 Bone Influence를 가질 수 있다.
 
 개념적으로는 다음과 같다.
 
@@ -1554,7 +1558,7 @@ Far Camera
 
 ### Screen Size Changes the Value of Geometry
 
-Geometry가 필요한 정도를 판단할 때는 **Screen Size**, 즉 화면에서 Asset이 차지하는 크기를 본다. Camera와의 거리가 달라지면 Screen Size도 달라질 수 있으므로, 아래 예시는 거리 변화가 화면의 Detail에 어떤 영향을 주는지 생각하며 읽는다.
+Geometry가 필요한 정도는 Camera와의 거리, 즉 **Screen Size**에 따라 달라진다.
 
 Character가 Camera 가까이에 있으면 작은 형태 변화도 화면에서 확인할 수 있다.
 
@@ -1590,7 +1594,7 @@ Low Visible Detail
 
 ### LOD
 
-Chapter 01에서 소개한 `LOD`는 **Level of Detail**의 약자이다. 여기서는 화면에서 필요한 Detail에 맞춰 Geometry 작업량을 조절하는 방법으로 연결한다.
+`LOD`는 **Level of Detail**의 약자이다.
 
 Camera Distance 또는 Screen Size에 따라 서로 다른 Triangle Density를 가진 Mesh를 사용하는 방법이다.
 
@@ -1644,7 +1648,7 @@ Screen에서 보이는 Detail 감소
 
 ### Silhouette Matters When Reducing Triangles
 
-Triangle을 줄인 뒤에는 Character의 화면상 바깥 윤곽인 **Silhouette**를 먼저 확인한다. 같은 수의 Triangle을 제거해도 윤곽을 만드는 부분과 완만한 Surface에서 보이는 변화가 다르기 때문이다.
+Triangle Count를 줄일 때 가장 중요한 판단 기준 중 하나가 **Silhouette**이다.
 
 Geometry Cost를 낮춘다고 해서 모든 영역의 Triangle을 동일한 비율로 제거하는 것은 좋은 방법이 아니다.
 
@@ -1663,7 +1667,7 @@ Outfit Fold
 Hair Silhouette
 ```
 
-이러한 영역에서 Triangle을 지나치게 줄이면 Silhouette와 **Deformation**, 즉 Animation에 따른 형태 변화가 빠르게 무너질 수 있다.
+이러한 영역에서 Triangle을 지나치게 줄이면 Silhouette와 Deformation이 빠르게 무너질 수 있다.
 
 반대로 넓고 완만한 Surface에서는 많은 Edge가 존재하더라도 실제 화면에서 형태 차이가 거의 없을 수 있다.
 
@@ -2110,7 +2114,7 @@ Measure Again
 
 ## 9.4 Pixel Cost and Overdraw
 
-Chapter 01에서 Triangle을 화면의 Coverage로 바꾸는 Rasterization을 살펴보았다. 그 뒤 실행되는 Pixel Shader에서는 Material과 Lighting 계산이 이루어진다. 이제는 Geometry의 개수에 더해 **화면에서 얼마나 많은 Shader 실행이 필요한지**를 비용의 관점으로 본다.
+Geometry가 Rasterization을 거쳐 화면의 Pixel로 변환되면, GPU는 각 Pixel에 대해 Material과 Lighting 계산을 수행한다.
 
 이때 발생하는 비용을 **Pixel Cost**라고 한다.
 
@@ -2152,16 +2156,9 @@ Character Screen Coverage
 
 <p align="center">
 <img src="Figures/Chapter09/Fig9_04.png" width="90%">
-</p>
-
-*Figure 9-04. Screen Coverage와 겹침이 Pixel 작업량에 미치는 영향을 생각하기 위한 자료. 색상과 1x~8x 표기는 ASF 실측 횟수가 아니다.*
-
-<details>
-<summary>Figure Reading Note — Coverage and Shader Execution</summary>
 
 *Figure 9-04. 기존 Pixel Cost/Overdraw 합성 자료. Character 결과와 열지도의 출처·도구·측정 조건이 확인되지 않아 1x~8x를 실측 횟수로 읽지 않는다. Hair→Cloth→Opaque Face는 일반적인 실행·합성 순서가 아니며, 겹침과 실제 실행은 Depth Test, Pass, Opaque/Masked/Translucent 방식에 따라 구분해야 한다. 같은 Screen Coverage에서 Geometry LOD만 낮춘다고 처리 Pixel 수가 자동으로 줄지는 않는다. Rasterization은 Coverage/Fragment를 생성하며 최종 색은 후속 처리로 결정된다. 내부 ASF 확장명은 현재 Anime Shader Framework와 다르다. 원본 렌더 영역을 보존한 주변 도식·Label 수정이 필요하다.*
-
-</details>
+</p>
 
 ---
 
@@ -2183,7 +2180,7 @@ Pixel Shader
 Final Color
 ```
 
-Triangle이 어느 Pixel을 덮는지 결정하면 Coverage를 얻는다. 실제 Pixel Shader 실행은 Depth Test, Pass와 Blend Mode 등의 조건에도 영향을 받는다. 아래 흐름은 **Pixel Shader가 실행될 때 어떤 계산을 하는지** 이해하기 위한 기본 설명이다.
+Triangle이 화면의 어느 Pixel을 덮는지 결정되면, 해당 Pixel에 대해 Pixel Shader가 실행된다.
 
 이 과정에서 Material과 Lighting에 필요한 여러 계산이 수행된다.
 
@@ -2200,7 +2197,7 @@ Texture Sampling
 Additional Material Logic
 ```
 
-이러한 실행 조건이 같다면 Screen Coverage가 커질수록 Pixel Shader가 처리할 작업도 늘어날 수 있다. 다음에는 이 화면상 크기를 따로 살펴본다.
+따라서 화면에 보이는 Pixel 수가 많아질수록 Pixel Shader의 실행 횟수도 증가한다.
 
 ---
 
@@ -2338,7 +2335,7 @@ Processed Pixels
 Pixel Shader Complexity
 ```
 
-이 관계는 작업량과 Pixel당 계산량을 나누어 보는 직관이다. 실제 GPU Rendering은 더 복잡하므로 이 식에 숫자를 넣어 GPU 시간을 계산하지 않는다. 대신 **처리 범위를 줄일지, 한 번의 계산을 줄일지** 질문을 나누는 데 사용한다.
+실제 GPU Rendering은 이보다 훨씬 복잡하지만, Pixel Cost를 이해하기 위한 기본 개념으로는 매우 유용하다.
 
 즉,
 
@@ -2358,7 +2355,7 @@ Pixel Shader Complexity
 
 Material에서 Texture를 Sample하는 작업 역시 Pixel Shader 안에서 이루어진다.
 
-Chapter 04에서 보았듯 Texture Sampling은 저장된 Texture Data를 읽어 계산에 사용하는 과정이다. Character Material은 Base Color와 Normal뿐 아니라 여러 특성 값도 읽는다. 아래의 **ORM**은 Occlusion, Roughness, Metallic을 Channel에 묶어 저장하는 이름이다. 각 Texture가 어떤 정보를 제공하는지 생각하며 목록을 보자.
+예를 들어 Character Material에서 다음과 같은 Texture를 사용할 수 있다.
 
 ```text
 Base Color
@@ -2942,7 +2939,7 @@ Optimize
 다시 측정
 ```
 
-예를 들어 Character Hair가 의심된다면 먼저 Hair가 전체 비용에 어떤 영향을 주는지 넓게 확인한다. 아래의 Hair 표시 비교는 원인 후보를 좁히기 위한 첫 실험이다.
+예를 들어 Character Hair가 의심된다면,
 
 ```text
 Hair On
@@ -2960,7 +2957,7 @@ Far Camera
 
 또 Transparency Layer나 Hair Card 수를 줄인 Test Version을 만들어 Cost 변화를 비교할 수도 있다.
 
-Hair Object를 통째로 숨기면 Geometry, Draw, Shadow, Overdraw가 함께 바뀐다. 이 비교는 Hair 영역의 영향을 좁히는 데 쓰고, Overdraw 하나의 원인 증명으로 사용하지 않는다. 원인 후보를 고른 뒤에는 Scene과 Coverage를 유지하면서 Feature나 Layer 같은 **한 가지 조건만 변경**하여 다시 비교한다. 이 측정 기록은 9.8에서 도구와 함께 연결한다.
+이처럼 실제 원인을 찾기 위해 하나의 조건만 변경하며 비교하는 것이 중요하다.
 
 ---
 
@@ -3110,16 +3107,9 @@ Shader Cost per Pixel
 
 <p align="center">
 <img src="Figures/Chapter09/Fig9_05.png" width="90%">
-</p>
-
-*Figure 9-05. Pixel 하나의 Shader 작업량을 구성하는 요소를 보는 자료. Node 목록과 Instruction 예시는 실행 순서나 실제 GPU Timing을 뜻하지 않는다.*
-
-<details>
-<summary>Figure Reading Note — Instructions and Timing</summary>
 
 *Figure 9-05. Shader 비용 요소를 정리한 기존 합성 자료. Texture/Math/Mask/Lighting 목록은 고정 실행 순서가 아니다. Lerp는 Blend 연산이며 If나 Custom HLSL의 표기만으로 실제 Dynamic Branch 또는 비용을 판단할 수 없다. 50/200/600 Instructions와 100×100 Pixels는 출처 없는 설명용 값이며 실측이 아니다. 렌더 외관만으로 Faster/Slower를 확정하지 않고 동일 장면·Coverage·Pass·Hardware 조건의 실제 GPU timing으로 검증한다. 비교 렌더 영역의 출처 확인 전에는 원본을 유지하며 주변 도식·Label을 수정한다.*
-
-</details>
+</p>
 
 ---
 
@@ -3217,7 +3207,7 @@ Complex Shader
 
 ### Shader Instructions
 
-Material Graph를 Shader Code로 변환하면 GPU가 수행할 명령들이 만들어진다. 이 개별 명령을 **Instruction**이라고 한다. Instruction Count를 보는 이유는 최종 Shader가 요구하는 작업량의 단서를 얻기 위해서이다.
+Shader는 GPU에서 여러 개의 Instruction으로 실행된다.
 
 Instruction에는 다양한 종류의 연산이 포함될 수 있다.
 
@@ -3269,7 +3259,7 @@ Complex Shader
 
 ### Texture Samples
 
-Chapter 04에서 배운 **Texture Sampling**은 Texture에서 필요한 값을 읽는 과정이다. 여기서는 같은 화면 범위를 그릴 때 얼마나 많은 Sample이 필요하며, 그 읽기 작업이 비용에 어떤 영향을 주는지 확인한다.
+Material에서 Texture를 읽는 작업을 **Texture Sampling**이라고 한다.
 
 예를 들어 Character Material에서는 다음과 같은 Texture를 사용할 수 있다.
 
@@ -3572,7 +3562,7 @@ Branch가 있다고 해서 항상 느린 것은 아니다.
 
 GPU는 많은 Pixel을 그룹 단위로 병렬 처리하기 때문에 동일한 그룹에서 서로 다른 Branch가 실행되면 두 경로를 모두 처리해야 하는 상황이 발생할 수 있다.
 
-이처럼 같은 실행 그룹 안에서 경로가 갈리는 현상을 **Branch Divergence**라고 한다. Branch가 있다는 사실만으로 비용을 확정하지 않고, 실제 Shader와 GPU Timing에서 어떤 경로가 실행되는지 확인한다. 9.8에서 볼 2×2 Pixel Quad는 화면 미분을 설명하는 묶음이며, 여기의 GPU 실행 그룹과 같은 개념으로 읽지 않는다.
+이러한 현상을 일반적으로 **Branch Divergence**와 연결해서 이해할 수 있다.
 
 따라서
 
@@ -4195,15 +4185,15 @@ Verify with GPU Timing
 
 ## 9.6 Draw Call and Rendering State Cost
 
-Chapter 01에서 소개한 **Draw Call**은 한 번의 그리기 작업을 전달하는 단위이다. Geometry와 Shader 비용을 확인한 뒤에는 **그 작업이 얼마나 많은 명령으로 나뉘어 준비되고 제출되는가**를 살펴본다.
+Rendering Performance를 분석할 때 Geometry와 Material Complexity만큼 중요한 요소가 **Draw Call**이다.
 
 Draw Call은 CPU가 GPU에게
 
 > **어떤 Mesh를 어떤 Rendering State로 그릴 것인지 전달하는 하나의 Rendering 작업 단위**
 
-라고 이해할 수 있다. 여기서 **Rendering State**는 그리기에 사용할 Shader, Texture, Depth/Blend 설정 등 현재 작업의 조건을 뜻한다. 같은 Mesh라도 어떤 상태로 그릴지 준비해야 하므로 명령의 수와 상태 변화가 함께 중요해진다.
+라고 이해할 수 있다.
 
-Mesh 안에서 특정 Material로 그릴 부분을 **Material Section**이라고 생각하면 된다. 하나의 Mesh가 하나의 Material Section으로 구성되어 있다면 일반적인 경우 하나의 Draw 작업으로 처리될 수 있다.
+예를 들어 하나의 Mesh가 하나의 Material Section으로 구성되어 있다면 일반적인 경우 하나의 Draw 작업으로 처리될 수 있다.
 
 반면 같은 Triangle Count를 가진 Mesh라도 여러 Material Section으로 나뉘어 있다면 여러 Draw Call이 필요할 수 있다.
 
@@ -4509,7 +4499,7 @@ GPU
 
 `Render Thread`에서는 Scene을 기반으로 Rendering 작업을 구성한다.
 
-그 이후 `RHI`는 **Rendering Hardware Interface**의 약자로, Unreal Engine의 Rendering Command를 실제 Graphics API와 GPU가 사용할 수 있는 형태로 연결하는 역할을 한다. Chapter 08에서는 실행 환경으로 확인했던 계층을, 여기서는 그리기 명령이 전달되는 경로로 다시 보는 것이다.
+그 이후 `RHI`는 **Rendering Hardware Interface**의 약자로, Unreal Engine의 Rendering Command를 실제 Graphics API와 GPU가 사용할 수 있는 형태로 연결하는 역할을 한다.
 
 개념적으로는 다음과 같다.
 
@@ -4572,7 +4562,7 @@ Object C → Material A
 Object D → Material C
 ```
 
-처럼 Rendering State가 계속 달라지면 상태를 바꾸는 **State Change**와 작업에 필요한 Texture 등의 입력을 연결하는 **Resource Binding**이 더 필요할 수 있다. 다음 비교에서는 어떤 상태를 반복해 바꾸는지 따라가 보자.
+처럼 Rendering State가 계속 달라지면 더 많은 State Change와 Resource Binding이 필요할 수 있다.
 
 따라서 Draw Call 수뿐 아니라 **Draw Call 사이의 Rendering State 변화**도 Performance에 영향을 줄 수 있다.
 
@@ -4608,7 +4598,7 @@ C
 
 두 번째 경우에는 Rendering State가 더 자주 변경된다.
 
-현대 Rendering Engine에서는 Draw Command Sorting, Batching, Pipeline State 관리 등을 통해 이러한 Cost를 줄이려 한다. Sorting은 호환되는 상태를 연속해서 처리하도록 순서를 정하는 것이고, Batching은 호환되는 작업을 묶는 것이다. 구체적인 묶음 조건과 효과는 Renderer에 따라 다르므로 실제 Count와 Timing을 확인한다.
+현대 Rendering Engine에서는 Draw Command Sorting, Batching, Pipeline State 관리 등을 통해 이러한 Cost를 줄이려 하지만, 기본적으로 지나치게 많은 Material과 Rendering State는 Rendering 구조를 복잡하게 만든다.
 
 따라서 Production에서는
 
@@ -5375,7 +5365,7 @@ Realtime Rendering에서는 화면에 존재하는 모든 Object를 항상 최�
 
 Camera에서 멀리 떨어진 Object는 화면에서 작게 보이므로 필요한 Geometry Detail이 줄어들 수 있다. 보이지 않는 Object를 제외할 때는 어떤 View와 Pass에서 제외하는지 구분한다. Main Camera에 직접 보이지 않아도 Shadow, Reflection 또는 다른 Rendering 작업에는 필요할 수 있다.
 
-Chapter 01에서 소개한 **LOD**는 필요한 Detail을 선택하는 방법이고, **Culling**은 해당 View/Pass에서 처리할 필요가 없는 Object를 제외하는 방법이다. 지금까지 조사한 비용을 줄일 때는 먼저 **이 화면과 Pass에 어떤 작업이 필요한가**를 판단한다.
+이때 사용하는 대표적인 Optimization 방법이 **LOD**와 **Culling**이다.
 
 두 기술의 목적은 서로 다르지만 기본적인 방향은 같다.
 
@@ -5403,20 +5393,13 @@ Culling
 <img src="Figures/Chapter09/Fig9_07.png" width="90%">
 </p>
 
-*Figure 9-07. 화면에 필요한 Detail 선택과 해당 View/Pass에서의 제외를 비교하는 자료. LOD는 Geometry Detail이며, Culling의 적용 범위는 View와 Pass로 구분한다. 이미지 숫자는 예시이며 ASF 실측 결과가 아니다.*
-
-<details>
-<summary>Figure Reading Note — LOD and Culling</summary>
-
 > **Figure 정정 및 범위:** Frustum Culling은 해당 Camera/Pass의 Frustum 밖 객체를 그 Pass에서 제외한다. 그림의 “are rendered”는 반대로 적힌 오류이다. Camera에 보이지 않아도 Shadow/Reflection 등 다른 Pass에는 기여할 수 있다. LOD는 Geometry Detail 선택이며 흐림이나 화면 해상도 감소를 뜻하지 않는다. 거리·Triangle 비율 및 성능 수치는 설정/비교 예시이며 ASF 실측 결과가 아니다. 실제 LOD 선택은 Screen Size와 프로젝트 설정에 따른다. Character·Scene 영역의 출처가 확인되지 않아 원본을 보존했으며, 한국어 설명과 정확한 LOD 표현으로 이미지 내부 정정이 필요하다.
-
-</details>
 
 ---
 
 ### Why LOD Is Necessary
 
-9.3에서 Triangle Count와 Vertex Count를 실제 Pass Timing에 연결했다. 이제는 그 Geometry가 **현재 Screen Size에서 화면 품질에 얼마나 기여하는가**를 판단한다.
+9.3에서 살펴본 것처럼 Triangle Count는 Geometry Cost를 판단하는 핵심 지표 중 하나이다.
 
 하지만 같은 Character라도 Camera와의 거리에 따라 실제로 필요한 Geometry Detail은 달라진다.
 
@@ -6539,18 +6522,7 @@ LOD / Culling
 
 Unreal Engine은 이를 위해 여러 종류의 Debug View와 Profiling Tool을 제공한다.
 
-먼저 질문을 정하면 도구를 고르기 쉽다. 전체 Frame의 지연을 볼 때와 Pixel 계산의 분포를 볼 때는 필요한 정보가 다르다. 아래 표를 이번 절의 지도처럼 사용하고, 각 도구의 결과를 어디까지 해석할 수 있는지 이어서 읽어 보자.
-
-| 질문 | 대표 Tool |
-|---|---|
-| CPU와 GPU 중 어디가 느린가? | `stat unit` |
-| Game / Render Thread 안에서 무엇이 느린가? | Unreal Insights |
-| GPU의 어떤 Pass가 느린가? | `ProfileGPU` |
-| Shader가 비싼 화면 영역은 어디인가? | Shader Complexity |
-| 작은 Triangle / Quad Processing 문제가 있는가? | Quad Overdraw |
-| Lighting Complexity가 높은 곳은 어디인가? | Light Complexity |
-| 현재 어떤 LOD가 사용되고 있는가? | LOD Visualization |
-| Rendering Buffer Data가 올바른가? | Buffer Visualization |
+각 Tool은 서로 다른 정보를 보여준다.
 
 예를 들어,
 
@@ -6601,35 +6573,21 @@ ProfileGPU
 <img src="Figures/Chapter09/Fig9_08.png" width="90%">
 </p>
 
-*Figure 9-08. 전체 Timing에서 시작해 작업 Timeline과 Debug View로 조사 범위를 좁히는 자료. 이미지 숫자와 화면은 ASF 실행 검증의 증거가 아니다.*
-
-<details>
-<summary>Figure Reading Note — Tool Outputs and Command Labels</summary>
-
 > **Figure 사용 범위:** 도식 내 숫자·Timeline·Debug View는 출처와 실행 조건이 확인되지 않은 예시이며 실제 ASF 측정 증거로 사용하지 않는다. Frame 16.7 ms가 Game/Draw/GPU보다 큰 예시에서는 CPU/GPU 병목을 바로 확정하지 말고 VSync, Frame Cap, 대기 및 동기화를 조사한다. `stat gpu`의 통계와 `ProfileGPU`의 분석 결과는 같은 화면/기능으로 단정하지 않으며, 출력 방식은 사용 Version/Build에서 확인한다. GPU Event 시간은 계층과 중첩 때문에 단순 합산하지 않는다. 이미지의 `r.ViewMode ...` 등 명령 표는 검증된 실행 지침이 아니다. Viewport의 지원되는 View Mode 메뉴 및 아래 본문의 공식 문서를 기준으로 사용한다. Quad Overdraw는 단순 겹침 횟수가 아니라 작은 Triangle과 Quad 처리 효율도 분석하는 지표이며, 색상은 GPU 시간의 직접 측정값이 아니다. 원본 영역을 보존한 이미지 내부 정정이 필요하다.
-
-</details>
 
 ---
 
-**Reading and Measurement Note**
-
-`stat unit`의 큰 값은 조사할 영역을 알려준다. 실제 처리와 대기는 Timeline에서 분리하고, GPU Event는 Parent/Child 범위나 병렬 Queue가 중첩될 수 있으므로 표시 시간을 무조건 합산하지 않는다. 이 해석 조건은 아래의 도구를 비교할 때 계속 유지한다.
-
-Chapter 08의 `MF_DebugView`는 계산 결과를 확인하는 기능이며 Timing 측정 도구가 아니다. Runtime Mode 0도 Debug 계산의 Compile-time 제거를 보장하지 않는다. **화면의 계산 결과를 확인하는 질문과 성능을 측정하는 질문을 나누어 도구를 선택한다.**
-
-<details>
-<summary>Implementation Note — Execution Environment</summary>
+**Implementation and Verification Note**
 
 이 절의 Command와 View Mode는 도구 선택을 위한 예시이다. 지원 여부, 출력 항목, UI와 Trace 설정은 사용하는 Engine Version, Build, Platform, RHI와 Renderer에서 확인해야 한다. 이 문서의 작성만으로 ASF Project에서 실행 검증된 것은 아니다.
 
-</details>
+`stat unit`의 큰 값은 조사할 영역을 알려준다. 실제 처리와 대기는 Timeline에서 분리하고, GPU Event는 Parent/Child 범위나 병렬 Queue가 중첩될 수 있으므로 표시 시간을 무조건 합산하지 않는다. Chapter 08의 `MF_DebugView`는 계산 결과를 확인하는 기능이며 Timing 측정 도구가 아니다. Runtime Mode 0도 Debug 계산의 Compile-time 제거를 보장하지 않는다.
 
 ---
 
 ### Start with `stat unit`
 
-9.2에서는 Frame, Game, Draw, GPU 시간을 비교해 CPU와 GPU 중 어디부터 조사할지 골랐다. 그 첫 비교를 실제 화면에서 시작하는 Tool이 `stat unit`이다. 먼저 큰 지연 영역을 찾은 뒤 상세 도구로 이동한다.
+Performance 문제가 발생했을 때 가장 먼저 사용하기 좋은 Tool 중 하나가 `stat unit`이다.
 
 Console에서 다음 Command를 실행한다.
 
@@ -6752,7 +6710,7 @@ Quad Overdraw
 
 **Unreal Insights**는 Unreal Engine에서 CPU 작업을 상세하게 분석할 때 사용하는 중요한 Profiling Tool이다.
 
-Engine에서 발생한 작업의 시점과 시간을 기록한 자료를 **Trace Data**라고 한다. Unreal Insights는 이 자료를 **Timeline**, 즉 시간축 위에 펼쳐 작업이 언제 실행되고 얼마나 걸렸는지 보여준다. [Epic: Performance Profiling](https://dev.epicgames.com/documentation/unreal-engine/introduction-to-performance-profiling-and-configuration-in-unreal-engine) 큰 숫자를 발견한 뒤 실제 작업과 대기, 다른 작업과의 겹침을 읽기 위해 사용하는 것이다. 다음 예시를 이 시간 관계를 읽는 도식으로 보자.
+Unreal Insights는 Engine에서 발생하는 Trace Data를 기록하고 시간 흐름에 따라 시각화하여 어떤 작업이 얼마나 오래 실행되는지를 분석할 수 있다. [Epic: Performance Profiling](https://dev.epicgames.com/documentation/unreal-engine/introduction-to-performance-profiling-and-configuration-in-unreal-engine) 개념적으로 다음과 같은 Timeline을 확인한다고 생각할 수 있다.
 
 ```text
 Time ───────────────────────────────→
@@ -7116,11 +7074,9 @@ Shader Complexity가 높다
 
 ### Quad Overdraw
 
-작은 Triangle이 많을 때는 화면에서 거의 보이지 않는 Geometry도 Pixel 처리 효율에 영향을 줄 수 있다. 단순한 Triangle Count만으로 이 문제를 찾기 어려우므로, 화면상의 작은 Triangle과 처리 단위의 관계를 보는 `Quad Overdraw` View를 사용한다.
+`Quad Overdraw`는 작은 Triangle이나 Screen-space에서 비효율적인 Geometry가 GPU의 Pixel 처리 단위에 어떤 영향을 주는지 확인하는 데 유용한 View이다.
 
-Chapter 04에서 주변 Pixel의 값 변화가 Texture Sampling에 관련되는 것을 살펴보았다. 일반적인 Raster Pixel Shading에서도 이런 **화면 미분**, 즉 화면상 인접 위치의 값 변화를 계산하기 위해 2×2 Pixel을 묶은 **Quad**와 **Helper Invocation**을 사용한다. Helper Invocation은 이웃 계산을 돕는 실행이다.
-
-따라서 다음 도식에서는 실제 Coverage가 있는 위치와 이웃 계산을 돕는 위치를 구분해 본다. 이 Quad는 더 큰 GPU 실행 단위인 Wave/Warp와 같은 개념이 아니다.
+일반적인 Raster Pixel Shading에서는 화면 미분 계산 등을 위해 2×2 Pixel Quad와 Helper Invocation을 사용한다. 이 Quad는 더 큰 실행 단위인 Wave/Warp와 같은 개념이 아니다.
 
 따라서 매우 작은 Triangle이 많아지면 Triangle이 실제로 덮지 않는 Pixel까지 함께 처리해야 하는 비효율이 발생할 수 있다.
 
@@ -7273,7 +7229,7 @@ LOD를 적용했다면 실제 Scene에서 어떤 LOD Level이 선택되고 있�
 
 LOD Coloration과 같은 Visualization을 사용하면 Object별 LOD 상태를 쉽게 확인할 수 있다.
 
-현재 Unreal Engine에는 Mesh LOD와 HLOD 상태를 시각화할 수 있는 View Mode가 제공된다. **HLOD(Hierarchical Level of Detail)**는 멀리 있는 여러 Static Mesh Actor를 묶어 Proxy로 표현하는 방식이다. 여기서는 Mesh 자체의 LOD 상태와 묶음의 HLOD 상태를 구분해 어떤 Detail 표현이 선택되었는지 확인한다. [Epic: Hierarchical Level of Detail](https://dev.epicgames.com/documentation/unreal-engine/hierarchical-level-of-detail-in-unreal-engine?lang=en-US)
+현재 Unreal Engine에는 Mesh LOD와 HLOD 상태를 시각화할 수 있는 View Mode가 제공된다.
 
 이를 통해 다음과 같은 문제를 찾을 수 있다.
 
@@ -7293,9 +7249,22 @@ Scene 전체의 LOD Distribution 문제
 
 ### Different Tools Answer Different Questions
 
-앞에서 본 도구들을 다시 연결해 보면 질문마다 필요한 정보가 달랐다. 큰 지연 영역은 stat unit으로 찾고, 그 안의 원인은 Timeline이나 Pass 분석으로 좁힌다. Debug View의 색상은 작업 분포나 Data를 관찰할 때 사용한다.
+Profiling에서 중요한 것은 Tool 이름을 많이 외우는 것이 아니다.
 
-따라서 도구를 사용할 때는 **이 결과가 어떤 질문에 답하며, 다음에는 무엇을 측정해야 하는가**를 함께 기록한다. 절 앞의 질문–도구 표로 돌아가면 다음 조사 대상을 고르기 쉽다.
+각 Tool이 **어떤 질문에 답하는지** 이해하는 것이다.
+
+| 질문 | 대표 Tool |
+|---|---|
+| CPU와 GPU 중 어디가 느린가? | `stat unit` |
+| Game / Render Thread 안에서 무엇이 느린가? | Unreal Insights |
+| GPU의 어떤 Pass가 느린가? | `ProfileGPU` |
+| Shader가 비싼 화면 영역은 어디인가? | Shader Complexity |
+| 작은 Triangle / Quad Processing 문제가 있는가? | Quad Overdraw |
+| Lighting Complexity가 높은 곳은 어디인가? | Light Complexity |
+| 현재 어떤 LOD가 사용되고 있는가? | LOD Visualization |
+| Rendering Buffer Data가 올바른가? | Buffer Visualization |
+
+이렇게 연결해서 기억하면 Profiling Workflow가 훨씬 명확해진다.
 
 ---
 

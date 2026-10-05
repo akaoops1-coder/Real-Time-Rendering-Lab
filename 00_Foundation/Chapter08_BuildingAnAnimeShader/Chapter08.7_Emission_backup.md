@@ -32,13 +32,13 @@ MF_MatCap
 
 즉 같은 `Emissive Color` Output을 사용하지만, 두 개념의 역할은 다르다.
 
-이번 절에서는 이 차이를 먼저 명확하게 구분한 뒤, Emission Color, Intensity, Mask, HDR, Bloom과의 관계를 살펴보고 최종적으로 `MF_Emission`을 ASF Master Material에 통합한다.
+이번 절에서는 이 차이를 먼저 명확하게 구분한 뒤,
+
+Emission Color, Intensity, Mask, HDR, Bloom과의 관계를 살펴보고 최종적으로 `MF_Emission`을 ASF Master Material에 통합한다.
 
 ---
 
 ### Emissive Output and Emission Contribution
-
-버튼에 적힌 이름과 그 버튼으로 전달하는 내용은 다를 수 있다. 이 실습에서도 출력 Pin의 이름만 보고 내부 역할을 판단하면 Base Lighting과 발광 추가분을 섞게 된다. 먼저 **계산한 값을 어디로 보내는가**와 **최종 색에 무엇을 더하는가**를 나누고, 그 다음 Color·Intensity·Mask를 연결한다.
 
 현재 ASF Material은 `Unlit` Shading Model을 사용한다.
 
@@ -71,7 +71,9 @@ Final ASF Color
 
 따라서 Unreal의 기본 Lighting 결과를 다시 적용할 필요가 없다.
 
-이 때문에 Material의 Shading Model을 `Unlit`으로 설정하고, 직접 계산한 최종 Color를 `Emissive Color`에 연결한다.
+이 때문에 Material의 Shading Model을 `Unlit`으로 설정하고,
+
+직접 계산한 최종 Color를 `Emissive Color`에 연결한다.
 
 ~~~text
 Final ASF Color
@@ -176,7 +178,9 @@ Emission은 Material의 특정 영역이
 
 이다.
 
-예를 들어 캐릭터의 눈에 발광 효과를 넣는다고 생각해보자. 눈의 기본 Material Appearance는 기존 ASF Lighting을 이용할 수 있다.
+예를 들어 캐릭터의 눈에 발광 효과를 넣는다고 생각해보자.
+
+눈의 기본 Material Appearance는 기존 ASF Lighting을 이용할 수 있다.
 
 ~~~text
 Base Lighting
@@ -188,7 +192,9 @@ Rim
 Eye Surface Appearance
 ~~~
 
-하지만 눈동자의 특정 Pattern이 빛나야 한다면, 그 부분에는 별도의 Emission Contribution을 추가한다.
+하지만 눈동자의 특정 Pattern이 빛나야 한다면,
+
+그 부분에는 별도의 Emission Contribution을 추가한다.
 
 ~~~text
 Emission Mask
@@ -248,9 +254,13 @@ Emission Effect
 
 #### Shared Output Path
 
-그렇다면 왜 두 개념 모두 결국 `Emissive Color`를 사용할까? 현재 ASF가 `Unlit` Material이기 때문이다.
+그렇다면 왜 두 개념 모두 결국 `Emissive Color`를 사용할까?
 
-Final Shader Color를 직접 만드는 구조에서는 Emission도 결국 Final Color의 일부가 된다.
+현재 ASF가 `Unlit` Material이기 때문이다.
+
+Final Shader Color를 직접 만드는 구조에서는
+
+Emission도 결국 Final Color의 일부가 된다.
 
 예를 들어 기존 Shader 결과가 다음과 같다고 하자.
 
@@ -294,7 +304,9 @@ Emissive Color
 
 #### Eye Emission Example
 
-캐릭터의 얼굴 전체를 생각해보자. 기본 얼굴은 일반 ASF Lighting을 사용한다.
+캐릭터의 얼굴 전체를 생각해보자.
+
+기본 얼굴은 일반 ASF Lighting을 사용한다.
 
 ~~~text
 Light Direction
@@ -440,7 +452,9 @@ Emission을 사용하면 흔히 주변에 빛이 퍼지는 Glow Effect를 떠올
 
 하지만 이것도 개념적으로 분리해야 한다.
 
-Material에서 Emission을 추가하는 것과, 화면에서 Bloom이 발생하는 것은 같은 작업이 아니다.
+Material에서 Emission을 추가하는 것과,
+
+화면에서 Bloom이 발생하는 것은 같은 작업이 아니다.
 
 ~~~text
 Material
@@ -470,7 +484,9 @@ Bloom
 
 이다.
 
-Emission은 Material이 높은 밝기의 Color를 출력하는 것이고, Bloom은 그 결과를 화면 후처리 단계에서 주변으로 퍼뜨리는 효과다.
+Emission은 Material이 높은 밝기의 Color를 출력하는 것이고,
+
+Bloom은 그 결과를 화면 후처리 단계에서 주변으로 퍼뜨리는 효과다.
 
 이 관계는 이후 절에서 직접 확인한다.
 
@@ -526,7 +542,7 @@ Emissive Color
 
 > **Implementation Note — Engine Output**
 >
-> 앞의 Emissive Color as Output Path에서 설명했듯이 Engine에는 합성된 전체 값이 전달된다. Emission Module만 분리해서 관리하는 ASF의 역할 구분이 Post Process 입력을 분리하는 것은 아니다. 다른 밝은 성분의 Bloom 영향과 조건부 GI 참여는 그 출력 범위 안에서 확인한다.
+> ASF의 논리적 Emission Module과 Engine의 Emissive Output은 역할이 다르다. Engine에는 합성된 전체 값이 전달되므로 Emission Module 외의 밝은 성분도 Bloom/GI 등에 영향을 줄 수 있으며 지원 조건을 확인해야 한다.
 
 ---
 
@@ -534,7 +550,9 @@ Emissive Color
 
 현재 ASF에서는 `Unlit` Shading Model을 사용한다.
 
-따라서 Unreal의 기본 Lighting 계산을 사용하지 않고, 직접 계산한 Shader Result를 `Emissive Color`로 출력한다.
+따라서 Unreal의 기본 Lighting 계산을 사용하지 않고,
+
+직접 계산한 Shader Result를 `Emissive Color`로 출력한다.
 
 ~~~text
 ASF Lighting
@@ -596,7 +614,13 @@ Bloom
 
 이다.
 
-이제 두 개념을 구분했으므로, 다음 절에서는 실제로 가장 기본적인 Emission을 만들어보고 `EmissionColor × EmissionIntensity` 구조가 어떤 결과를 만드는지 확인한다.
+이제 두 개념을 구분했으므로,
+
+다음 절에서는 실제로 가장 기본적인 Emission을 만들어보고
+
+`EmissionColor × EmissionIntensity`
+
+구조가 어떤 결과를 만드는지 확인한다.
 
 ---
 
@@ -606,11 +630,11 @@ Bloom
 
 ### Emission Color and Intensity
 
-같은 보라색 표시등이 약하게 빛나는 상태와 강하게 빛나는 상태를 생각해보자. 색의 종류와 출력의 크기를 따로 다루면 색을 다시 고르지 않고도 강도만 조절할 수 있다. 이번 계산은 그 두 조절을 RGB Color와 Scalar Intensity로 분리한다. Color는 Linear 값으로 사용하며, 곱한 결과는 최종 Display RGB와 구분한다.
-
 앞 절에서는 현재 ASF에서 사용하는 `Emissive Color` Output과 실제 발광 표현인 `Emission Effect`가 서로 다른 개념이라는 점을 정리했다.
 
-이번 절에서는 가장 기본적인 Emission 구조를 직접 구현하고, `EmissionColor`와 `EmissionIntensity`가 각각 어떤 역할을 담당하는지 확인한다.
+이번 절에서는 가장 기본적인 Emission 구조를 직접 구현하고,
+
+`EmissionColor`와 `EmissionIntensity`가 각각 어떤 역할을 담당하는지 확인한다.
 
 기본 구조는 매우 단순하다.
 
@@ -646,7 +670,9 @@ EmissionColor
 → Vector3 / RGB
 ~~~
 
-예를 들어 보라색 계열의 값을 사용하면, Emission의 기본 색상 방향도 보라색이 된다.
+예를 들어 보라색 계열의 값을 사용하면,
+
+Emission의 기본 색상 방향도 보라색이 된다.
 
 ~~~text
 EmissionColor
@@ -770,7 +796,9 @@ Intensity
 색은 유지하면서 강도만 조절
 ~~~
 
-하거나, 반대로
+하거나,
+
+반대로
 
 ~~~text
 강도는 유지하면서 색만 변경
@@ -885,7 +913,9 @@ EmissionColor
 Stronger Emission Value
 ~~~
 
-이때 색의 기본 방향은 유지되지만, 출력되는 값의 크기는 증가한다.
+이때 색의 기본 방향은 유지되지만,
+
+출력되는 값의 크기는 증가한다.
 
 따라서 화면에서는 더 밝게 보이기 시작한다.
 
@@ -903,7 +933,9 @@ EmissionColor
 High Intensity Emission
 ~~~
 
-화면에서는 원래의 보라색이 점점 더 밝고 연하게 보이며, 일부 영역은 흰색에 가까운 인상으로 나타날 수 있다.
+화면에서는 원래의 보라색이 점점 더 밝고 연하게 보이며,
+
+일부 영역은 흰색에 가까운 인상으로 나타날 수 있다.
 
 하지만 이것을
 
@@ -925,13 +957,11 @@ High Intensity Emission
 
 ---
 
-Intensity 비교는 계산과 화면을 두 번 확인하는 실습이다. 계산에서는 같은 Color에 곱하는 값만 바뀌는지 확인하고, 화면에서는 고정된 Exposure·Bloom·Tone Mapping 조건에서 보이는 차이를 읽는다. 아래 Figure는 기존 관찰 자료이며, 초기 Auto Exposure 상태의 이미지로 Intensity 변화만의 효과를 수치 분리하지 않는다.
-
----
-
 #### Intensity Comparison
 
-다음 Figure에서는 같은 `EmissionColor`를 유지하고, `EmissionIntensity`만
+다음 Figure에서는 같은 `EmissionColor`를 유지하고,
+
+`EmissionIntensity`만
 
 ~~~text
 0
@@ -1018,7 +1048,9 @@ EmissionIntensity
 
 처럼 `1`을 초과할 수 있다.
 
-이러한 값은 일반적인 화면의 최종 RGB 범위보다 크지만, HDR Rendering Pipeline 내부에서는 유효한 Scene Color Data로 사용할 수 있다.
+이러한 값은 일반적인 화면의 최종 RGB 범위보다 크지만,
+
+HDR Rendering Pipeline 내부에서는 유효한 Scene Color Data로 사용할 수 있다.
 
 ---
 
@@ -1080,7 +1112,9 @@ Bloom
 
 #### Intensity and Displayed Color
 
-테스트 결과를 보면 Intensity가 커질수록 보라색이 점점 밝아지고, 높은 값에서는 흰색에 가까운 인상으로 보인다.
+테스트 결과를 보면 Intensity가 커질수록 보라색이 점점 밝아지고,
+
+높은 값에서는 흰색에 가까운 인상으로 보인다.
 
 하지만 Shader 내부에서 색상의 비율이 반드시 흰색으로 바뀐 것은 아니다.
 
@@ -1098,7 +1132,9 @@ Tone Mapping
 Display Color
 ~~~
 
-HDR 값은 그대로 Monitor에 표시할 수 없기 때문에, 최종 Display Range에 맞게 변환된다.
+HDR 값은 그대로 Monitor에 표시할 수 없기 때문에,
+
+최종 Display Range에 맞게 변환된다.
 
 이 과정 때문에 높은 Intensity 값이 화면에서는 점점 밝아지고 채도가 줄어든 것처럼 보일 수 있다.
 
@@ -1173,7 +1209,9 @@ EmissionIntensity
 
 라는 기본 관계 자체를 확인하는 것이 목적이다.
 
-아래 초기 비교는 Project 설정을 유지한 관찰 예이다. Auto Exposure가 켜져 있다면 통제된 Intensity 비교가 아니므로 기본 검증에서는 Fixed Exposure와 동일한 Bloom/Tone Mapping 조건을 사용한다. 초기 관찰에서는 Intensity 값만 변경하여 결과를 비교했다.
+아래 초기 비교는 Project 설정을 유지한 관찰 예이다. Auto Exposure가 켜져 있다면 통제된 Intensity 비교가 아니므로 기본 검증에서는 Fixed Exposure와 동일한 Bloom/Tone Mapping 조건을 사용한다. 초기 관찰에서는
+
+Intensity 값만 변경하여 결과를 비교했다.
 
 이렇게 해야 다음 단계에서
 
@@ -1246,7 +1284,9 @@ Bloom
 
 라고 이해하는 것이 정확하다.
 
-다음 절에서는 이 높은 HDR Emission이 Post Process의 Bloom과 어떻게 연결되는지 확인하고, Emission과 Bloom이 각각 Rendering Pipeline에서 어떤 역할을 담당하는지 살펴본다.
+다음 절에서는 이 높은 HDR Emission이 Post Process의 Bloom과 어떻게 연결되는지 확인하고,
+
+Emission과 Bloom이 각각 Rendering Pipeline에서 어떤 역할을 담당하는지 살펴본다.
 
 ---
 
@@ -1256,9 +1296,13 @@ Bloom
 
 ### HDR Emission, Bloom, and Glow
 
-앞 절에서는 `EmissionColor × EmissionIntensity`를 이용하여 기본적인 Emission을 구현하고, Intensity를 증가시키면 Shader 내부에서 `1`을 초과하는 HDR Color 값이 만들어질 수 있다는 것을 확인했다.
+앞 절에서는 `EmissionColor × EmissionIntensity`를 이용하여 기본적인 Emission을 구현하고,
 
-이번 절에서는 그 높은 Emission 값이 실제 화면에서 어떻게 보이는지 살펴보고, 서로 혼동하기 쉬운 다음 세 개념을 구분한다.
+Intensity를 증가시키면 Shader 내부에서 `1`을 초과하는 HDR Color 값이 만들어질 수 있다는 것을 확인했다.
+
+이번 절에서는 그 높은 Emission 값이 실제 화면에서 어떻게 보이는지 살펴보고,
+
+서로 혼동하기 쉬운 다음 세 개념을 구분한다.
 
 ~~~text
 Emission
@@ -1395,7 +1439,9 @@ Emission은 이 HDR 범위를 적극적으로 사용할 수 있다.
 
 여기서 중요한 점이 있다.
 
-Material이 높은 HDR 값을 출력한다고 해서, 그 자체가 주변 Pixel로 퍼지는 것은 아니다.
+Material이 높은 HDR 값을 출력한다고 해서,
+
+그 자체가 주변 Pixel로 퍼지는 것은 아니다.
 
 예를 들어
 
@@ -1403,7 +1449,9 @@ Material이 높은 HDR 값을 출력한다고 해서, 그 자체가 주변 Pixel
 EmissionIntensity = 5
 ~~~
 
-라고 해도, Material Shader는 기본적으로 해당 Surface Pixel에 높은 Color 값을 출력할 뿐이다.
+라고 해도,
+
+Material Shader는 기본적으로 해당 Surface Pixel에 높은 Color 값을 출력할 뿐이다.
 
 ~~~text
 Surface Pixel
@@ -1427,7 +1475,9 @@ Material 자체가 자동으로
 
 #### Bloom
 
-Bloom은 매우 밝은 화면 영역의 밝기를 주변으로 퍼뜨려, 실제 Camera나 눈에서 강한 빛을 볼 때 발생하는 번짐과 비슷한 인상을 만드는 `Post Process` Effect다.
+Bloom은 매우 밝은 화면 영역의 밝기를 주변으로 퍼뜨려,
+
+실제 Camera나 눈에서 강한 빛을 볼 때 발생하는 번짐과 비슷한 인상을 만드는 `Post Process` Effect다.
 
 즉 Bloom은 Material 계산 이후에 적용된다.
 
@@ -1485,7 +1535,9 @@ Bloom
 
 이다.
 
-Emission이 Bloom의 입력이 될 수는 있지만, Emission 그 자체가 Bloom은 아니다.
+Emission이 Bloom의 입력이 될 수는 있지만,
+
+Emission 그 자체가 Bloom은 아니다.
 
 ---
 
@@ -1566,9 +1618,9 @@ Glow Appearance
 
 #### Bloom Validation
 
-주변 번짐을 이해하려면 Material과 후처리를 동시에 바꾸지 않는다. 같은 Emission 값을 둔 채 Bloom만 켜고 끄면 표면에 출력되는 값과 주변 Pixel에 보이는 Halo를 구분할 수 있다. Exposure·Camera·나머지 Post Process 조건도 고정하고, 이 실험은 주변 Geometry가 실제 조명을 받는지의 검증과 분리한다.
+Emission과 Bloom의 차이를 실제로 확인하기 위해,
 
-Emission과 Bloom의 차이를 실제로 확인하기 위해, 앞 절에서 제작한
+앞 절에서 제작한
 
 ~~~text
 M_EmissionTest
@@ -1602,7 +1654,9 @@ EmissionIntensity = 5
 
 ##### Post Process Volume
 
-Bloom은 Material Parameter가 아니라 Post Process Effect이므로, Scene에 `Post Process Volume`을 추가했다.
+Bloom은 Material Parameter가 아니라 Post Process Effect이므로,
+
+Scene에 `Post Process Volume`을 추가했다.
 
 테스트 Level 전체에 효과를 적용하기 위해
 
@@ -1668,7 +1722,9 @@ Surface는 밝음
 
 #### Increasing Bloom Intensity
 
-Material의 Emission 설정은 그대로 유지하고, Post Process의 Bloom Intensity만 증가시켰다.
+Material의 Emission 설정은 그대로 유지하고,
+
+Post Process의 Bloom Intensity만 증가시켰다.
 
 이번 비교에서는 차이가 명확하게 보이도록 다음 값을 사용했다.
 
@@ -1686,7 +1742,9 @@ Bloom Intensity
 Bloom Intensity = 0
 ~~~
 
-이고, 아래쪽 결과는
+이고,
+
+아래쪽 결과는
 
 ~~~text
 Bloom Intensity = 10
@@ -1854,13 +1912,17 @@ Viewport
 → Lit
 ~~~
 
-조합을 사용하고 있으며, Bloom 검증 역시 Lit View Mode에서 진행한다.
+조합을 사용하고 있으며,
+
+Bloom 검증 역시 Lit View Mode에서 진행한다.
 
 ---
 
 #### Bloom and Scene Illumination
 
-Bloom을 보면 Object 주변이 밝아지기 때문에, Emission이 실제 Light처럼 주변 Scene을 비추고 있다고 생각할 수 있다.
+Bloom을 보면 Object 주변이 밝아지기 때문에,
+
+Emission이 실제 Light처럼 주변 Scene을 비추고 있다고 생각할 수 있다.
 
 하지만 Bloom 자체는 기본적으로 Screen Space Post Process다.
 
@@ -1971,7 +2033,9 @@ Glow
 
 하지만 각 단계는 서로 독립적으로 생각해야 한다.
 
-Emission이 있다고 해서 반드시 Bloom을 사용해야 하는 것도 아니며, Bloom이 있다고 해서 그것이 Material 내부의 Emission 계산인 것도 아니다.
+Emission이 있다고 해서 반드시 Bloom을 사용해야 하는 것도 아니며,
+
+Bloom이 있다고 해서 그것이 Material 내부의 Emission 계산인 것도 아니다.
 
 따라서 다음과 같이 기억하는 것이 좋다.
 
@@ -1990,7 +2054,9 @@ Glow
 
 #### Implementation Result
 
-이번 단계에서는 `M_EmissionTest`의 Material 값을 변경하지 않고, Post Process Bloom만 변경하여 결과를 비교했다.
+이번 단계에서는 `M_EmissionTest`의 Material 값을 변경하지 않고,
+
+Post Process Bloom만 변경하여 결과를 비교했다.
 
 ~~~text
 EmissionIntensity
@@ -2082,7 +2148,9 @@ Viewport View Mode
 
 ### Exposure and Tone Mapping
 
-앞 절에서는 높은 Emission 값이 HDR Scene Color를 만들고, Post Process의 Bloom이 그 밝은 영역을 주변으로 퍼뜨려 Glow처럼 보이는 결과를 만들 수 있다는 점을 확인했다.
+앞 절에서는 높은 Emission 값이 HDR Scene Color를 만들고,
+
+Post Process의 Bloom이 그 밝은 영역을 주변으로 퍼뜨려 Glow처럼 보이는 결과를 만들 수 있다는 점을 확인했다.
 
 이번 절에서는 한 단계 더 나아가,
 
@@ -2100,7 +2168,9 @@ Tone Mapping
 → Rendering Pipeline의 역할을 개념적으로 이해
 ~~~
 
-즉 이번 절에서 실제로 값을 변경하며 검증하는 것은 `Exposure`이고, Tone Mapping은 Unreal이 기본 Rendering Pipeline에서 처리하는 후처리 단계이므로 별도의 Tone Mapper Curve나 알고리즘을 수정하지 않는다.
+즉 이번 절에서 실제로 값을 변경하며 검증하는 것은 `Exposure`이고,
+
+Tone Mapping은 Unreal이 기본 Rendering Pipeline에서 처리하는 후처리 단계이므로 별도의 Tone Mapper Curve나 알고리즘을 수정하지 않는다.
 
 전체 흐름은 다음과 같이 이해하면 된다.
 
@@ -2146,7 +2216,9 @@ EmissionResult
 
 이 값은 아직 최종 화면에 표시되는 Color가 아니다.
 
-Shader가 만든 결과는 먼저 HDR Scene Color로 존재하고, 이후 Rendering Pipeline을 거쳐 최종 화면에 표시된다.
+Shader가 만든 결과는 먼저 HDR Scene Color로 존재하고,
+
+이후 Rendering Pipeline을 거쳐 최종 화면에 표시된다.
 
 ~~~text
 Material Result
@@ -2182,7 +2254,9 @@ Shader 내부의 Emission 값
 
 실제 Camera를 생각하면 이해하기 쉽다.
 
-같은 장면을 촬영하더라도 노출을 낮추면 어둡게 보이고, 노출을 높이면 밝게 보인다.
+같은 장면을 촬영하더라도 노출을 낮추면 어둡게 보이고,
+
+노출을 높이면 밝게 보인다.
 
 Rendering에서도 비슷한 역할을 한다.
 
@@ -2266,8 +2340,6 @@ Exposure
 
 #### Exposure Observation
 
-이번에는 Material이 만드는 값과 그 값을 보여주는 방식을 분리한다. Emission과 Bloom을 고정한 뒤 Exposure만 바꾸면, 같은 Shader 값이 다른 화면 밝기로 표시된다는 관계를 읽을 수 있다. 화면이 어두워졌다고 Material 계산이 작아졌다고 결론 내리지 않는 것이 이 비교의 목적이다.
-
 이번 테스트에서도 기존 `M_EmissionTest`를 그대로 사용했다.
 
 Material 구조는 변경하지 않았다.
@@ -2307,7 +2379,9 @@ Bloom
 → 동일
 ~~~
 
-하고, Exposure만 변경한다.
+하고,
+
+Exposure만 변경한다.
 
 ---
 
@@ -2321,7 +2395,9 @@ Auto Exposure Histogram
 
 인 상태에서 테스트했다.
 
-Auto Exposure는 현재 Scene의 밝기를 분석하고, 너무 밝거나 어두운 상황을 자동으로 보정한다.
+Auto Exposure는 현재 Scene의 밝기를 분석하고,
+
+너무 밝거나 어두운 상황을 자동으로 보정한다.
 
 개념적으로는 다음과 같다.
 
@@ -2337,7 +2413,9 @@ Auto Exposure
 
 이는 실제 Game Camera에서는 매우 유용하다.
 
-예를 들어 Character가 어두운 실내에서 밝은 야외로 이동했을 때, 눈이 밝기에 적응하는 것과 비슷한 결과를 만들 수 있다.
+예를 들어 Character가 어두운 실내에서 밝은 야외로 이동했을 때,
+
+눈이 밝기에 적응하는 것과 비슷한 결과를 만들 수 있다.
 
 ---
 
@@ -2352,7 +2430,9 @@ Exposure 값만 변경했을 때
 
 를 비교하려면 Auto Exposure가 추가 변수로 작동한다.
 
-Exposure Compensation을 변경하면 화면 밝기가 달라지지만, Auto Exposure가 Scene의 Metering 결과와 시간적 적응에 따라 별도 노출을 결정하기 때문이다. Compensation 이후 표시 화면을 그대로 재측정해 상쇄한다는 Feedback 구조를 일반 규칙으로 단정하지 않는다.
+Exposure Compensation을 변경하면 화면 밝기가 달라지지만,
+
+Auto Exposure가 Scene의 Metering 결과와 시간적 적응에 따라 별도 노출을 결정하기 때문이다. Compensation 이후 표시 화면을 그대로 재측정해 상쇄한다는 Feedback 구조를 일반 규칙으로 단정하지 않는다.
 
 ~~~text
 Scene Metering / Adaptation → Automatic Exposure
@@ -2384,16 +2464,11 @@ Exposure Compensation
 
 <img src="../Figures/Chapter08/Fig8_62.png" width="90%">
 
-*Figure 8-62. 기존 초기 관찰에서 Exposure Compensation −2/0/+2에 따라 화면 밝기가 달라진 비교.*
-
-<details>
-<summary>Verification Note — Active Metering and Adaptation</summary>
-
 *Figure 8-62. Exposure Compensation −2/0/+2에서 관찰된 밝기 변화의 초기 비교. Metering Mode Override가 꺼져 있으므로 표시된 Auto Exposure Histogram이 최종 유효 설정이라고 이 이미지로 확정할 수 없다. 자동 적응의 동작이나 원인을 분리해 입증하는 자료로 사용하지 않으며, 유효 Metering 설정과 적응 완료 조건의 확인은 별도다.*
 
-</details>
+화면 밝기가 달라지는 것은 확인할 수 있었지만,
 
-화면 밝기가 달라지는 것은 확인할 수 있었지만, Exposure 자체의 영향만을 분리한 테스트라고 하기는 어렵다.
+Exposure 자체의 영향만을 분리한 테스트라고 하기는 어렵다.
 
 그래서 최종 비교에서는 Auto Exposure를 사용하지 않았다.
 
@@ -2586,16 +2661,9 @@ EmissionIntensity는 그대로인데
 
 <img src="../Figures/Chapter08/Fig8_63.png" width="90%">
 
-*Figure 8-63. Manual Metering Override와 Exposure Compensation −2/0/+2의 기존 정성적 비교.*
-
-<details>
-<summary>Verification Note — Fixed Exposure Conditions and Capture Scope</summary>
-
 *Figure 8-63. Manual Metering Override와 Exposure Compensation −2/0/+2의 정성적 비교. 본문에 기록된 조건은 EmissionIntensity=5, Bloom=0이며 해당 값들은 이 캡처에 모두 표시되어 있지는 않다. Apply Physical Camera Exposure의 Override는 꺼져 있으므로 유효 Camera 설정과 기준 Exposure는 별도 확인해야 한다. 어두운 화면도 관찰 결과이므로 밝기 보정 없이 원본을 유지한다.*
 
-</details>
-
-기존 비교 기록의 공통 조건은 다음과 같다.
+세 결과 모두
 
 ~~~text
 EmissionIntensity = 5
@@ -2656,7 +2724,9 @@ Exposure만 변경
 
 다.
 
-따라서 -2에서 매우 어둡게 보이는 것은 실패한 결과가 아니라, Exposure가 최종 Display Brightness에 얼마나 강하게 영향을 주는지 보여주는 검증 결과다.
+따라서 -2에서 매우 어둡게 보이는 것은 실패한 결과가 아니라,
+
+Exposure가 최종 Display Brightness에 얼마나 강하게 영향을 주는지 보여주는 검증 결과다.
 
 실제 Character Presentation에서는 보기 좋은 Exposure를 별도로 결정하면 된다.
 
@@ -2666,7 +2736,9 @@ Exposure만 변경
 
 여기서부터는 이번 절에서 **직접 구현 테스트하지 않은 영역**이다.
 
-Tone Mapping은 Unreal Rendering Pipeline에서 기본적으로 처리되는 단계이며, 이번 Emission 기초 구현에서는 Tone Mapper의 Curve나 알고리즘을 직접 수정하지 않는다.
+Tone Mapping은 Unreal Rendering Pipeline에서 기본적으로 처리되는 단계이며,
+
+이번 Emission 기초 구현에서는 Tone Mapper의 Curve나 알고리즘을 직접 수정하지 않는다.
 
 따라서 먼저 Tone Mapping의 역할 자체를 이해한다.
 
@@ -2809,9 +2881,13 @@ Strong Emission
 10 → 1
 ~~~
 
-이 되어, 밝은 Light와 매우 강한 Emission 사이의 차이를 잃어버리게 된다.
+이 되어,
 
-따라서 단순히 높은 값을 잘라내기보다, 넓은 밝기 범위를 제한된 Display 범위 안에 **압축해서 표현**할 필요가 있다.
+밝은 Light와 매우 강한 Emission 사이의 차이를 잃어버리게 된다.
+
+따라서 단순히 높은 값을 잘라내기보다,
+
+넓은 밝기 범위를 제한된 Display 범위 안에 **압축해서 표현**할 필요가 있다.
 
 개념적으로는 다음과 같다.
 
@@ -2859,7 +2935,9 @@ Display Range
 
 그러면 높은 밝기 사이의 관계가 사라진다.
 
-Tone Mapping은 일반적으로 HDR 값의 관계를 가능한 한 유지하면서, 높은 밝기 영역을 더 부드럽게 압축하여 화면에 표현한다.
+Tone Mapping은 일반적으로 HDR 값의 관계를 가능한 한 유지하면서,
+
+높은 밝기 영역을 더 부드럽게 압축하여 화면에 표현한다.
 
 즉 개념적으로
 
@@ -2877,7 +2955,9 @@ Tone Mapping
 
 #### Using the Existing Output Transform
 
-[Exposure and Tone Mapping](#exposure-and-tone-mapping)의 목적은 Tone Mapping 알고리즘을 공부하거나, Unreal의 Tone Mapper Curve를 직접 수정하는 것이 아니다.
+[Exposure and Tone Mapping](#exposure-and-tone-mapping)의 목적은 Tone Mapping 알고리즘을 공부하거나,
+
+Unreal의 Tone Mapper Curve를 직접 수정하는 것이 아니다.
 
 이번에 실제로 검증한 것은
 
@@ -3149,7 +3229,9 @@ Post Process
 
 #### Validation Scope
 
-이번 절에서는 `M_EmissionTest`의 Material 값을 고정한 상태에서, Exposure의 영향만 직접 테스트했다.
+이번 절에서는 `M_EmissionTest`의 Material 값을 고정한 상태에서,
+
+Exposure의 영향만 직접 테스트했다.
 
 ~~~text
 EmissionIntensity
@@ -3161,7 +3243,9 @@ Bloom
 0
 ~~~
 
-처음에는 Auto Exposure를 사용했지만, Scene Brightness에 따른 자동 보정이 추가 변수로 들어가기 때문에 최종 비교에서는 Manual Exposure를 사용했다.
+처음에는 Auto Exposure를 사용했지만,
+
+Scene Brightness에 따른 자동 보정이 추가 변수로 들어가기 때문에 최종 비교에서는 Manual Exposure를 사용했다.
 
 ~~~text
 Metering Mode
@@ -3239,7 +3323,9 @@ Final Display
 
 앞 절까지는 `EmissionColor`와 `EmissionIntensity`를 이용하여 Object 전체에 Emission을 적용했다.
 
-하지만 실제 Character Shader나 Stylized Material에서는 전체 Surface가 동일하게 발광하는 경우보다, 특정 문양, 눈, 장식, 장비 일부처럼 **선택된 영역만 발광해야 하는 경우**가 훨씬 많다.
+하지만 실제 Character Shader나 Stylized Material에서는 전체 Surface가 동일하게 발광하는 경우보다,
+
+특정 문양, 눈, 장식, 장비 일부처럼 **선택된 영역만 발광해야 하는 경우**가 훨씬 많다.
 
 이때 사용하는 것이 `Emission Mask`다.
 
@@ -3262,8 +3348,6 @@ EmissionResult
 ---
 
 #### Mask
-
-앞의 Intensity가 발광 전체를 키웠다면 Mask는 Surface의 위치마다 그 발광을 얼마만큼 통과시킬지 정한다. 먼저 동일한 Scalar를 전체에 적용하여 계산을 확인하고, 다음에 Texture를 Sample하여 위치마다 다른 값이 들어오게 한다. 이 순서를 따르면 곱셈 문제와 Texture 입력 문제를 따로 찾을 수 있다.
 
 Mask는 일반적으로 `0 ~ 1` 범위의 Scalar 값으로 생각할 수 있다.
 
@@ -3288,7 +3372,9 @@ EmissionIntensity
 EmissionBase
 ~~~
 
-였다면, Mask를 추가한 뒤에는 다음과 같이 된다.
+였다면,
+
+Mask를 추가한 뒤에는 다음과 같이 된다.
 
 ~~~text
 EmissionBase
@@ -3316,7 +3402,9 @@ EmissionMask
 
 #### Scalar Mask Test
 
-Mask Texture를 사용하기 전에, 가장 단순한 Scalar 값으로 Mask의 역할을 먼저 확인했다.
+Mask Texture를 사용하기 전에,
+
+가장 단순한 Scalar 값으로 Mask의 역할을 먼저 확인했다.
 
 예를 들어
 
@@ -3358,7 +3446,9 @@ EmissionMask = 0.5
 
 처럼 전체 Emission 강도를 줄이는 것도 가능하다.
 
-하지만 Scalar 값 하나를 사용하면 Object 전체에 동일한 값이 적용되기 때문에, 이것만으로는 Mask의 가장 중요한 목적을 충분히 보여주지 못한다.
+하지만 Scalar 값 하나를 사용하면 Object 전체에 동일한 값이 적용되기 때문에,
+
+이것만으로는 Mask의 가장 중요한 목적을 충분히 보여주지 못한다.
 
 Mask의 실제 목적은
 
@@ -3400,13 +3490,17 @@ White Heart
 → Mask 1
 ~~~
 
-따라서 Sphere 전체가 발광하는 대신, Texture에서 흰색으로 표시된 Heart Pattern 영역에만 Emission이 적용된다.
+따라서 Sphere 전체가 발광하는 대신,
+
+Texture에서 흰색으로 표시된 Heart Pattern 영역에만 Emission이 적용된다.
 
 ---
 
 #### R Channel Selection
 
-흑백 Mask Texture는 RGB 각 Channel이 동일한 값을 가지고 있기 때문에, 전체 RGB를 사용할 필요 없이 하나의 Channel만 읽어도 된다.
+흑백 Mask Texture는 RGB 각 Channel이 동일한 값을 가지고 있기 때문에,
+
+전체 RGB를 사용할 필요 없이 하나의 Channel만 읽어도 된다.
 
 이번 구현에서는
 
@@ -3458,7 +3552,9 @@ Emissive Color
 
 #### Texture Mask Result
 
-Texture Mask를 적용한 결과, Sphere 전체가 발광하는 대신 Heart Pattern 영역에만 Emission이 나타나는 것을 확인할 수 있었다.
+Texture Mask를 적용한 결과,
+
+Sphere 전체가 발광하는 대신 Heart Pattern 영역에만 Emission이 나타나는 것을 확인할 수 있었다.
 
 <img src="../Figures/Chapter08/Fig8_64.png" width="90%">
 
@@ -3498,7 +3594,9 @@ Black Mask 영역
 
 Mask Texture를 사용할 때는 Texture 설정도 중요하다.
 
-일반적인 Base Color Texture는 화면에 표시할 색 정보를 저장하지만, Mask Texture는 색 표현이 목적이 아니다.
+일반적인 Base Color Texture는 화면에 표시할 색 정보를 저장하지만,
+
+Mask Texture는 색 표현이 목적이 아니다.
 
 Mask Texture에 저장된 값은
 
@@ -3538,7 +3636,9 @@ White
 sRGB Off는 Color Decode를 하지 않는다는 뜻이다. Compression, Filtering, Mip 등으로 값이 바뀔 가능성까지 제거하지 않으며 무손실을 보장하지 않는다. Sample 후 0–1 범위와 경계의 중간값을 확인한다.
 
 
-이번 테스트에서 Mask Texture를 처음 사용했을 때, Texture 설정이 적절하지 않으면 예상과 다른 결과가 나타날 수 있다는 점도 확인했다.
+이번 테스트에서 Mask Texture를 처음 사용했을 때,
+
+Texture 설정이 적절하지 않으면 예상과 다른 결과가 나타날 수 있다는 점도 확인했다.
 
 Mask Texture에서는 다음 설정을 사용했다.
 
@@ -3548,7 +3648,9 @@ Compression Settings
 Masks (no sRGB)
 ~~~
 
-이 설정은 Texture를 일반적인 Color Texture가 아니라, Mask와 같은 Data Texture로 사용하기 위한 설정이다.
+이 설정은 Texture를 일반적인 Color Texture가 아니라,
+
+Mask와 같은 Data Texture로 사용하기 위한 설정이다.
 
 즉 Engine에게
 
@@ -3571,9 +3673,13 @@ sRGB
 Off
 ~~~
 
-이유는 Mask Texture의 값이 색 표현을 위한 값이 아니라, Shader 계산에 직접 사용할 데이터이기 때문이다.
+이유는 Mask Texture의 값이 색 표현을 위한 값이 아니라,
 
-일반 Color Texture에서는 sRGB 변환이 필요할 수 있지만, Mask에서 원하는 것은
+Shader 계산에 직접 사용할 데이터이기 때문이다.
+
+일반 Color Texture에서는 sRGB 변환이 필요할 수 있지만,
+
+Mask에서 원하는 것은
 
 ~~~text
 Texture에 저장된 값
@@ -3609,9 +3715,13 @@ sRGB는 사람이 보는 색의 밝기 특성을 고려하기 위한 Color Encod
 0.5
 ~~~
 
-라는 Mask 값으로 사용되어야 한다면, 그 값은 Shader에서 그대로 `0.5`에 가까운 데이터로 읽히는 것이 중요하다.
+라는 Mask 값으로 사용되어야 한다면,
 
-만약 Color Texture처럼 Gamma 변환이 개입하면, Shader에서 기대한 Mask 값과 실제 읽히는 값이 달라질 수 있다.
+그 값은 Shader에서 그대로 `0.5`에 가까운 데이터로 읽히는 것이 중요하다.
+
+만약 Color Texture처럼 Gamma 변환이 개입하면,
+
+Shader에서 기대한 Mask 값과 실제 읽히는 값이 달라질 수 있다.
 
 따라서 Mask처럼 값 자체가 계산에 사용되는 Texture는
 
@@ -3629,7 +3739,9 @@ Data Accuracy
 
 #### Checking Texture Settings
 
-초보 단계에서는 Material Graph가 올바르게 연결되어 있는데도 결과가 이상하면, 노드 연결부터 의심하기 쉽다.
+초보 단계에서는 Material Graph가 올바르게 연결되어 있는데도 결과가 이상하면,
+
+노드 연결부터 의심하기 쉽다.
 
 예를 들어
 
@@ -3740,7 +3852,9 @@ White
 1
 ~~~
 
-이라면, Emission 결과도 다음처럼 달라진다.
+이라면,
+
+Emission 결과도 다음처럼 달라진다.
 
 ~~~text
 Mask 0
@@ -3753,13 +3867,17 @@ Mask 1
 → Emission 100%
 ~~~
 
-따라서 Mask Texture 안에 Gradient를 사용하면, Emission이 부드럽게 사라지는 영역도 만들 수 있다.
+따라서 Mask Texture 안에 Gradient를 사용하면,
+
+Emission이 부드럽게 사라지는 영역도 만들 수 있다.
 
 ---
 
 #### Mask and Intensity
 
-Mask와 Intensity 모두 Emission의 강도를 바꿀 수 있기 때문에, 둘의 역할을 구분하는 것이 중요하다.
+Mask와 Intensity 모두 Emission의 강도를 바꿀 수 있기 때문에,
+
+둘의 역할을 구분하는 것이 중요하다.
 
 ##### EmissionIntensity
 
@@ -3829,7 +3947,9 @@ Emission Mask는 실제 Character Shader에서도 매우 유용하다.
 → 발광
 ~~~
 
-이때 Character 전체에 Emission을 적용하는 것이 아니라, Texture Mask를 이용하여 필요한 부분만 선택한다.
+이때 Character 전체에 Emission을 적용하는 것이 아니라,
+
+Texture Mask를 이용하여 필요한 부분만 선택한다.
 
 즉
 
@@ -3887,7 +4007,9 @@ Black
 
 으로 동작하는 것을 확인했다.
 
-또한 Mask Texture는 일반 Color Texture가 아니라 Shader 계산에 사용하는 Data Texture이므로, 다음 Texture 설정을 적용했다.
+또한 Mask Texture는 일반 Color Texture가 아니라 Shader 계산에 사용하는 Data Texture이므로,
+
+다음 Texture 설정을 적용했다.
 
 ~~~text
 Compression Settings
@@ -3914,7 +4036,9 @@ EmissionMask
 → Region
 ~~~
 
-다음 절에서는 지금까지 테스트 Material 안에서 직접 구성했던 Emission 계산을 `MF_Emission` Material Function으로 분리하여, ASF의 다른 Shader 기능과 동일한 방식으로 모듈화한다.
+다음 절에서는 지금까지 테스트 Material 안에서 직접 구성했던 Emission 계산을 `MF_Emission` Material Function으로 분리하여,
+
+ASF의 다른 Shader 기능과 동일한 방식으로 모듈화한다.
 
 ---
 
@@ -3923,8 +4047,6 @@ EmissionMask
 ---
 
 ### Creating MF_Emission
-
-Function의 입력을 정할 때는 **필요한 것이 Texture Resource인가, 이미 읽힌 값인가**를 먼저 묻는다. Emission 계산은 현재 위치의 Mask 값만 알면 되므로 Scalar를 받는다. UV로 그 값을 읽는 일은 Master에 남겨두어, Texture가 아닌 다른 Mask Source도 같은 계산에 사용할 수 있게 한다.
 
 앞 절에서는 `M_EmissionTest` 안에서 직접
 
@@ -3936,7 +4058,9 @@ EmissionIntensity
 EmissionMask
 ~~~
 
-구조를 구현하고, Texture Mask를 이용해 특정 영역에만 Emission을 적용하는 방법까지 확인했다.
+구조를 구현하고,
+
+Texture Mask를 이용해 특정 영역에만 Emission을 적용하는 방법까지 확인했다.
 
 이번 절에서는 이 계산을 ASF 구조에 맞게 `MF_Emission` Material Function으로 분리한다.
 
@@ -3962,9 +4086,13 @@ EmissionMask
 EmissionResult
 ~~~
 
-이 구조는 단순하지만, Master Material 안에 직접 계속 추가하면 전체 Graph가 점점 복잡해진다.
+이 구조는 단순하지만,
 
-ASF에서는 각 기능의 역할을 분리하는 방향으로 구조를 정리하고 있으므로, Emission 역시 하나의 Material Function으로 분리하는 것이 자연스럽다.
+Master Material 안에 직접 계속 추가하면 전체 Graph가 점점 복잡해진다.
+
+ASF에서는 각 기능의 역할을 분리하는 방향으로 구조를 정리하고 있으므로,
+
+Emission 역시 하나의 Material Function으로 분리하는 것이 자연스럽다.
 
 ~~~text
 Lighting
@@ -4120,7 +4248,9 @@ White
 
 여기서 처음에는 한 가지 의문이 생길 수 있다.
 
-앞 절에서는 Emission Mask로 Texture를 사용했는데, 왜 `MF_Emission`의 Input은 `Texture2D`가 아니라 `Scalar`일까?
+앞 절에서는 Emission Mask로 Texture를 사용했는데,
+
+왜 `MF_Emission`의 Input은 `Texture2D`가 아니라 `Scalar`일까?
 
 이 차이를 이해하는 것이 중요하다.
 
@@ -4140,7 +4270,9 @@ Mask Texture
 
 따라서 Texture 전체가 하나의 Scalar 값으로 바뀌는 것은 아니다.
 
-Shader는 현재 Rendering 중인 Surface Pixel에 대응하는 UV 위치를 이용하여, Texture의 특정 위치를 Sample한다.
+Shader는 현재 Rendering 중인 Surface Pixel에 대응하는 UV 위치를 이용하여,
+
+Texture의 특정 위치를 Sample한다.
 
 ~~~text
 현재 Surface Pixel
@@ -4160,7 +4292,9 @@ RGB
 (1, 1, 1)
 ~~~
 
-을 읽었다면 흰색 Mask 영역이고, 다른 Pixel에서
+을 읽었다면 흰색 Mask 영역이고,
+
+다른 Pixel에서
 
 ~~~text
 RGB
@@ -4174,7 +4308,9 @@ RGB
 
 #### The Current Sample Value
 
-Texture를 Sample한 뒤에는 현재 Pixel 위치에서 읽힌 값만 Shader 계산에 사용된다.
+Texture를 Sample한 뒤에는
+
+현재 Pixel 위치에서 읽힌 값만 Shader 계산에 사용된다.
 
 ~~~text
 Mask Texture 전체
@@ -4284,7 +4420,9 @@ EmissionMask
 
 가 되어 Emission이 부분적으로 적용된다.
 
-즉 Shader는 모든 Pixel에서 동일한 Mask 값을 사용하는 것이 아니라, 각 Pixel이 자신의 UV 위치에 해당하는 Mask 값을 따로 읽는다.
+즉 Shader는 모든 Pixel에서 동일한 Mask 값을 사용하는 것이 아니라,
+
+각 Pixel이 자신의 UV 위치에 해당하는 Mask 값을 따로 읽는다.
 
 ~~~text
 Pixel A
@@ -4319,7 +4457,9 @@ MF_Emission.EmissionMask
 
 이렇게 구성한 이유는 `MF_Emission`이 Texture 자체에 종속되지 않도록 하기 위해서다.
 
-만약 함수가 `Texture2D`를 직접 입력받도록 만들면, 함수 내부에서
+만약 함수가 `Texture2D`를 직접 입력받도록 만들면,
+
+함수 내부에서
 
 ~~~text
 Texture
@@ -4460,7 +4600,9 @@ EmissionMask
 EmissionColor
 ~~~
 
-을 계산하고, 그 결과에
+을 계산하고,
+
+그 결과에
 
 ~~~text
 EmissionIntensity
@@ -4613,9 +4755,13 @@ Scalar
 EmissionMask
 ~~~
 
-형태로 값을 전달함으로써, `MF_Emission`이 Texture, Vertex Color, Procedural Mask 등 다양한 Mask Source를 사용할 수 있는 범용적인 구조가 되었다.
+형태로 값을 전달함으로써,
 
-다음 절에서는 이 `MF_Emission`을 ASF Master Material에 연결하고, MatCap까지 합성된 기존 결과에 Emission Contribution을 추가한다.
+`MF_Emission`이 Texture, Vertex Color, Procedural Mask 등 다양한 Mask Source를 사용할 수 있는 범용적인 구조가 되었다.
+
+다음 절에서는 이 `MF_Emission`을 ASF Master Material에 연결하고,
+
+MatCap까지 합성된 기존 결과에 Emission Contribution을 추가한다.
 
 ---
 
@@ -4625,11 +4771,11 @@ EmissionMask
 
 ### Master Material Integration
 
-여기서는 새 결과를 더하는 위치를 결정해야 한다. 눈의 발광 문양을 생각하면, MatCap Appearance를 강하게 섞어도 발광은 남아야 할 수 있다. 이 실습은 그 의도를 **MatCap Blend 이후 Emission Add**라는 순서로 표현한다. 합성 전에 두 Function의 개별 출력이 맞는지 확인한 뒤 이 순서를 연결한다.
-
 앞 절에서는 `MF_Emission`을 별도의 Material Function으로 분리했다.
 
-이번 절에서는 이 함수를 ASF Master Material에 연결하여, 기존에 구성한
+이번 절에서는 이 함수를 ASF Master Material에 연결하여,
+
+기존에 구성한
 
 - Base Lighting
 - Shadow
@@ -4645,7 +4791,9 @@ EmissionMask
 
 이다.
 
-따라서 MatCap처럼 `Lerp`로 섞는 것이 아니라, 기존 결과 뒤에 `Add`로 더하는 구조를 사용한다.
+따라서 MatCap처럼 `Lerp`로 섞는 것이 아니라,
+
+기존 결과 뒤에 `Add`로 더하는 구조를 사용한다.
 
 ---
 
@@ -4699,7 +4847,9 @@ Emission Contribution
 
 구조다.
 
-즉 기존 결과를 다른 Look으로 바꾸는 것이 아니라, 기존 결과 위에 발광 성분을 추가한다.
+즉 기존 결과를 다른 Look으로 바꾸는 것이 아니라,
+
+기존 결과 위에 발광 성분을 추가한다.
 
 따라서 Emission은 `Add`가 더 자연스럽다.
 
@@ -4717,7 +4867,9 @@ Emission
 
 #### Emission after MatCap Blend
 
-Emission을 Master Material에 연결할 때, MatCap 이전에 넣을지 이후에 넣을지 선택할 수 있다.
+Emission을 Master Material에 연결할 때,
+
+MatCap 이전에 넣을지 이후에 넣을지 선택할 수 있다.
 
 예를 들어 Emission을 MatCap Lerp 이전에 넣는다고 생각해보자.
 
@@ -4731,7 +4883,9 @@ Lerp
 MatCap
 ~~~
 
-이 경우 `MatCapBlend`가 커질수록, 앞에서 추가한 Emission까지 MatCap 결과에 의해 덮일 수 있다.
+이 경우 `MatCapBlend`가 커질수록,
+
+앞에서 추가한 Emission까지 MatCap 결과에 의해 덮일 수 있다.
 
 특히
 
@@ -4739,11 +4893,15 @@ MatCap
 MatCapBlend = 1
 ~~~
 
-에 가까워지면, Lerp 결과는 거의 MatCap Result가 되므로 Emission의 영향도 줄어든다.
+에 가까워지면,
+
+Lerp 결과는 거의 MatCap Result가 되므로 Emission의 영향도 줄어든다.
 
 하지만 일반적으로 Emission은 MatCap 사용 여부와 관계없이 유지되는 것이 자연스럽다.
 
-예를 들어 Character의 눈이나 장비의 Energy Line이 발광하고 있다면, MatCap Blend 값을 높였다고 해서 그 Emission이 사라지는 것은 원하는 동작이 아닐 가능성이 높다.
+예를 들어 Character의 눈이나 장비의 Energy Line이 발광하고 있다면,
+
+MatCap Blend 값을 높였다고 해서 그 Emission이 사라지는 것은 원하는 동작이 아닐 가능성이 높다.
 
 따라서 Emission은
 
@@ -4815,7 +4973,9 @@ MF_Emission.EmissionMask
 
 **Texture 전체가 하나의 Scalar로 변환되는 것이 아니라는 것**이다.
 
-현재 Rendering 중인 Pixel의 UV 위치에서 Texture를 Sample하고, 그 위치에서 읽힌 R Channel 값 하나가 `EmissionMask`로 전달된다.
+현재 Rendering 중인 Pixel의 UV 위치에서 Texture를 Sample하고,
+
+그 위치에서 읽힌 R Channel 값 하나가 `EmissionMask`로 전달된다.
 
 ---
 
@@ -4898,22 +5058,15 @@ Emissive Color
 
 #### Integration Result
 
-아래 Figure와 완료 서술은 기존 구현에서 기록한 연결과 관찰을 읽는 자료다. 현재 입력 계약으로 다시 확인할 때는 EmissionResult 단독 출력, Mask=0/1, MatCapBlend=0/1의 순서로 범위를 좁힌다. 새로운 Engine 실행 결과를 이 화면만으로 추정하지 않는다.
-
 전체 Master Material에 `MF_Emission`을 연결한 결과는 다음과 같다.
 
 <img src="../Figures/Chapter08/Fig8_66.png" width="90%">
 
-*Figure 8-66. MF_Emission 입력과 MatCap Lerp 이후의 Add 연결을 보여주는 기존 통합 화면.*
-
-<details>
-<summary>Verification Note — Integration State and Display Conditions</summary>
-
 *Figure 8-66. MF_Emission의 Color/Intensity/현재 UV의 R Mask 입력과 MatCap Lerp 이후 Add 연결을 확인하는 기존 통합 화면. Alpha=1, 수동 ShadowVisibility=1인 시험 상태이며 모든 Lighting Module의 동작 검증은 아니다. 전체 Graph의 RimWidth=0.3/RimSoftness=0.5는 현재 유효 범위에 맞지 않아 수정 후 실제 재촬영이 필요하다. 화면의 Auto Exposure Histogram 및 Compensation=3도 최종 표시 조건에 영향을 준다.*
 
-</details>
+Figure의 왼쪽에는 전체 ASF Master Material 구조가 보이고,
 
-Figure의 왼쪽에는 전체 ASF Master Material 구조가 보이고, 오른쪽 아래에는 Emission 영역을 확대하여 표시했다.
+오른쪽 아래에는 Emission 영역을 확대하여 표시했다.
 
 확대 영역에서는 다음 연결을 확인할 수 있다.
 
@@ -4934,8 +5087,6 @@ Texture Sample R
 
 #### Viewport Observation
 
-이 화면에서는 Heart Pattern의 위치와 기존 Appearance 위에 추가된 밝기를 정성적으로 읽는다. EmissionResult의 정확한 RGB, 모든 Module의 정상 동작, 유효 Parameter 범위는 이 화면과 별도의 확인 항목이다. 아래 관찰은 기존 캡처의 기록이며, 현재 계약은 위 Verification Note의 조건을 맞추어 확인한다.
-
 Figure 오른쪽 위의 Viewport에서는 Heart Mask 영역에 Emission이 적용된 결과를 확인할 수 있다.
 
 Mask Texture에서
@@ -4950,7 +5101,9 @@ Black
 
 구조가 그대로 나타난다.
 
-즉 Sphere 전체가 동일하게 발광하는 것이 아니라, Mask Texture에서 선택된 Heart Pattern 부분만 높은 Emission 값을 가지게 된다.
+즉 Sphere 전체가 동일하게 발광하는 것이 아니라,
+
+Mask Texture에서 선택된 Heart Pattern 부분만 높은 Emission 값을 가지게 된다.
 
 ~~~text
 Mask White
@@ -4977,8 +5130,6 @@ EmissionResult = 0
 ---
 
 #### Presentation Exposure Settings
-
-보기 좋은 최종 Look을 고르는 일과 계산을 비교하는 일은 목적이 다르다. Presentation에서는 장면에 맞는 Exposure를 선택할 수 있지만, 앞의 비교를 재현할 때는 Fixed Exposure로 돌아가 변수를 고정한다. 같은 Material 값이어도 두 조건의 화면 밝기를 직접 같은 수치 기준으로 비교하지 않는다.
 
 아래 Auto Exposure Histogram/Compensation=3 결과는 Presentation 조건이며 Linear 수치 비교의 기준이 아니다. 수치 검증은 Chapter 06.6의 Fixed Exposure 조건과 분리한다.
 
@@ -5031,7 +5182,9 @@ Exposure 설정
 
 이다.
 
-Emission은 Material에서 HDR 값을 만들고, Exposure는 그 결과가 화면에서 어떻게 보일지에 영향을 준다.
+Emission은 Material에서 HDR 값을 만들고,
+
+Exposure는 그 결과가 화면에서 어떻게 보일지에 영향을 준다.
 
 ---
 
@@ -5347,7 +5500,9 @@ Final ASF Color
 
 이를 통해 MatCap Blend와 관계없이 Emission이 최종 발광 성분으로 유지되는 구조를 만들었다.
 
-또한 실제 Viewport에서 Heart Pattern 영역만 Emission이 적용되는 것을 확인하여, 다음 전체 흐름이 정상적으로 동작하는 것을 검증했다.
+또한 실제 Viewport에서 Heart Pattern 영역만 Emission이 적용되는 것을 확인하여,
+
+다음 전체 흐름이 정상적으로 동작하는 것을 검증했다.
 
 ~~~text
 Mask Texture
@@ -5376,7 +5531,9 @@ Final ASF Color에 Add
 
 까지 하나의 흐름으로 구성되었다.
 
-다음 절에서는 8.7 전체 내용을 정리하고, Emission이 ASF Shader Framework 안에서 어떤 역할을 담당하는지 최종적으로 요약한다.
+다음 절에서는 8.7 전체 내용을 정리하고,
+
+Emission이 ASF Shader Framework 안에서 어떤 역할을 담당하는지 최종적으로 요약한다.
 
 ---
 
@@ -5834,7 +5991,9 @@ Emission HDR Value
 Final Display Brightness
 ~~~
 
-이며, 최종 화면에서는
+이며,
+
+최종 화면에서는
 
 ~~~text
 Exposure
@@ -5844,7 +6003,9 @@ Bloom
 
 등 Rendering Pipeline의 영향을 함께 고려해야 한다는 점도 확인했다.
 
-마지막으로 Emission을 `MF_Emission`으로 분리하고 Master Material에 통합함으로써, ASF의 다른 기능과 마찬가지로 독립적인 Rendering Module 형태로 구성했다.
+마지막으로 Emission을 `MF_Emission`으로 분리하고 Master Material에 통합함으로써,
+
+ASF의 다른 기능과 마찬가지로 독립적인 Rendering Module 형태로 구성했다.
 
 ---
 

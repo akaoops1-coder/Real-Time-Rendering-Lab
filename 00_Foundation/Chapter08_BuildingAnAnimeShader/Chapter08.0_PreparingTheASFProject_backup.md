@@ -8,8 +8,6 @@ Chapter 01부터 07까지 Radiometry, Reflection, BRDF, Modern Real-Time Renderi
 
 8.0은 그 구현에 필요한 개발 환경과 운영 규칙을 준비하는 절이다. 하나의 Unreal Engine 프로젝트를 지속적으로 확장하여 이후 실습에서도 구현한 기능을 재사용한다.
 
-같은 Node를 연결했는데 두 프로젝트의 화면이 다르다면, 계산이 틀렸는지 환경이 다른지부터 구분해야 한다. 처음에 Engine 설정과 테스트 Asset의 위치를 정해두면 이후에는 Module의 계산에 집중하면서 결과를 같은 기준으로 비교할 수 있다. 이 절의 결과물은 Shader 효과가 아니라, 그 비교를 시작할 수 있는 공통 프로젝트다.
-
 ---
 
 #### Development Workflow
@@ -176,22 +174,13 @@ Anime Shader Framework(ASF)를 구현하기 위한 Unreal Engine 프로젝트를
 
 Epic Games Launcher에서 **Unreal Engine 5.8**을 실행한 후 **Games → Blank** 템플릿을 선택한다.
 
-Chapter 04에서 본 Blueprint는 여기서 테스트 환경과 Utility를 구성하는 역할을 맡는다. 프로젝트 종류는 **Blueprint**로 선택하고 Shader 계산은 Material Editor에서 구현한다. 아래 표의 Project Type은 Shader를 Blueprint에서 작성하라는 뜻이 아니다.
-
 Figure 8-3은 ASF 프로젝트 생성 화면과 권장 설정을 나타낸다.
 
 <p align="center">
     <img src="../Figures/Chapter08/Fig8_03.png" width="90%">
 </p>
 
-*Figure 8-3. 프로젝트 생성 화면.*
-
-<details>
-<summary>Verification Note</summary>
-
-⑥은 Project Location이며 Starter Content 설정을 가리키지 않는다. 이 캡처만으로 Engine 버전, Starter Content 포함 여부 또는 Ray Tracing 비활성화를 검증할 수 없다. 해당 항목은 실제 프로젝트에서 별도로 확인해야 하며, 현재 설정을 보여주는 재촬영이 필요하다.
-
-</details>
+*Figure 8-3. 프로젝트 생성 화면. ⑥은 Project Location이며 Starter Content 설정을 가리키지 않는다. 이 캡처만으로 Engine 버전, Starter Content 포함 여부 또는 Ray Tracing 비활성화를 검증할 수 없다. 해당 항목은 실제 프로젝트에서 별도로 확인해야 하며, 현재 설정을 보여주는 재촬영이 필요하다.*
 
 프로젝트는 다음 설정을 사용하여 생성한다.
 
@@ -349,26 +338,13 @@ ASF는 모든 실습이 동일한 결과를 얻을 수 있도록 프로젝트 �
 
 #### Recommended Settings
 
-이 설정에서는 세 가지 질문을 먼저 구분한다. Engine이 어떤 Graphics API를 사용하는가, 어떤 Shader 기능을 대상으로 Compile하는가, 최종 화면의 경계를 어떤 방법으로 재구성하는가이다.
-
-**RHI(Rendering Hardware Interface)**는 Engine의 Rendering 명령과 플랫폼 Graphics API 사이를 연결하는 계층이다. 여기서 `Default RHI`를 확인하는 것은 이 프로젝트가 사용할 Graphics API 경로를 확인하는 일이다. **SM6(Shader Model 6)**는 대상으로 삼는 Shader 기능 수준을 나타내며, 표의 `D3D12 Targeted Shader Formats`에서 그 사용 여부를 확인한다.
-
-**TSR(Temporal Super Resolution)**은 이전 Frame의 정보도 이용해 현재 출력 이미지를 재구성하는 Temporal Upscaler다. 표에서는 Anti-Aliasing Method의 선택 항목으로 만난다. 같은 계산도 출력 재구성 방식에 따라 경계가 다르게 보일 수 있으므로 비교 실습에서는 이 선택을 함께 기록한다. 이름과 역할은 [Epic의 RHI 설명](https://dev.epicgames.com/documentation/unreal-engine/windows-settings-in-the-unreal-engine-project-settings?lang=en-US), [Shader Model 요구 사항](https://dev.epicgames.com/documentation/en-us/unreal-engine/hardware-and-software-specifications-for-unreal-engine), [TSR 설명](https://dev.epicgames.com/documentation/en-us/unreal-engine/temporal-super-resolution-in-unreal-engine)을 기준으로 한다.
-
 Figure 8-4는 ASF에서 사용하는 Project Settings를 나타낸다.
 
 <p align="center">
     <img src="../Figures/Chapter08/Fig8_04.png" width="100%">
 </p>
 
-*Figure 8-4. 문서가 목표로 하는 Project Settings.*
-
-<details>
-<summary>Verification Note</summary>
-
-하단 표의 “기본값”은 보편적인 Engine 기본값이나 현재 프로젝트의 검증 결과를 뜻하지 않는다. 실제 버전과 Template에서 값을 확인한다. ④의 Mobile TAA와 Default Settings의 Desktop TSR은 서로 다른 대상이며, 본 실습의 목표는 후자이다. 이 설정 화면은 ASF Module 구현이나 Material Function 합성의 증거가 아니다.
-
-</details>
+*Figure 8-4. 문서가 목표로 하는 Project Settings. 하단 표의 “기본값”은 보편적인 Engine 기본값이나 현재 프로젝트의 검증 결과를 뜻하지 않는다. 실제 버전과 Template에서 값을 확인한다. ④의 Mobile TAA와 Default Settings의 Desktop TSR은 서로 다른 대상이며, 본 실습의 목표는 후자이다. 이 설정 화면은 ASF Module 구현이나 Material Function 합성의 증거가 아니다.*
 
 다음 항목이 동일하게 설정되어 있는지 확인한다.
 
@@ -542,7 +518,7 @@ ASF는 하나의 프로젝트를 지속적으로 확장하는 Framework이다.
 
 초기에는 몇 개의 Material과 Texture만으로도 작업이 가능하지만, Framework가 확장될수록 Asset을 체계적으로 관리할 수 있는 구조가 반드시 필요하다.
 
-앞의 Project Organization에서는 왜 Asset을 나눌지 정했다. 본 절에서는 그 원칙을 실제 Content Browser 폴더로 옮긴다. 아래 구조를 만든 뒤에는 새 Asset을 어디에 저장할지 판단할 수 있어야 한다.
+본 절에서는 ASF에서 사용하는 Content Browser 구조를 정의한다.
 
 ---
 
@@ -695,8 +671,6 @@ ASF는 다음 규칙을 따른다.
 ---
 
 #### Standard Prefix
-
-아래 표에서는 이름의 앞부분으로 Asset Type을 읽고, 뒤의 단어로 역할을 읽는다. **Material Parameter Collection**은 여러 Material이 공유할 Parameter를 모아두는 Asset이다. 여기서는 이름 규칙만 정하며, 실제 Light 방향을 공급하는 데 사용할 경우의 조건은 8.2에서 확인한다.
 
 ASF는 Unreal Engine에서 일반적으로 사용하는 Prefix를 그대로 사용한다.
 
@@ -909,7 +883,7 @@ Version Control은 안정적인 개발 환경을 유지하기 위한 핵심 도�
 
 지금까지 ASF 구현을 위한 개발 환경을 준비하였다.
 
-프로젝트 생성부터 Rendering 환경 검증, Content Browser 구조, Asset Naming Convention, Version Control까지 준비 항목을 살펴보았다. 완료 여부는 독자의 실제 프로젝트에서 아래 항목을 확인한 뒤 판단한다.
+프로젝트 생성부터 Rendering 환경 검증, Content Browser 구조, Asset Naming Convention, Version Control까지 모든 준비 과정이 완료되었다.
 
 본 절에서는 지금까지의 준비 과정을 최종적으로 확인하고, 이후 Chapter에서 Shader Framework를 구현하기 위한 준비 상태를 점검한다.
 
@@ -931,7 +905,7 @@ Figure 8-8은 ASF 구현을 시작하기 전에 확인해야 하는 준비 항�
 
 #### Verification Checklist
 
-아래 ✅는 각 항목에서 도달해야 할 상태를 표시한다. 문서의 표시만으로 독자의 프로젝트가 검증된 것은 아니므로, 실제 환경·폴더·저장 상태를 확인한 뒤 항목별 완료 여부를 기록한다.
+다음 항목이 모두 완료되었는지 확인한다.
 
 | Category | Status |
 |----------|--------|
@@ -1009,7 +983,7 @@ Chapter 8 이후에는 다음 원칙을 유지한다.
 프로젝트 준비 이후에도 유지할 핵심 원칙은 다음과 같다.
 
 - Development Environment는 프로젝트 시작 시 한 번만 구성한다.
-- Rendering 환경은 이 절에서 정한 목표 설정과 실제 프로젝트 값을 대조하여 검증한다.
+- Rendering 환경은 Unreal Engine 기본 설정을 기준으로 검증한다.
 - 모든 Framework Asset은 `Content/ASF/` 아래에서 관리한다.
 - Asset은 Unreal Engine 표준 Naming Convention을 따른다.
 - Version Control을 통해 프로젝트와 Documentation을 함께 관리한다.

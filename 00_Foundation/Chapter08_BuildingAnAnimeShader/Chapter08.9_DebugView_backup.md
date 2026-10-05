@@ -56,9 +56,9 @@ ASF에서는 우선 다음과 같은 Intermediate Data를 Debug 대상으로 사
 - Specular Mask
 - Rim Mask
 - MatCap Result
-- Emission Result
+- Emission Mask
 
-이 값들은 모두 최종 Shading 결과를 만들기 위해 이미 계산되고 있는 데이터다. Emission의 기본 Mode는 Color·Intensity·Mask를 조합한 RGB Result를 선택하며, Mask 자체만 보는 진단은 필요할 때 별도로 확장한다.
+이 값들은 모두 최종 Shading 결과를 만들기 위해 이미 계산되고 있는 데이터다.
 
 따라서 Debug View를 위해 동일한 계산을 다시 만드는 것이 아니라, 기존 계산 결과를 그대로 재사용한다.
 
@@ -96,7 +96,9 @@ Final Color
 
 이 구조는 정상적인 Rendering에는 적합하지만, 문제를 추적할 때는 불편할 수 있다.
 
-예를 들어 최종 결과에서 Specular가 예상보다 넓게 나타났다고 가정하자. Material Instance에서 `SpecularIntensity`를 낮추면 Highlight 자체를 약하게 만들 수 있다.
+예를 들어 최종 결과에서 Specular가 예상보다 넓게 나타났다고 가정하자.
+
+Material Instance에서 `SpecularIntensity`를 낮추면 Highlight 자체를 약하게 만들 수 있다.
 
 하지만 이것만으로는 다음 질문에 답할 수 없다.
 
@@ -143,8 +145,6 @@ Normal / Shininess 계산 확인
 ---
 
 #### Inspecting Intermediate Data
-
-계산 중간의 숫자를 화면으로 옮기는 것은 온도 분포를 색으로 보여주는 것과 비슷하다. 어디가 크고 작은지 빠르게 볼 수 있지만, 화면의 색 자체가 측정값의 원래 Type과 숫자를 증명하지는 않는다. 여기서는 먼저 분포를 읽는 목적을 이해하고, 구현 뒤에는 수치와 Type을 따로 확인한다.
 
 Shader 내부에서 사용하는 데이터는 항상 화면에서 바로 볼 수 있는 Color 형태로 존재하는 것은 아니다.
 
@@ -262,7 +262,9 @@ Debug View
 → Shader Development / TA Debugging
 ~~~
 
-즉 Material Instance가 **결과를 만들기 위한 조절 도구**라면, Debug View는 **그 결과가 만들어진 이유를 확인하기 위한 진단 도구**다.
+즉 Material Instance가 **결과를 만들기 위한 조절 도구**라면,
+
+Debug View는 **그 결과가 만들어진 이유를 확인하기 위한 진단 도구**다.
 
 ---
 
@@ -270,7 +272,7 @@ Debug View
 
 ASF의 Normal Rendering에서는 각 Shader Feature의 결과가 서로 결합되어 Final Color를 만든다.
 
-반면 Debug View에서는 최종 출력에 Final Composition 결과 대신 특정 Intermediate Data를 선택하여 표시한다. 출력 대상을 바꾸는 것이며, 미선택 계산이 Compile에서 제거되거나 실행되지 않는다는 보장은 아니다.
+반면 Debug View에서는 Final Composition까지 진행하지 않고, 특정 Intermediate Data를 선택하여 화면에 직접 출력한다.
 
 <img src="../Figures/Chapter08/Fig8_69.png" width="90%">
 
@@ -325,12 +327,6 @@ Debug Calculation
 따라서 ASF에서는 다음 원칙을 사용한다.
 
 > **Debug View는 Shader Feature를 다시 계산하지 않는다. 기존 Material Function에서 생성된 Intermediate Data를 그대로 재사용한다.**
-
----
-
-> **Contract Note — Emission Debug Data**
->
-> 위 개념 Diagram의 Emission Mask는 영역 선택 Data를 예로 든 것이다. 이 절의 최종 Mode 5와 Function Interface는 MF_Emission에서 나온 EmissionResult(Vector3)를 사용한다. 이후 Debug Mode Contract와 실제 연결 단계의 계약을 기준으로 읽는다.
 
 ---
 
@@ -1005,8 +1001,6 @@ FinalResult ──────┘
 
 #### Reusing Actual Shader Data
 
-먼저 의심하는 것은 **같은 숫자를 보고 있는가**다. Final에서 사용한 SpecularMask를 그대로 갈라 Debug로 전달하면, 계산은 하나이고 관찰 경로만 두 개가 된다. 새 Debug 계산을 따로 만들면 그 계산이 맞다는 사실만 확인할 수 있으므로 원래 문제의 원인을 놓칠 수 있다.
-
 Debug View를 설계할 때 가장 중요한 원칙 중 하나는 기존 계산을 다시 만들지 않는 것이다.
 
 예를 들어 Specular Debug를 위해 다음과 같은 별도의 계산을 다시 만든다고 가정하자.
@@ -1066,12 +1060,6 @@ Emission Texture Sample
 ~~~
 
 이 구조를 통해 Debug View에서 보는 값과 실제 Shader가 사용하는 값을 동일하게 유지할 수 있다.
-
----
-
-> **Implementation Note — Emission Source**
->
-> 위 Data Flow의 Emission Texture Sample은 Mask를 공급하는 출처를 나타낸다. Mode 5에 실제로 전달할 RGB는 Texture의 R만이 아니라 MF_Emission.EmissionResult이다. Texture Sample의 Scalar Mask와 Color·Intensity를 조합한 RGB 결과를 구분하여 연결한다.
 
 ---
 
@@ -1492,8 +1480,6 @@ Vector3
 
 #### Explicit Scalar-to-RGB Conversion
 
-출력은 RGB 세 성분을 받으므로 Scalar를 보여줄 규칙을 먼저 정한다. 한 숫자를 세 Channel에 같은 값으로 복제하면 색 차이 없이 분포를 읽을 수 있고, 원래 RGB인 결과는 그 세 성분을 유지한다. 이 규칙은 Selector 입력의 의미와 Type을 분명히 드러내기 위한 것이다.
-
 `BaseLightingData`, `SpecularMask`, `RimMask`는 각각 하나의 값만 가지는 Scalar Data다.
 
 예를 들어 다음과 같은 값이 있다고 하자.
@@ -1562,7 +1548,7 @@ EmissionResult
 
 이렇게 Data Type을 통일한 뒤 `If` Chain에서 선택하도록 구성한다.
 
-이 과정은 하나의 Selector 안에서 Scalar를 어떻게 표시하고 RGB를 어떻게 보존할지 명시하는 방법이다. Scalar와 Vector3를 혼합하면 항상 실패하거나 Color를 잃는다는 일반 규칙은 아니며, 실제 암묵적 Type Conversion과 Compile 결과는 Graph에서 확인한다.
+이 과정이 필요한 이유는 하나의 Selector 구조 안에서 Scalar와 Vector3를 직접 혼합하면 예상과 다른 Type Conversion이 발생하거나 Color Channel 정보가 손실될 수 있기 때문이다.
 
 특히 `FinalResult`, `MatCapResult`, `EmissionResult`처럼 Color 정보가 중요한 Data는 Vector3 상태를 유지해야 한다.
 
@@ -1883,20 +1869,13 @@ A == B → FinalResult
 
 <img src="../Figures/Chapter08/Fig8_71.png" width="90%">
 
-**Fig8_71. 기존 If Chain의 중첩 연결을 보여주는 참고 Graph.**
-
-<details>
-<summary>Verification Note — Earlier Capture and Current Interface</summary>
-
 **Fig8_71. 현재 최종 입력 계약 이전의 MF_DebugView 캡처 — 재촬영 필요.** 이 화면은 EmissionMask(Scalar)를 사용하고 Scalar→Vector3의 명시적 변환이 보이지 않는다. 현재 계약은 EmissionResult(Vector3)를 입력받고 세 Scalar를 Gray RGB로 변환한 후 선택한다. 기존 If 중첩 형태의 참고 자료로만 읽으며, 최종 구현은 RGB 보존 결과와 함께 실제 Unreal에서 다시 촬영해야 한다.
-
-</details>
 
 위 그래프에서 `DebugMode` Input이 모든 `If` Node에 전달되고, 각 Mode Number와 순차적으로 비교되는 것을 확인할 수 있다.
 
 가장 아래의 `B = 4` 비교부터 시작하여 결과가 위쪽 `If` Chain으로 전달되며, 최종적으로 `B = 0`을 검사하는 마지막 `If` Result가 `DebugColor` Output으로 연결된다.
 
-현재 계약으로 구현할 때는 `BaseLightingData`, `SpecularMask`, `RimMask`를 Vector3로 변환한 뒤 각각의 `A == B` 경로에 전달한다. Fig8_71에서 그 연결이 이미 확인되었다고 읽지 않는다.
+실제 최종 구현에서는 `BaseLightingData`, `SpecularMask`, `RimMask`가 Vector3로 변환된 뒤 각각의 `A == B` 경로에 전달된다.
 
 따라서 모든 `If` Result는 Vector3 Type으로 통일된다.
 
@@ -2520,18 +2499,7 @@ Emissive Color
 Screen
 ~~~
 
-Unlit Shading Model의 Emissive 경로는 기본 Lit Lighting을 다시 적용하지 않고 선택값을 표시하는 데 사용한다. 여기서 확인 목적을 두 가지로 나눈다.
-
-**Distribution Check**에서는 밝은 영역의 위치·폭·형태를 본다. Camera와 Fixed Exposure를 고정하고 같은 Tone Mapping·Bloom·Output Encoding 조건에서 Mode를 비교한다.
-
-**Value and Type Check**에서는 실제 선택된 Buffer/Pixel 값과 Graph의 Input/Output Type을 확인한다. Exposure, Tone Mapping, Bloom, Output Encoding을 거친 화면 RGB는 원시 Scalar와 같지 않으므로 회색 화면만으로 원래 숫자나 Scalar Type을 입증하지 않는다.
-
-<details>
-<summary>Verification Note — Display Interpretation</summary>
-
 Unlit Shading Model에서 이 경로를 사용하면 기본 Lit Lighting은 피할 수 있다. 다만 Exposure, Tone Mapping, Bloom, Output Encoding을 거치므로 화면 RGB가 원시 Scalar와 같지는 않다. Fixed Exposure에서 분포를 비교하고 수치 검증에는 Buffer/Pixel 값 확인 수단이 필요하다. 회색으로 보인다는 사실만으로 Scalar Type도 입증되지 않는다.
-
-</details>
 
 현재 ASF는 Final Shading 역시 Emissive 중심으로 출력하고 있으므로 Normal Rendering과 Debug Rendering 모두 동일한 Output Path를 사용할 수 있다.
 
@@ -2639,10 +2607,6 @@ MF_DebugView
 ---
 
 ### Testing Debug Modes
-
-검증할 대상은 세 가지다. 계산 계약이 어떤 출력을 요구하는지, 기존 구현 화면에서 무엇이 관찰되었는지, 현재 계약의 Graph로 무엇을 다시 실행해야 하는지 구분한다. 아래 Mode 설명은 예상 동작과 확인 절차이며, Fig8_72와 완료 서술은 기존 테스트 기록이다. Fig8_71은 최종 EmissionResult/명시적 Type 계약 이전의 화면이므로, 현재 Graph의 Compile·RGB 보존·Mode 전환을 새로 실행한 증거로 사용하지 않는다.
-
-같은 Material Instance·Scene·Camera·Fixed Exposure·Post Process 조건에서 정수 Mode 0–5를 하나씩 선택한다. 화면 분포와 실제 값/Type은 앞의 두 확인 목적에 맞추어 기록한다.
 
 `MF_DebugView`를 Master Material에 통합한 뒤에는 각 `DebugMode`가 의도한 데이터를 정확하게 출력하는지 검증해야 한다.
 
@@ -2828,8 +2792,6 @@ EmissionResult
 
 #### Mode Comparison
 
-비교에서 읽을 것은 같은 Scene 안에서 출력 대상이 바뀌었는지다. Mode 0의 Final Color와 Mode 4/5의 RGB, Mode 1–3의 밝기 분포를 각각 확인한다. 기존 이미지에서 보이는 Gray/RGB 차이는 정성적 관찰이며, 명시적 Vector3 배선과 원시 값까지 확인한 결과는 Graph와 실행 기록으로 별도 점검한다.
-
 각 Mode의 테스트 결과를 동일한 Scene과 Material Instance에서 비교하면 다음과 같다.
 
 <img src="../Figures/Chapter08/Fig8_72.png" width="90%">
@@ -2989,7 +2951,7 @@ DebugMode = 4
 
 #### Validation Result
 
-기존 테스트 기록은 `DebugMode = 0~5`를 순차적으로 전환하여 아래 결과를 관찰했다고 정리한다. 현재 계약의 새 실행 완료와는 구분하며, 이 목록을 재현할 확인 항목으로 사용한다.
+`DebugMode = 0~5`를 순차적으로 테스트한 결과 각 Mode는 의도한 데이터를 정상적으로 출력했다.
 
 ~~~text
 0
@@ -3013,7 +2975,7 @@ DebugMode = 4
 
 또한 Material Instance의 `DebugMode` Parameter만 변경하여 모든 View를 전환할 수 있음을 확인했다.
 
-현재 `MF_DebugView`가 만족해야 할 요구사항은 다음과 같다.
+따라서 현재 `MF_DebugView`는 다음 요구사항을 만족한다.
 
 - 기존 Final Rendering을 변경하지 않는다.
 - 주요 Intermediate Data를 선택적으로 확인할 수 있다.
@@ -3021,7 +2983,7 @@ DebugMode = 4
 - Material Graph의 연결을 변경하지 않고 Debug View를 전환할 수 있다.
 - 각 Shader Feature의 문제를 Final Composition과 분리하여 확인할 수 있다.
 
-이 기록으로 기본 Debug View의 관찰 목적과 확인 절차를 회고할 수 있다. 현재 계약의 동작 완료는 명시적 Type 배선과 RGB 보존, Mode 전환을 실제 Graph에서 다시 확인하여 판단한다.
+이로써 ASF의 기본 Debug View 구현과 동작 검증이 완료되었다.
 
 다음 절에서는 이러한 Debug View를 실제 Production Material과 Shader Development 과정에서 어떻게 활용할 수 있는지, 그리고 Debug 기능을 유지할 때 고려해야 할 사항을 정리한다.
 
@@ -3173,7 +3135,9 @@ Emission Result 확인
 
 Debugging 과정에서 중요한 방법 중 하나는 Final Result와 Feature-specific Result를 반복해서 비교하는 것이다.
 
-예를 들어 MatCap이 Final Result에서 이상하게 보인다고 하자. 먼저:
+예를 들어 MatCap이 Final Result에서 이상하게 보인다고 하자.
+
+먼저:
 
 ~~~text
 DebugMode = 0
@@ -3501,7 +3465,7 @@ DebugMode = 0
 
 #### Mode Validation
 
-기존 구현에서는 Material Instance의 `DebugMode = 0~5` 전환을 관찰했다. 이 참조는 아래 Mode별 기대 출력을 다시 찾는 용도이며, 현재 Type·EmissionResult 계약의 새 실행 완료 기록은 아니다.
+Material Instance에서 `DebugMode = 0~5`를 순차적으로 변경하며 모든 Mode가 의도한 데이터를 출력하는지 확인했다.
 
 <img src="../Figures/Chapter08/Fig8_72.png" width="90%">
 
@@ -3534,7 +3498,7 @@ DebugMode = 0
 → RGB Color 유지
 ~~~
 
-기존 관찰에서는 Gray Scale과 RGB의 표시 차이를 확인했다고 기록했다. 현재 계약에서는 Scalar의 명시적 RGB 변환과 Final Result의 Color 보존을 Graph Type 및 실제 값 확인과 함께 검증한다.
+이를 통해 Scalar와 Vector3 Data가 각각 의도한 방식으로 시각화되고, Final Result의 Color 정보 역시 정상적으로 유지되는 것을 확인했다.
 
 ---
 

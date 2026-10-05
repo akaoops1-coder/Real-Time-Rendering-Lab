@@ -2,9 +2,7 @@
 
 ## 8.5 Rim Light
 
-8.4의 Specular는 Reflection 방향이 Camera와 맞는 영역을 강조했다. 이번 Rim Light는 같은 Normal과 View Direction을 사용하되, Camera에 대해 비스듬하게 놓인 표면을 강조하여 Object의 실루엣을 읽기 쉽게 만든다.
-
-먼저 Power로 Mask의 분포를 조절하는 Prototype을 만든다. 그 과정에서 사용자가 폭과 밝기를 조절할 때 생기는 문제를 살펴본 뒤, Rim의 폭인 Width와 경계의 부드러움인 Softness를 직접 조절하는 최종 Interface로 발전시킨다. 아래 초기 Graph와 후반 최종 Graph는 이 학습 순서의 서로 다른 단계다.
+이 Section은 Power 기반 Prototype을 먼저 만든 뒤 Width/Softness 기반 최종 Interface로 교체한다. 이후 Master Material에서는 Normal, ViewDirection, RimWidth, RimSoftness → Scalar RimMask 계약을 사용하며 RimPower를 필수 Input으로 혼합하지 않는다. N과 V는 같은 Space의 비영 Unit Vector이고 V는 Surface→Camera이다. 외부에서 정규화하거나 Function 경계에서 정규화한 뒤 모든 Dot에 같은 값을 사용한다.
 
 이번 절에서는 이러한 View-dependent한 관계가 어떻게 Rim 영역으로 변환되는지를 단계적으로 살펴본다.
 
@@ -261,8 +259,6 @@ Emissive Color
 
 `Camera Vector`는 현재 Surface에서 Camera를 향하는 방향을 제공한다.
 
-N과 V는 같은 Space의 비영 Unit Vector이고 V는 Surface→Camera이다. 외부에서 정규화하거나 Function 경계에서 정규화한 뒤 모든 Dot에 같은 값을 사용한다. 앞의 방향 비교와 마찬가지로 Vector 길이가 Rim의 분포를 바꾸지 않도록 준비하는 것이다.
-
 두 Vector를 `Dot Product`에 입력하면 다음 값을 얻을 수 있다.
 
 ~~~text
@@ -310,14 +306,7 @@ Value > 1
 
 <img src="../Figures/Chapter08/Fig8_42.png" width="90%">
 
-*Figure 8-42. `saturate(N·V)`의 Emissive 연결과 구 표면 분포를 확인하는 정성적 Debug 예시.*
-
-<details>
-<summary>Verification Note</summary>
-
-N/V는 같은 공간의 Unit Vector라는 전제로 읽는다. Viewport 밝기를 Scalar 원값으로 직접 읽지 않으며 정량 비교에는 Material 설정과 Exposure/Post Process 조건을 확인한다. 바닥의 Cast Shadow는 이 Rim 계산의 출력이 아니다.
-
-</details>
+*Figure 8-42. `saturate(N·V)`의 Emissive 연결과 구 표면 분포를 확인하는 정성적 Debug 예시. N/V는 같은 공간의 Unit Vector라는 전제로 읽는다. Viewport 밝기를 Scalar 원값으로 직접 읽지 않으며 정량 비교에는 Material 설정과 Exposure/Post Process 조건을 확인한다. 바닥의 Cast Shadow는 이 Rim 계산의 출력이 아니다.*
 
 Sphere를 보면 정면 중심부가 가장 밝고, 외곽으로 갈수록 점점 어두워지는 것을 확인할 수 있다.
 
@@ -1457,8 +1446,6 @@ MF_RimLight
 
 #### Input and Output
 
-현재 만드는 것은 **Power Prototype의 Interface**다. Normal과 View Direction에서 기본 Grazing Mask를 만들고 RimPower로 분포를 압축한다. 아래 세 입력은 Prototype을 따로 확인하기 위한 계약이며, 후반 Width/Softness 최종 Interface로 교체할 때 그대로 함께 노출하지 않는다.
-
 `MF_RimLight`는 다음 세 가지 Input을 사용한다.
 
 ~~~text
@@ -1721,8 +1708,6 @@ RimMask
 #### Mask and Contribution
 
 현재 `MF_RimLight`는 `RimMask`까지만 출력한다.
-
-이는 영역을 고르는 계산과 그 영역의 색·밝기를 정하는 계산을 분리한다는 뜻이다. 같은 Mask에 RimColor만 바꾸면 강조 위치는 유지되고 Color만 바뀌어야 한다. Intensity를 바꾼 뒤 화면에서 폭이 달라 보이는 경우는 아래에서 계산상의 영역과 지각상의 폭을 나누어 살펴본다.
 
 아직 다음 요소들은 포함하지 않았다.
 
@@ -2000,8 +1985,6 @@ RimSoftness
 
 `RimSoftness`는 Rim과 비-Rim 영역 사이의 Transition이 얼마나 부드럽게 연결될지를 제어한다.
 
-이제 사용자는 "지수를 얼마나 높일까?" 대신 "Rim을 어디까지 넓힐까, 그 경계를 얼마나 부드럽게 연결할까?"를 조절한다. 아래에서는 이 두 표현을 Smoothstep의 시작값과 끝값으로 변환하여, 사용자에게 보이는 의미와 Node 입력 사이의 관계를 만든다.
-
 기본 Rim 값은 다음과 같다.
 
 ~~~text
@@ -2066,14 +2049,7 @@ RimWidth 감소
 
 #### Transition Range and Valid Parameters
 
-이 식의 기본 유효 범위는 0<RimWidth≤1, 0<RimSoftness≤RimWidth이다. 그러면 Min<Max≤1이 되어 Grazing 값 1이 완전한 Rim 값에 도달한다. 먼저 이 정상 범위에서 Width는 시작 위치를, Softness는 그 위치에서 값이 올라가는 구간을 정한다고 이해한다.
-
-<details>
-<summary>Boundary Input Implementation Note</summary>
-
-Width=0은 Rim Off로 별도 처리하고, Softness=0의 Hard Edge가 필요하면 Step 경로를 명시적으로 사용한다. Min=Max인 Smoothstep을 그대로 계산하지 않는다. 현재 Node 예시는 유효 입력을 전제로 하므로 UI 범위와 경계 처리를 실제 프로젝트에서 확인한다.
-
-</details>
+이 식의 기본 유효 범위는 0<RimWidth≤1, 0<RimSoftness≤RimWidth이다. 그러면 Min<Max≤1이 되어 Grazing 값 1이 완전한 Rim 값에 도달한다. Width=0은 Rim Off로 별도 처리하고, Softness=0의 Hard Edge가 필요하면 Step 경로를 명시적으로 사용한다. Min=Max인 Smoothstep을 그대로 계산하지 않는다. 현재 Node 예시는 유효 입력을 전제로 하므로 UI 범위와 경계 처리를 실제 프로젝트에서 확인한다.
 
 예를 들어 Width=0.4, Softness=0.1이면 Min=0.6, Max=0.7이다. BaseRim 0.6/0.65/0.7에서 Mask는 0/0.5/1이 된다. Width=0과 Softness=0의 별도 정책도 검증한다.
 
@@ -2160,14 +2136,7 @@ RimSoftness
 
 <img src="../Figures/Chapter08/Fig8_48.png" width="90%">
 
-*Figure 8-48. 중간 실험 Interface의 비교 화면.*
-
-<details>
-<summary>Verification Note</summary>
-
-위에서부터 (RimWidth, RimSoftness)는 (0.2, 0.1), (0.5, 0.1), (0.5, 0.3)이다. 세 화면 모두 RimPower=4 입력이 남아 있으며 내부 Graph가 보이지 않아 Power 적용 여부는 확인할 수 없다. 따라서 이 이미지는 아래 최종 Width/Softness 계약의 구현 검증 자료가 아니며, 해당 계약의 내부 Graph와 비교 결과를 실제 Unreal에서 재촬영해야 한다.
-
-</details>
+*Figure 8-48. 중간 실험 Interface의 비교 화면. 위에서부터 (RimWidth, RimSoftness)는 (0.2, 0.1), (0.5, 0.1), (0.5, 0.3)이다. 세 화면 모두 RimPower=4 입력이 남아 있으며 내부 Graph가 보이지 않아 Power 적용 여부는 확인할 수 없다. 따라서 이 이미지는 아래 최종 Width/Softness 계약의 구현 검증 자료가 아니며, 해당 계약의 내부 Graph와 비교 결과를 실제 Unreal에서 재촬영해야 한다.*
 
 첫 번째와 두 번째 결과를 비교하면 `RimWidth` 증가에 따라 Rim 영역이 넓어진 것을 확인할 수 있다.
 
@@ -2311,8 +2280,6 @@ ASF에서는 완전한 독립 제어보다
 
 #### Final Rim Interface
 
-이후 Master에서 사용할 계약은 여기부터다. 앞의 세 입력 Power Prototype을 Normal, ViewDirection, RimWidth, RimSoftness → Scalar RimMask 계약으로 교체하며 RimPower를 필수 Input으로 혼합하지 않는다. Color와 Intensity는 Mask 밖의 Master 합성 역할로 유지한다.
-
 이번 테스트를 통해 ASF Rim Light의 기본 Parameter 구조를 다음과 같이 정리할 수 있다.
 
 ~~~text
@@ -2368,8 +2335,6 @@ Rim Contribution
 ---
 
 ### Integration into the Master Material
-
-이번 통합은 개별 Module의 계산이 그대로 유지되는지 확인하는 단계다. 아래 기존 구현·비교 기록은 작업 순서를 보여주는 참고이며, 현재 프로젝트에서는 각 Interface와 Unlit 출력 설정을 다시 확인한 뒤 Contribution을 하나씩 켠다. Figure 밖의 설정과 실제 Renderer Visibility 연결 여부는 해당 검증 조건으로 확인한다.
 
 지금까지 Chapter 8에서는 각 Rendering 기능을 개별적으로 구현하고 검증했다.
 
@@ -2446,8 +2411,6 @@ Master Material
 
 #### Current Master Material
 
-Module을 모으기 전에 공통 방향 Data를 먼저 확인한다. 같은 LightDirection과 Normal을 여러 Branch에 전달하면, 한 Module의 결과가 이상할 때 입력 기준이 달랐는지 내부 계산이 달랐는지 비교하기 쉬워진다. 8.2에서 검증한 명시적 LightDirection 입력을 기본으로 사용하고, Engine Adapter는 해당 지원 조건을 통과한 경우에만 연결한다.
-
 현재 `M_ASF_Master`에서는 다음 공통 Data를 사용한다.
 
 ~~~text
@@ -2485,8 +2448,6 @@ Normal
 Base Color
 ← BaseColor Parameter
 ~~~
-
-위 Flow의 `Forward Selected Directional Light`는 기존 연결 예시다. 8.0의 Deferred 목표 환경에서 자동 지원된다고 가정하지 않는다. 이 실습의 기본 출처는 8.2의 명시적 World-space 방향 Parameter이며, 공급 출처가 달라도 Surface→Light 계약과 같은 Space 조건을 유지한다.
 
 `MF_BaseLighting` 내부에서는 Surface Normal과 Light Direction의 관계를 계산하고 Base Color에 적용한다.
 
@@ -2859,14 +2820,7 @@ RimIntensity = 1
 
 <img src="../Figures/Chapter08/Fig8_50.png" width="90%">
 
-*Figure 8-50. 위에서부터 (SpecularIntensity, RimIntensity)=(0,0), (1,0), (1,1)인 합성 비교.*
-
-<details>
-<summary>Verification Note</summary>
-
-최종 Material 입력과 Shading Model 설정이 화면 밖이므로 Unlit + Emissive 연결까지 이 이미지로 검증할 수는 없다. 해당 연결과 설정을 포함한 실제 Unreal 재촬영이 필요하며, 바닥 Cast Shadow는 MF_Shadow 출력의 증거가 아니다.
-
-</details>
+*Figure 8-50. 위에서부터 (SpecularIntensity, RimIntensity)=(0,0), (1,0), (1,1)인 합성 비교. 최종 Material 입력과 Shading Model 설정이 화면 밖이므로 Unlit + Emissive 연결까지 이 이미지로 검증할 수는 없다. 해당 연결과 설정을 포함한 실제 Unreal 재촬영이 필요하며, 바닥 Cast Shadow는 MF_Shadow 출력의 증거가 아니다.*
 
 위에서부터 각각
 

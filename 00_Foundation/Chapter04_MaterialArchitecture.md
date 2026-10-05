@@ -4,7 +4,7 @@
 
 Geometry와 Lighting Data만으로는 Surface가 어떤 성질을 갖는지 알 수 없다. Surface의 Color, 거친 정도, 금속성, Lighting에 사용할 Direction과 발광 Data가 함께 필요하다.
 
-이 Surface Property를 구성하고 Shader에 제공하는 구조가 Material이다. Texture를 화면에 보여주는 기능보다 넓은 역할이다.
+여기서 Surface Property는 Surface의 색이나 거친 정도처럼 계산에 필요한 성질을 뜻한다. 이 Property를 구성하고 Shader에 제공하는 구조가 Material이다. Chapter 01에서 Texture는 위치별 데이터를 저장하는 자원으로 소개했는데, Material의 역할은 그 Texture를 화면에 보여주는 것보다 넓다.
 
 ```text
 Geometry → Surface의 형태 / 위치 / 기준 Attribute
@@ -15,7 +15,9 @@ Lighting → Surface와 Light / Camera의 관계
 
 Chapter 03에서는 Position, Normal, Light Direction과 View Direction을 Lighting에 사용할 형태로 준비했다. 이번 Chapter에서는 그 계산에 사용할 또 다른 입력인 Material Data가 어디에서 시작하고 어떻게 Shader에 전달되는지 살펴본다.
 
-먼저 Input이 어떤 Property를 표현하는지 이해한다. 그 뒤 Constant, Texture와 Parameter가 그 값을 제공하는 방법을 살펴보고, 마지막에 Lighting Data와 합류하는 흐름을 연결한다.
+먼저 Input이 어떤 Property를 표현하는지 이해한다. 그 값은 고정된 숫자로 줄 수도 있고, 외부에서 조절하도록 노출할 수도 있으며, 위치마다 다른 값을 Texture에서 읽을 수도 있다.
+
+고정된 값을 Constant, 조절 가능한 입력을 Parameter라고 부른다. 이후에는 이 Source가 왜 필요한지 하나씩 살펴보고, 마지막에 Lighting Data와 합류하는 흐름을 연결한다.
 
 ```text
 Surface에 필요한 Property
@@ -55,15 +57,19 @@ Light의 Direction과 Intensity도 동일하다.
 
 달라지는 것은 Surface가 가진 Material Data다.
 
-Plastic은 비교적 부드러운 Reflection과 Diffuse Color를 가질 수 있고, Metal은 주변 환경을 강하게 반사할 수 있다.
+Chapter 03에서 관찰 방향에 민감한 Specular Reflection과 넓게 퍼져 보이는 Diffuse의 기본 차이를 예고했다. Reflection은 Surface에 도달한 빛이 다시 나가는 반사를 뜻한다.
 
-Rough Surface는 Reflection이 넓게 퍼져 Highlight가 흐려질 수 있으며, Emissive Surface는 외부 Light와 별개로 스스로 빛을 내는 것처럼 표현할 수 있다.
+Plastic은 비교적 부드러운 Reflection과 Diffuse Color를 가질 수 있고, Metal은 주변 환경을 강하게 반사할 수 있다. 여기서 Diffuse Color는 그 넓게 퍼지는 응답에 사용할 색이다. 모델의 정확한 정의는 Chapter 05에서 확장한다.
+
+Rough Surface는 Reflection이 넓게 퍼져 Highlight가 흐려질 수 있다. Highlight는 반사가 집중되어 밝게 보이는 부분이다.
+
+Emissive Surface는 외부 Light와 별개로 스스로 빛을 내는 것처럼 표현할 수 있다. 화면의 번짐이나 주변을 비추는 효과까지 같은 계산 하나에서 모두 나온다고 가정하지는 않는다. 그 구분은 아래의 Emissive Input에서 이어진다.
 
 즉 최종 Appearance의 차이는 Geometry가 아니라 **Surface Property의 차이**에서 만들어진다.
 
 <img src="Figures/Chapter04/Fig4_01.png" width="90%">
 
-**Figure 4-1. What Is a Material?** 같은 Geometry와 Light 조건에 서로 다른 Material Data를 사용한 개념 비교다. Roughness가 Reflection 분포를 바꾸는 효과와 Normal이 만드는 표면 요철을 구분한다. Emissive Sphere의 Bloom과 주변 조명은 별도 Rendering 경로의 영향을 받을 수 있으므로 Emissive 값 하나의 효과로 모두 해석하지 않는다.
+**Figure 4-1. What Is a Material?** 같은 Geometry와 Light 조건에 서로 다른 Material Data를 사용한 개념 비교다. Roughness가 Reflection 분포를 바꾸는 효과와 Normal이 만드는 표면 요철을 구분한다. Bloom은 밝은 부분이 주변으로 번져 보이는 화면 효과다. Emissive Sphere의 Bloom과 주변 조명은 별도 Rendering 경로의 영향을 받을 수 있으므로 Emissive 값 하나의 효과로 모두 해석하지 않는다.
 
 ---
 
@@ -99,7 +105,7 @@ Material은 Surface가 어떤 특성을 가지고 있는지를 여러 값으로 
 
 여기서 Material과 Lighting의 역할을 구분할 필요가 있다.
 
-Light에 반응하는 Material에서는 Material Input만으로 최종 밝기가 정해지지 않는다. Unlit 출력과 Emission처럼 Scene Light 없이도 결과를 내는 경로는 뒤에서 별도로 구분한다.
+먼저 외부 Light에 반응하는 Material을 생각해보자. Material Input만으로는 Light가 어느 쪽에 있는지 알 수 없으므로 최종 밝기가 정해지지 않는다.
 
 Material은 우선 Shader에 Surface의 특성을 전달한다.
 
@@ -113,7 +119,9 @@ Material은 우선 Shader에 Surface의 특성을 전달한다.
 
 라고 이해하는 것이 좋다.
 
-그리고 Lighting Model은 이 Material Data와 Lighting Data를 이용해 최종 Shading 결과를 계산한다.
+그리고 Lighting Model은 이 Material Data와 Lighting Data를 이용해 최종 Shading 결과를 계산한다. Lighting Model은 입력 관계에서 Surface의 반응을 구하는 방식이다.
+
+**Implementation Note — Output Scope.** Engine의 기본 Lighting 응답을 사용하지 않는 경로를 Unlit이라고 한다. Emission은 Surface가 자체적으로 내보내는 빛의 기여다. 이런 출력은 Scene Light 없이도 값을 낼 수 있으므로, 위 설명의 “외부 Light에 반응하는 Material” 범위를 모든 출력에 그대로 넓히지 않는다.
 
 ---
 
@@ -125,7 +133,11 @@ Shader는 GPU에서 실행되어 실제 Rendering 계산을 수행하는 Program
 
 Material은 그 Shader가 Surface를 계산할 때 사용할 Data와 설정을 제공한다.
 
-Engine의 Material Graph는 이 입력을 준비하는 Logic도 표현하며, 필요한 Shader Program으로 Compile될 수 있다. 개념을 구분할 때는 Material이 정의하는 Surface 구조와 GPU에서 실제 실행되는 Shader Program의 역할을 나누어 본다.
+Engine에서는 계산 단위를 Node로 만들고 연결선으로 Data의 이동을 보여줄 수 있다. 이 연결 구조가 Material Graph다. 연결된 계산 방식이 Material의 Logic이다.
+
+Graph가 실행되려면 GPU가 수행할 Program으로 준비되어야 한다. 이 번역·준비 과정이 Compile이다. Material Graph는 입력을 준비하는 Logic도 표현하며, 필요한 Shader Program으로 Compile될 수 있다.
+
+개념을 구분할 때는 Material이 정의하는 Surface 구조와 GPU에서 실제 실행되는 Shader Program의 역할을 나누어 본다.
 
 개념적으로 보면 다음과 같다.
 
@@ -137,7 +149,9 @@ Engine의 Material Graph는 이 입력을 준비하는 Logic도 표현하며, �
 
 → `Final Appearance`
 
-하나의 Shader Architecture를 여러 Material이 공유하면서 서로 다른 Parameter와 Texture를 사용할 수도 있다. Architecture 재사용과 동일한 Compiled Shader Variant의 조건은 4.7에서 구분한다.
+하나의 Shader Architecture를 여러 Material이 공유하면서 서로 다른 Parameter와 Texture를 사용할 수도 있다. Architecture는 공통 계산과 입력이 어떻게 구성되는지를 뜻한다.
+
+공통 구조를 공유하더라도 기능 선택에 따라 실제로 Compile한 Program이 달라질 수 있다. 이렇게 준비된 Program의 한 구성이 Compiled Shader Variant다. 이 구분은 4.7에서 Editor의 조절과 Program이 실행 중인 시점인 Runtime의 사용 범위에 연결한다.
 
 이 구조를 이용하면 같은 Rendering Logic을 유지하면서도 여러 종류의 Surface를 표현할 수 있다.
 
@@ -221,7 +235,9 @@ Rendering에서는 이러한 Surface의 성질을 여러 개의 `Material Input`
 
 ### Material Input and Surface Property
 
-`Material Input`은 Shader에 전달되는 값이다.
+두 Surface가 같은 Color를 가져도 한쪽은 매끈하고 다른 쪽은 거칠 수 있다. 이 차이를 표현하려면 Color와 거친 정도를 따로 전달해야 한다.
+
+`Material Input`은 이런 서로 다른 성질을 계산하도록 Shader에 전달되는 값이다.
 
 그리고 그 값은 Surface의 특정한 `Surface Property`를 표현한다.
 
@@ -303,7 +319,9 @@ Roughness는 **빛이 반사되는 분포의 형태**를 바꾸는 Property다.
 
 `Metallic`은 Surface가 Metal의 특성을 가지는지 판단하는 데 사용되는 Material Input이다.
 
-일반적인 PBR Material에서는 크게 다음 두 종류의 Surface를 구분한다.
+일반적인 PBR(Physically Based Rendering) Material에서는 크게 다음 두 종류의 Surface를 구분한다.
+
+이 이름은 빛과 Material의 물리적 관계에 근거해 Surface 응답을 구성하는 접근을 뜻한다. 여기서는 그 입력인 Metallic의 역할을 이해하고, 반사 모델의 관계는 Chapter 05에서 배운다.
 
 - `Dielectric`
 - `Metal`
@@ -326,11 +344,11 @@ Metallic 값은 일반적으로 다음과 같이 사용된다.
 
 Metallic이 변하면 단순히 Reflection의 양만 달라지는 것이 아니라 **Surface가 Light를 반사하는 방식 자체가 달라진다.**
 
-이 차이는 이후 PBR과 BRDF를 다룰 때 더 자세히 살펴본다.
+이 차이는 Chapter 05에서 물리적 반사 모델과 Surface 응답을 다룰 때 더 자세히 살펴본다.
 
 여기서는 Metallic을 Reflection의 밝기 Slider로 외우지 않고, Surface 응답 종류를 구분하는 Input으로 이해한다. Roughness와 Metallic을 함께 바꾼 결과를 볼 때도 어느 Property의 변화인지 분리해 확인한다.
 
-**Technical Note — Base Color in the Metallic Workflow.** Dielectric의 Base Color는 주로 Diffuse 반사색을, Metal의 Base Color는 주로 Specular 반사색을 제어한다. 하나의 Input이 항상 Diffuse Color와 같은 뜻은 아니다. 이 연결은 Chapter 05의 BRDF/F0에서 자세히 살펴본다.
+**Technical Note — Base Color in the Metallic Workflow.** Dielectric의 Base Color는 주로 Diffuse 반사색을, Metal의 Base Color는 주로 Specular 반사색을 제어한다. 하나의 Input이 항상 Diffuse Color와 같은 뜻은 아니다. 이 연결은 Chapter 05에서 Material의 반사 응답과 정면 반사율을 살펴보며 확장한다.
 
 ---
 
@@ -342,7 +360,7 @@ Chapter 03에서 살펴봤듯이 Surface Normal은 Light Direction과의 관계�
 
 하지만 실제 Geometry의 Polygon만으로 모든 작은 Surface Detail을 표현하려면 매우 많은 Geometry가 필요하다.
 
-대신 Normal Map과 같은 데이터를 사용하면 Geometry 자체를 변경하지 않고도 Pixel마다 Lighting에 사용할 Normal 방향을 바꿀 수 있다.
+대신 위치마다 다른 Normal Direction을 Texture에 저장할 수 있다. 이 Direction Data가 Normal Map이다. Geometry 자체를 변경하지 않고도 Pixel마다 Lighting에 사용할 Normal 방향을 바꿀 수 있다.
 
 즉,
 
@@ -364,7 +382,7 @@ Normal Map의 구조와 Tangent Space에 대해서는 이후 관련 Section에�
 
 예를 들어,
 
-- LED
+- LED(Light Emitting Diode, 빛을 내는 반도체 소자)
 - Display
 - Neon Sign
 - Magic Effect
@@ -506,7 +524,9 @@ Texture는 이 문제를 해결한다. Surface의 여러 위치에 사용할 Mat
 
 Texture를 열면 하나의 Image가 보인다. 그러나 Shader가 사용하는 것은 Image의 전체 모습이 아니라 그 안에 저장된 값이다.
 
-Texture를 구성하는 각 저장 단위를 `Texel`이라고 한다. 화면의 Pixel과 구분하기 위한 이름이며, 자세한 Sampling 관계는 4.4에서 살펴본다.
+Texture를 구성하는 각 저장 단위를 `Texel`이라고 한다. Texture Element를 줄인 이름이다. 화면의 Pixel은 화면에서 다루는 위치이고, Texel은 Texture 자원에 저장된 위치의 단위다. 서로 저장하고 처리하는 대상이 다르므로 이름을 구분한다. 자세한 Sampling 관계는 4.4에서 살펴본다.
+
+Chapter 03에서 RGB는 Red, Green, Blue의 세 Color Channel이라고 살펴봤다. Texture에서도 Channel은 값을 나누어 저장하는 자리다. 그 자리에 Color 성분 대신 Roughness 같은 숫자를 저장할 수도 있다.
 
 각 Texel의 숫자가 어떤 Material Property를 표현하는지에 따라 같은 Image 형식도 다른 Data가 된다. Base Color Texture의 RGB는 Surface Color를 표현한다. Roughness Texture의 한 Channel은 거친 정도를 표현한다. Metallic Texture의 값은 Metal과 Dielectric의 반응을 구분하는 데 사용된다.
 
@@ -526,7 +546,11 @@ Texture를 구성하는 각 저장 단위를 `Texel`이라고 한다. 화면의 
 
 Character의 피부와 입술처럼 위치마다 Color가 달라야 할 때 `Base Color Texture`를 사용할 수 있다.
 
-각 Texel에는 일반적으로 RGB 값이 저장된다. Shader는 현재 Surface에 대응하는 위치를 Sample하고, Color Space를 올바르게 해석한 결과를 Base Color로 사용한다.
+각 Texel에는 일반적으로 RGB 값이 저장된다. Shader는 현재 Surface에 대응하는 Texture 위치의 값을 읽는다. 이렇게 위치를 지정해 값을 얻는 처리가 Sample이다.
+
+읽은 숫자를 어떤 기준의 Color로 해석할지도 필요하다. 그 기준이 Color Space다. Shader는 위치를 Sample하고, Color Space를 올바르게 해석한 결과를 Base Color로 사용한다.
+
+Lighting에서 더하기와 비율 계산을 하려면 Light 값 사이의 비례 관계가 유지되어야 한다. 이런 계산에 사용할 값이 Linear 값이다.
 
 예를 들어 입력 해석까지 끝난 현재 Surface의 Linear Base Color가 다음과 같을 수 있다.
 
@@ -534,7 +558,7 @@ Character의 피부와 입술처럼 위치마다 Color가 달라야 할 때 `Bas
 
 이 값은 Texture 전체의 대표 Color가 아니다. 지금 처리하는 Surface 위치에 사용할 값이다. 다른 위치를 Sample하면 입술이나 의상의 다른 Base Color를 얻을 수 있다.
 
-sRGB로 저장한 파일의 Raw RGB와 Shader가 사용할 Linear RGB가 언제나 같지는 않다는 점도 기억한다. 이 차이는 4.5에서 설명한다.
+사람이 볼 Color를 저장할 때 흔히 사용하는 sRGB(standard Red Green Blue)는 Color 표현의 표준이다. 저장용으로 비선형 변환한 RGB와 Lighting 계산에 사용할 Linear RGB가 같지 않을 수 있다. Raw RGB는 아직 그런 입력 해석을 적용하지 않은 원래 저장값을 뜻한다. 저장값을 계산값으로 되돌리는 이유와 방향은 4.5에서 설명한다.
 
 ---
 
@@ -558,9 +582,13 @@ Metallic도 Scalar를 저장할 수 있다. 기본적인 해석은 `0 → Dielec
 
 `Normal Texture`는 이때 사용할 Surface Direction 정보를 저장한다. Base Color의 Color나 Roughness의 Scalar와 달리, Shader가 복원할 대상은 Direction Vector다.
 
-일반적인 Tangent Space Normal Map은 Direction의 X, Y, Z 성분을 RGB에 Encoding하므로 파란색이나 보라색 계열로 보인다. 이 색을 Base Color로 사용할 목적은 아니다.
+Chapter 02의 Tangent Space는 Surface에 붙은 기준축으로 방향을 표현하는 Space였다. 일반적인 Tangent Space Normal Map은 이 기준의 Direction을 저장한다.
 
-여기서는 Normal Texture가 Direction Data를 저장한다는 점을 이해하면 된다. 저장 범위, Tangent Space, Decode, TBN은 4.6에서 순서대로 연결한다.
+Direction의 성분을 Texture가 저장할 수 있는 RGB 범위로 바꾸어 기록하는 과정을 Encoding이라고 한다. X, Y, Z 성분을 RGB에 Encoding하면 파란색이나 보라색 계열로 보일 수 있다. 이 색을 Base Color로 사용할 목적은 아니다.
+
+여기서는 Normal Texture가 Direction Data를 저장한다는 점을 이해하면 된다. 읽은 저장값을 다시 Direction으로 복원하는 처리가 Decode다.
+
+복원한 방향도 어떤 기준축으로 표현되었는지 확인해야 한다. Chapter 02에서 배운 Surface의 T/B/N 기준을 목표 Lighting Space로 연결하는 처리는 4.6에서 저장 범위와 함께 순서대로 살펴본다.
 
 ---
 
@@ -581,6 +609,8 @@ Texture는 이렇게 하나의 Material 안에서도 일부 영역만 다른 Pro
 Shader가 하나의 Surface Pixel을 처리한다고 생각해보자. 지금 필요한 것은 Character Texture 전체가 아니라, 이 Pixel에 해당하는 Base Color와 Roughness다.
 
 현재 위치를 Texture 안에서 찾을 수 있도록 사용하는 좌표가 `UV`다. UV가 Texture의 주소 역할을 하고, Texture는 그 주소에서 읽을 Data를 제공한다.
+
+Chapter 02에서 살펴본 Sampler는 Texture에서 값을 읽는 규칙을 담당한다. Engine의 Normal Sampler가 Direction을 이미 복원해 반환하는 경우도 있으므로, 저장된 RGB와 현재 읽은 값을 구분한다.
 
 예를 들어 현재 Pixel의 `UV = (0.34, 0.62)`에서 여러 Texture를 Sample하고 필요한 입력 해석을 마친 결과는 다음처럼 구성될 수 있다.
 
@@ -615,6 +645,8 @@ UV는 읽을 위치를 제공하고 Texture는 읽을 자원을 제공한다. Te
 
 같은 Sampling 동작으로 얻은 값도 용도에 따라 다르게 해석된다. Base Color는 Color로, Roughness는 Scalar로, Normal은 Direction Data로 사용한다.
 
+Sampler는 어떤 Texel을 선택하거나 섞을지에 대한 설정을 사용한다. 주변 Texel을 이용해 값을 계산하는 처리는 Filtering이라고 한다.
+
 실제 Sampler는 주변 Texel을 이용해 값을 계산할 수도 있다. 따라서 Sample 결과를 반드시 특정 Texel 하나의 원래 값과 같다고 가정하지 않는다. 이 과정은 다음 Section의 Filtering에서 살펴본다.
 
 ---
@@ -625,7 +657,7 @@ Roughness나 Metallic처럼 값 하나가 필요한 Data를 각각 RGB Texture�
 
 일반적인 RGBA Texture의 `R`, `G`, `B`, `A`를 서로 다른 Scalar Data에 배정하면 하나의 Texture에서 여러 Property를 읽을 수 있다. 이를 `Channel Packing`이라고 한다.
 
-예를 들어 다음과 같은 배정이 가능하다.
+예를 들어 Ambient Occlusion(AO)은 주변 Geometry에 의해 간접적인 빛이 얼마나 가려지는지를 표현하는 값으로 사용할 수 있다. Mask는 특정 영역을 선택하거나 효과의 적용량을 정하는 값이다. 이런 Scalar Data를 다음과 같이 배정할 수 있다.
 
 | Channel | Example Data |
 |---|---|
@@ -680,7 +712,9 @@ Material Inputs + Lighting Data → Final Appearance
 
 Character Face의 Triangle 안쪽을 처리하는 Pixel Shader는 Texture의 피부 영역을 읽어야 한다. 그러나 Shader가 받는 3D 위치만으로는 Texture의 어느 2D 위치가 피부인지 알 수 없다.
 
-따라서 Mesh의 Surface와 Texture 영역 사이에 대응 관계를 준비해야 한다. 그 관계를 표현하는 좌표가 `UV`다.
+따라서 Mesh의 Surface와 Texture 영역 사이에 대응 관계를 준비해야 한다. Chapter 01과 4.3에서 Texture의 주소 역할로 보았던 `UV`를 여기서는 Vertex에서 현재 처리 위치까지 추적한다.
+
+UV의 U와 V는 두 좌표축의 이름이며 어떤 English Phrase의 Acronym이 아니다. 그 숫자는 Surface의 어느 부분을 Texture의 어느 부분에 대응시켰는지 알려준다.
 
 먼저 Surface에 UV를 지정하고, Vertex에 저장된 UV가 Triangle 내부로 전달되는 과정을 이해한다. 그 뒤 현재 Pixel에서 Texture 값을 얻고, Texel 사이의 위치를 처리하는 Filtering으로 연결한다.
 
@@ -726,7 +760,7 @@ Mesh Surface에 UV 대응 관계 설정
 
 Fragment는 Rasterization이 만드는 처리 후보이며 최종 화면 Pixel과 항상 일대일인 것은 아니라는 Chapter 01의 구분을 유지한다. 여기서 Current Pixel UV는 Pixel Shader가 지금 처리하는 Surface Sample의 UV라는 뜻으로 사용한다.
 
-일반적인 Perspective Rendering에서는 Perspective-correct Interpolation으로 UV를 준비한다. 화면상의 단순한 선형 보간 그림은 흐름을 보여주는 모델이며 실제 보간 조건 전체를 뜻하지 않는다.
+**Technical Note — Interpolation Scope.** 일반적인 Perspective Rendering에서는 Chapter 02에서 본 원근 관계를 반영하는 Perspective-correct Interpolation으로 UV를 준비한다. 화면상의 단순한 선형 보간 그림은 흐름을 보여주는 모델이며 실제 보간 조건 전체를 뜻하지 않는다.
 
 **Technical Note — Generated Coordinates.** 이 예제의 UV는 Mesh에 저장된 Surface Attribute다. 모든 Sampling Coordinate가 반드시 Mesh에서 와야 하는 것은 아니다. Shader가 Position이나 Direction으로 좌표를 만들 수도 있다. Chapter 08의 MatCap은 View Space Normal에서 UV를 만드는 예다.
 
@@ -738,7 +772,9 @@ Fragment는 Rasterization이 만드는 처리 후보이며 최종 화면 Pixel�
 
 예를 들어 `UV = (0.34, 0.62)`에서 Base Color Texture를 Sample하고 입력 해석을 마치면 `Base Color = (0.82, 0.68, 0.61)`을 얻을 수 있다. 같은 좌표로 Roughness Texture를 Sample하면 `Roughness = 0.58`을 얻을 수도 있다.
 
-이 숫자는 설명용 예시다. 실제 결과는 Texture에 저장된 Data, Filtering, Mip Level과 입력 해석에 따라 달라진다.
+이 숫자는 설명용 예시다. 실제 결과는 Texture에 저장된 Data와 Sampler의 읽기 규칙에 따라 달라진다.
+
+앞에서 본 Filtering 외에도, 미리 만든 여러 Texture 해상도 중 어느 단계를 읽는지가 영향을 준다. 이 해상도 단계가 Mip Level이다. 아래에서는 많은 Texture Detail을 작은 화면 영역에서 읽는 문제와 연결해 설명한다. 입력 해석 역시 결과에 영향을 준다.
 
 Normal Texture를 Sample하면 같은 Surface 위치에 사용할 Encoded Direction 또는 Engine sampler가 이미 복원한 Direction을 얻는다. 이 결과가 바로 Lighting Space Normal인지는 4.6의 처리 조건으로 판단한다.
 
@@ -790,7 +826,9 @@ Texture는 Texel 단위로 값을 저장하지만 UV는 그 사이의 위치도 
 
 ### Bilinear Filtering
 
-2D에서 Sampling Point 주변에는 가로와 세로 방향으로 가까운 Texel들이 있다. Bilinear Filtering은 한 Mip Level에서 주변 네 Texel의 값을 사용해 현재 위치의 중간값을 계산한다.
+2D에서 Sampling Point 주변에는 가로와 세로 방향으로 가까운 Texel들이 있다. Bilinear라는 이름은 두 축 방향으로 값을 이어 계산한다는 의미다.
+
+Bilinear Filtering은 한 Mip Level에서 주변 네 Texel의 값을 사용해 현재 위치의 중간값을 계산한다.
 
 먼저 각 가로 방향의 두 값을 위치에 맞게 섞고, 그 두 결과를 세로 위치에 맞게 다시 섞는다고 이해할 수 있다. Sample 위치가 특정 Texel Center에 가까울수록 그 Texel의 기여가 커진다.
 
@@ -813,7 +851,7 @@ Sampling Point와 주변 네 Texel의 위치 관계
 
 Filtering으로 Texel 사이를 부드럽게 만들더라도, 화면 Pixel 하나에 너무 많은 Texture Detail이 들어오는 문제는 남는다.
 
-Camera에서 먼 Object는 화면에서 작게 보인다. 이때 고해상도 Texture의 많은 Texel이 적은 Screen Pixel에 압축되면 작은 Detail이 프레임마다 다르게 선택되어 Shimmering이나 Aliasing이 발생할 수 있다.
+Camera에서 먼 Object는 화면에서 작게 보인다. 이때 고해상도 Texture의 많은 Texel이 적은 Screen Pixel에 압축되면 작은 Detail이 프레임마다 다르게 선택될 수 있다. Camera가 조금 움직일 때 무늬가 반짝이듯 흔들리는 현상이 Shimmering이다. 충분히 표현하지 못한 Detail이 엉뚱한 무늬나 경계로 나타나는 Sampling 오류를 Aliasing이라고 한다.
 
 이를 줄이기 위해 미리 해상도를 단계적으로 낮춘 Texture Version들을 준비한다. 이 구조를 `Mipmap`이라고 한다.
 
@@ -826,7 +864,7 @@ Camera에서 먼 Object는 화면에서 작게 보인다. 이때 고해상도 Te
 
 현재 Screen Pixel의 영역이 Texture에서 넓은 영역에 대응하면, 그 영역을 대표하기에 알맞은 Mip를 사용할 수 있다. 불필요하게 높은 Detail을 읽는 것을 줄이고 Aliasing도 완화한다.
 
-**Technical Note — Texture Footprint.** 실제 Mip 선택은 Texture에서 차지하는 footprint와 관련된다. 거리뿐 아니라 UV Scale, Surface 기울기, 화면 해상도와 좌표 변화율도 영향을 준다. Object 전체의 화면 크기 하나만으로 정해지는 것은 아니다.
+**Technical Note — Texture Footprint.** Texture Footprint는 앞에서 설명한 현재 화면 Pixel이 Texture에서 덮는 범위를 말하며, 실제 Mip 선택은 이 범위와 관련된다. 거리뿐 아니라 UV Scale, Surface 기울기, 화면 해상도와 좌표 변화율도 영향을 준다. Object 전체의 화면 크기 하나만으로 정해지는 것은 아니다.
 
 ---
 
@@ -853,9 +891,9 @@ Character/UV 자료와 Sample Color, Filtering 결과는 관계를 설명하는 
 
 ### UV Outside the 0–1 Range
 
-Tile Texture를 넓은 Surface에 반복하려면 UV가 한 Texture 영역을 넘어갈 수 있다. UV가 반드시 0~1 안에만 있어야 하는 것은 아니다.
+Tile Texture는 같은 무늬를 이어 반복하도록 준비한 Texture다. 넓은 Surface에 반복하려면 UV가 한 Texture 영역을 넘어갈 수 있다. UV가 반드시 0~1 안에만 있어야 하는 것은 아니다.
 
-범위를 벗어난 좌표를 어떻게 읽을지는 Sampler의 Addressing Setting이 정한다.
+범위를 벗어난 좌표를 어떻게 읽을지 정하는 규칙이 Addressing Setting이다. Sampler는 이 규칙에 따라 반복된 위치, 가장자리 또는 반전된 영역을 읽는다.
 
 | Setting | Behavior |
 |---|---|
@@ -873,7 +911,9 @@ Texture Sample은 Shader에 필요한 Data를 제공하지만 무료 작업은 �
 
 Material이 많은 Sample을 사용하면 Texture Sampling Cost가 증가할 수 있다. 필요하지 않은 Sample을 줄이거나 여러 Scalar를 Channel Packing으로 함께 읽는 이유가 여기에 있다.
 
-그러나 Texture 개수만으로 현재 GPU Cost를 확정할 수는 없다. Cache, Resolution, Filtering, Platform 등도 영향을 준다. Cost가 존재한다는 것과 그것이 현재 Bottleneck이라는 것은 구분한다.
+그러나 Texture 개수만으로 현재 GPU Cost를 확정할 수는 없다. 자주 사용하는 Data를 가까이 보관하는 Cache, Texture Resolution과 Filtering, 실행 Platform 등도 영향을 준다.
+
+Bottleneck은 전체 작업의 속도를 제한하는 구간이다. Cost가 존재한다는 것과 그것이 현재 Bottleneck이라는 것은 구분한다.
 
 이 측정과 Optimization의 연결은 Chapter 09에서 다시 다룬다.
 
@@ -916,7 +956,9 @@ Texture가 Surface에 자동으로 붙는 것이 아니다. Mesh와 Texture의 �
 
 둘 다 `0.5`로 보인다는 이유만으로 같은 방식으로 읽어도 될까?
 
-Color를 효율적으로 저장하는 과정에서는 원래의 Linear 값에 Encoding을 적용할 수 있다. 반면 Roughness처럼 Numeric Data를 저장할 때는 Artist가 지정한 숫자의 의미를 보존해야 한다.
+예를 들어 Base Color의 회색은 보이는 Color를 저장한 값이고 Roughness의 회색은 거친 정도를 지정한 숫자다. 목적이 다르면 같은 0.5도 같은 Light 값을 뜻하지 않는다.
+
+4.3의 Encoding은 저장할 수 있는 표현으로 바꾸는 처리였다. Color를 효율적으로 저장하는 과정에서는 원래의 Linear 값에 비선형 Encoding을 적용할 수 있다. 반면 Roughness처럼 Numeric Data를 저장할 때는 Artist가 지정한 숫자의 의미를 보존해야 한다.
 
 따라서 먼저 사람이 보는 Color를 저장하는 이유를 살펴보고, Shader 계산에 필요한 Linear 값으로 되돌리는 과정과 Data Texture의 처리 차이를 연결한다.
 
@@ -924,9 +966,11 @@ Color를 효율적으로 저장하는 과정에서는 원래의 Linear 값에 En
 
 사람의 시각은 물리적인 Light Intensity 변화에 완전히 선형적으로 반응하지 않는다. 어두운 영역의 작은 변화와 밝은 영역의 같은 크기 변화를 동일하게 느끼지 않는다.
 
+Texture는 숫자를 무한히 세밀하게 저장할 수 없다. 각 Component에 몇 Bit를 사용해 몇 단계로 저장할지 정한 것이 Bit Depth다.
+
 Texture를 제한된 Bit Depth로 저장할 때 Linear 값에 균일하게 단계를 배정하면, 사람이 구별하기 쉬운 어두운 영역의 표현이 부족해질 수 있다. 시각 특성에 맞게 저장값을 비선형적으로 배분하면 Color를 표현하는 데 유리하다.
 
-이때 흔히 사용하는 표현이 `sRGB`다. Color를 저장하기 위해 Linear 값을 비선형적으로 Encoding한다. 그래서 파일에 저장한 sRGB Color 값과 Lighting 계산에 사용할 Linear 값은 같은 숫자가 아닐 수 있다.
+이때 흔히 사용하는 표현이 4.3에서 소개한 `sRGB`다. Color를 저장하기 위해 Linear 값을 비선형적으로 Encoding한다. 저장값의 단계 간격이 실제 Light의 같은 간격을 그대로 나타내지는 않는다는 뜻이다. 그래서 파일에 저장한 sRGB Color 값과 Lighting 계산에 사용할 Linear 값은 같은 숫자가 아닐 수 있다.
 
 여기서 Encoding은 저장을 위한 변환이다. Shader가 그 Color를 계산에 사용하려면 저장된 표현을 다시 Linear 값으로 Decode해야 한다.
 
@@ -946,11 +990,18 @@ Linear Color
 
 Color의 숫자를 저장하고 읽으려면 그 숫자가 어떤 기준의 Color를 뜻하는지도 정해야 한다. 이 기준을 정의하는 체계가 `Color Space`다.
 
-Material에서 자주 비교하는 sRGB와 Linear는 특히 **비선형 저장 표현과 light-linear 계산값의 차이**를 설명할 때 사용된다.
+Material에서 자주 비교하는 sRGB와 Linear는 특히 **비선형 저장 표현과 light-linear 계산값의 차이**를 설명할 때 사용된다. light-linear는 Light 양의 비례 관계를 유지하는 계산값이라는 뜻이다.
+
+저장 표현과 계산값 사이의 변환 관계를 Transfer Function이라고 한다. 여기서는 이 변환 방향을 먼저 이해하고 전체 Color Space의 기준은 아래 Note에서 구분한다.
 
 Linear 값에서는 값의 크기와 Light Energy의 비례 관계가 유지된다. 같은 기준에서 개념적으로 `0.5`는 `1.0`의 절반에 해당하는 Light 값을 나타낸다. sRGB에 Encoding된 `0.5`는 그 자체가 같은 Linear Light 값 `0.5`를 의미하지 않는다.
 
-**Technical Note — Color Space and Transfer Encoding.** sRGB라는 Color Space에는 transfer function뿐 아니라 primaries와 white point도 포함된다. Linear라는 말만으로 전체 Color Space가 정해지는 것은 아니다. 이 Section에서는 주로 동일한 RGB 기준에서 transfer Encoding/Decode의 차이를 설명한다. Working Color Space를 지정하는 Engine 설정과 Texture의 저장 Encoding 설정도 구분한다.
+<details>
+<summary>Technical Note — Color Space and Transfer Encoding</summary>
+
+sRGB라는 Color Space에는 Transfer Function뿐 아니라 RGB의 기준 색인 Primaries와 흰색의 기준인 White Point도 포함된다. Linear라는 말만으로 전체 Color Space가 정해지는 것은 아니다. 이 Section에서는 주로 동일한 RGB 기준에서 transfer Encoding/Decode의 차이를 설명한다. Engine이 내부 계산에 사용할 Color 기준인 Working Color Space를 지정하는 설정과 Texture의 저장 Encoding 설정도 구분한다.
+
+</details>
 
 ---
 
@@ -969,7 +1020,7 @@ UV + sRGB-encoded Texture
     → Lighting Calculation
 ```
 
-이 흐름은 Shader에 도달하는 값의 의미를 설명하는 논리적 모델이다. sRGB Decode와 Filtering을 독립된 수동 Node처럼 차례로 연결해야 한다는 뜻은 아니다. 실제 format/sampler의 처리 순서는 Engine과 Graphics API에서 확인한다.
+**Implementation Note — Sampling Scope.** 이 흐름은 Shader에 도달하는 값의 의미를 설명하는 논리적 모델이다. sRGB Decode와 Filtering을 독립된 수동 Node처럼 차례로 연결해야 한다는 뜻은 아니다. 실제 format/sampler의 처리 순서는 Engine과 Chapter 03에서 소개한 Graphics API에서 확인한다.
 
 ---
 
@@ -979,7 +1030,7 @@ UV + sRGB-encoded Texture
 
 `Color Texture`는 사람이 보는 Color를 표현하는 Data다. Base Color, Albedo, Diffuse Color, Emissive Color가 대표적인 예다.
 
-일반적인 sRGB-encoded Color Texture에는 sRGB Decode를 적용해 Linear Color를 얻는다. 그러나 Color Texture라고 해서 모두 sRGB로 저장된 것은 아니다. HDR 또는 이미 Linear로 저장한 Color에는 중복 Decode를 적용하지 않는다.
+일반적인 sRGB-encoded Color Texture에는 sRGB Decode를 적용해 Linear Color를 얻는다. 그러나 Color Texture라고 해서 모두 sRGB로 저장된 것은 아니다. HDR(High Dynamic Range)은 넓은 밝기 범위를 표현하는 방식이다. HDR 또는 이미 Linear로 저장한 Color에는 중복 Decode를 적용하지 않는다.
 
 `Data Texture`는 Shader 계산에 사용할 숫자를 저장한다. Roughness, Metallic, Ambient Occlusion, Mask, Height, Normal 등이 여기에 해당한다.
 
@@ -995,7 +1046,7 @@ Artist가 현재 Surface의 Roughness를 `0.50`으로 지정했다고 생각해�
 
 올바르게 Numeric Data로 읽으면 Shader 입력도 `0.50`이다. 그런데 Texture를 잘못 `sRGB On`으로 설정하면 Engine은 저장된 숫자를 sRGB Color라고 해석하여 Linear로 Decode한다.
 
-그 결과는 다음 방향이다.
+그 결과는 다음 방향이다. 아래의 Glossy는 반사가 더 또렷하게 집중되어 보이는 외관을 뜻한다. 숫자가 낮아진다는 사실과 외관의 경향을 순서대로 읽는다.
 
 ```text
 Correct Linear Data
@@ -1192,9 +1243,9 @@ Height Map은 높고 낮음을 Scalar로 저장한다. Normal Map은 현재 위�
 
 Surface 위치마다 다른 Direction을 쓰려면 그 Direction들을 Texture처럼 위치별로 저장할 수 있어야 한다.
 
-Direction Vector에는 X, Y, Z Component가 있다. 일반적인 RGB Texture의 세 Channel에 이 성분을 대응시킬 수 있다. 그러나 저장 범위가 맞지 않는 문제가 남는다.
+Chapter 03에서 Vector는 방향을 여러 성분으로 표현하는 값이었다. Direction Vector의 X, Y, Z 각각의 성분을 Component라고 부른다. 일반적인 RGB Texture의 세 Channel에 이 성분을 대응시킬 수 있다. 그러나 저장 범위가 맞지 않는 문제가 남는다.
 
-Normal의 Component는 음수와 양수를 가지므로 `-1~1` 범위를 사용한다. 반면 여기서 설명하는 일반적인 unsigned RGB 저장은 `0~1` 범위다. 음수 Direction을 저장하려면 이 범위에 맞게 Encoding해야 한다.
+방향은 기준축의 양쪽을 가리킬 수 있으므로 성분에도 부호가 필요하다. 부호가 있는 값을 signed 값이라고 한다. Normal의 Component는 음수와 양수를 가지므로 `-1~1` 범위를 사용한다. 반면 여기서 설명하는 일반적인 unsigned RGB 저장은 `0~1` 범위다. unsigned는 음수 부호 없이 저장하는 표현이라는 뜻이다. 음수 Direction을 저장하려면 이 범위에 맞게 Encoding해야 한다.
 
 즉 RGB는 사람이 볼 Color가 아니라 Direction을 저장하기 위한 표현이다. Sampling한 숫자를 Direction으로 복원해야 한다는 의미에서 4.5의 Numeric Data에 해당한다.
 
@@ -1220,7 +1271,7 @@ T와 B는 Surface를 따라가는 두 기준 방향이고 N은 바깥쪽 기준 
 
 이것은 Mesh 전체의 Object Local Space와 같지 않다. Surface의 각 위치에서 구성되는 Basis다. Chapter 02의 2.14 Tangent Space에서 배운 기준을 여기서는 Normal Map의 Direction을 해석하는 데 사용한다.
 
-UV의 handedness와 Tangent Basis를 만드는 방식이 맞아야 Texture의 기울기가 의도한 방향으로 나타난다. 구체적인 Transform 조건은 아래의 Lighting Space 변환에서 확인한다.
+**Implementation Note — Basis Agreement.** Chapter 02의 handedness는 축의 방향과 순서에 관한 규약이었다. UV의 handedness와 Tangent Basis를 만드는 방식이 맞아야 Texture의 기울기가 의도한 방향으로 나타난다. 구체적인 Transform 조건은 아래의 Lighting Space 변환에서 확인한다.
 
 ---
 
@@ -1333,7 +1384,9 @@ sRGB Off만으로 Normal Decode가 없어지는 것은 아니다. sRGB Color Dec
 
 Direction을 복원했지만 아직 Lighting에 바로 사용할 수 있는지는 알 수 없다. 복원한 Vector는 Tangent Space 기준이고, L과 V는 World Space 또는 View Space에서 준비되어 있을 수 있다.
 
-Chapter 03에서 배운 것처럼 방향 관계를 계산하려면 같은 Coordinate Space가 필요하다. Tangent 성분을 Lighting Space의 방향으로 옮기는 기준이 `TBN Basis`다.
+Chapter 03에서 배운 것처럼 방향 관계를 계산하려면 같은 Coordinate Space가 필요하다. Chapter 02의 `TBN Basis`는 Tangent, Bitangent, Normal 세 기준 방향을 묶은 것이었다.
+
+지금 복원한 x/y/z는 각각 그 방향으로 얼마나 기울었는지 나타낸다. 따라서 같은 세 기준을 목표 Lighting Space에서 준비하면 Tangent 성분도 그 Space의 방향으로 옮길 수 있다.
 
 목표 Space로 표현한 T, B, N을 사용하면 Tangent Space Normal의 x, y, z 성분을 각각 그 기준 방향의 기여로 결합할 수 있다. 즉 “T 방향으로 이만큼, B 방향으로 이만큼, N 방향으로 이만큼”이라는 관계를 목표 Space의 Vector로 바꾼다.
 
@@ -1354,7 +1407,14 @@ Tangent Space Normal
 
 <img src="Figures/Chapter04/Fig4_06.png" width="90%">
 
-**Figure 4-6. Normal Map and Normal Encoding.** Geometry를 유지하면서 Shading Direction을 바꾸는 원리와 Tangent Space의 방향을 Lighting Space로 준비하는 연결을 확인한다. 4번은 raw RGB를 복원하는 경로와 Normal sampler가 이미 Decode한 Direction을 반환하는 경로를 구분한다. `RGB × 2 - 1`은 raw RGB에만 적용하며 이미 Decode된 Direction에는 중복 적용하지 않는다. 3번의 `(0.52, 0.47, 1.00)`은 저장 RGB 예시이고, 6번의 flat/+X/+Y는 Encoded RGB와 복원된 Unit Direction을 함께 보여준다. 5번의 TBN→World 경로는 World Space에서 Lighting을 계산하는 예제다. N, L, V는 선택한 같은 Lighting Space의 Unit Direction으로 준비한다. 실제 Normal sampler, Compression/Format과 TBN의 목표 Space·Basis 조건은 별도 Engine 검증이 필요하다.
+**Figure 4-6. Normal Map and Normal Encoding.** Geometry를 유지하면서 Shading Direction을 바꾸는 원리와 Tangent Space의 방향을 Lighting Space로 준비하는 연결을 확인한다. raw RGB인지 이미 Decode된 Direction인지 구분한 뒤, 같은 Lighting Space의 Normal로 연결한다.
+
+<details>
+<summary>Figure Reading Note — Decode and Basis Scope</summary>
+
+4번은 raw RGB를 복원하는 경로와 Normal sampler가 이미 Decode한 Direction을 반환하는 경로를 구분한다. `RGB × 2 - 1`은 raw RGB에만 적용하며 이미 Decode된 Direction에는 중복 적용하지 않는다. 3번의 `(0.52, 0.47, 1.00)`은 저장 RGB 예시이고, 6번의 flat/+X/+Y는 Encoded RGB와 복원된 Unit Direction을 함께 보여준다. 5번의 TBN→World 경로는 World Space에서 Lighting을 계산하는 예제다. N, L, V는 선택한 같은 Lighting Space의 Unit Direction으로 준비한다. 실제 Normal sampler, Compression/Format과 TBN의 목표 Space·Basis 조건은 별도 Engine 검증이 필요하다.
+
+</details>
 
 ---
 
@@ -1434,11 +1494,15 @@ Normal Map의 RGB는 Color가 아니라 Encoded Direction Data다. 이 Direction
 
 같은 Shader 구조를 사용하는 두 Character가 서로 다른 Texture와 Roughness를 가져야 한다고 생각해보자. Data만 다른데 Material Graph 전체를 복사하면 이후 Logic을 고칠 때 두 Graph를 각각 관리해야 한다.
 
-또 Artist가 Roughness를 조절할 때마다 Graph를 열어 고정값을 바꾸어야 한다면 Look Development도 불편해진다.
+또 Artist가 Roughness를 조절할 때마다 Graph를 열어 고정값을 바꾸어야 한다면 외관을 만들고 비교하는 작업도 불편해진다. 이 외관 조절 과정을 Look Development라고 한다.
 
-이 문제는 **Material Logic과 조절할 Data를 분리**하면 해결할 수 있다. 공통 Logic은 Parent Material에 두고, 외부에서 조절할 Input은 Parameter로 노출한다. Material Instance는 그 Interface를 재사용해 다른 값을 지정한다.
+이 문제는 **Material Logic과 조절할 Data를 분리**하면 해결할 수 있다. 공통 Logic을 가진 원본이 Parent Material이다. 외부에서 조절할 Input은 Parameter로 노출한다.
 
-다만 모든 Parameter가 같은 방식으로 바뀌는 것은 아니다. 값만 공급하는 Parameter, Compile Time 구성을 선택하는 Parameter, Editor에서의 조절과 Runtime에서의 조절을 차례로 구분한다.
+원본의 계산 구조를 재사용하면서 값을 따로 지정하는 것이 Material Instance다. Parent의 기본값 대신 Instance의 값을 쓰도록 지정하는 처리가 Override다. 조절 가능한 입력을 제공하는 접점인 Interface를 재사용하므로 Graph 전체를 복사할 필요가 없다.
+
+다만 모든 Parameter가 같은 방식으로 바뀌는 것은 아니다. Program을 실행 전에 준비하는 시점이 Compile Time이고, 준비한 Program이 실제로 실행되는 시점이 Runtime이다.
+
+먼저 기존 계산에 공급할 값만 바꾸는 경우를 살펴본다. 그 다음 Compile Time에 계산 구성을 선택하는 경우를 구분한다. 이 차이를 알면 Editor에서 외관을 조절하는 작업과 게임 Runtime에서 값을 바꾸는 작업도 분리할 수 있다.
 
 ### Why Use Parameters?
 
@@ -1461,9 +1525,11 @@ Parameter의 목적은 단순히 숫자를 저장하는 것이 아니다. **어�
 
 ### Common Parameter Types
 
-먼저 기존 Logic에 Data를 공급하는 `Non-Static Parameter`를 살펴본다. Scalar, Vector, Texture Parameter가 대표적이다.
+Chapter 03에서 Scalar는 숫자 하나, Vector는 여러 성분을 가진 값이었다. 같은 입력 형식을 Parameter로 노출할 수 있고, 사용할 Texture 자원도 따로 지정할 수 있다.
 
-그 다음 Compile Time에 기능이나 Channel 구성을 선택하는 `Static Parameter`를 구분한다. Static Switch와 Static Component Mask가 여기에 해당한다.
+먼저 기존 Logic에 Data를 공급하는 `Non-Static Parameter`를 살펴본다. Scalar, Vector, Texture Parameter가 대표적이다. Non-Static은 Compile Time에 Logic 구성을 고정하는 종류와 구분하기 위한 이름이다.
+
+그 다음 Compile Time에 기능이나 Channel 구성을 선택하는 `Static Parameter`를 구분한다. Static Switch는 기능을 포함할지 선택하고, Static Component Mask는 사용할 성분이나 Channel을 선택한다. 이 두 입력은 실행 중 숫자를 공급하는 것과 역할이 다르다. 아래 표를 읽은 뒤 각각의 예제로 연결한다.
 
 | Parameter Type | Example | Role |
 |---|---|---|
@@ -1531,7 +1597,7 @@ Static Switch Off
     → 해당 Logic을 사용하지 않는 구성
 ```
 
-이 선택은 Shader가 실행 중에 값에 따라 분기하는 일반적인 Runtime Branch와 다르다. Static Switch는 Compile Time에 구성을 정하므로 선택 조합이 다르면 다른 Compiled Shader Variant가 필요할 수 있다.
+Runtime Branch는 실행 중에 조건을 확인해 어느 계산 경로로 갈지 선택하는 분기다. 이 선택은 Shader가 실행 중에 값에 따라 분기하는 일반적인 Runtime Branch와 다르다. Static Switch는 Compile Time에 구성을 정하므로 선택 조합이 다르면 다른 Compiled Shader Variant가 필요할 수 있다.
 
 따라서 Editor에서 Switch를 조절할 수 있다는 사실을 Runtime에서 매 프레임 같은 방식으로 바꿀 수 있다는 뜻으로 해석하지 않는다.
 
@@ -1616,6 +1682,8 @@ Shared Parent Architecture
 ```
 
 따라서 **Parent Architecture를 공유하는 것과 동일한 Compiled Shader Variant를 공유하는 것은 다른 조건**이다.
+
+Static 기능 선택의 조합 등에 따라 서로 다른 Shader Variant가 만들어지는 구성을 Shader Permutation이라고 부른다. 여러 선택이 결합되면 필요한 Program의 종류도 늘어날 수 있다.
 
 Static Parameter가 많고 실제로 사용하는 조합이 다양하면 Shader Permutation 수와 Compile 부담이 증가할 수 있다. 반대로 Switch 개수만 보고 모든 이론적인 조합이 현재 Project에서 쓰인다고 가정하지 않는다. 실제 사용 구성과 Engine 결과를 확인한다.
 
@@ -1714,7 +1782,7 @@ Texture와 Parameter를 각각 이해했더라도 Material Graph에서 Data가 �
 
 따라서 지금 필요한 것은 모든 요소를 한 줄의 순서로 나열하는 것이 아니라 **어떤 Data가 어디에서 시작해 어떤 Shader 입력으로 합류하는지** 추적하는 것이다.
 
-Material Input, Texture, UV, Texture Sampling, Color Space, Normal Map, Parameter, Material Instance를 이 관점에서 함께 살펴본다.
+앞 Section들의 이름을 다시 외우기보다, “현재 연결선에 있는 값은 무엇이며 어디에서 왔는가?”를 따라가 보자. Material Input, Texture, UV, Texture Sampling, Color Space, Normal Map, Parameter, Material Instance를 이 관점에서 함께 살펴본다.
 
 ### Material Starts with Mesh Data
 
@@ -1828,7 +1896,9 @@ Chapter 03에서 준비한 대표적인 입력은 다음과 같다.
 - Light Color
 - Light Intensity
 
-N은 Surface 기준 경로에서 준비하고, L과 V는 Surface Position과 Scene의 Light/Camera Data에서 준비한다. Directional/Point/Spot Light와 Perspective/Orthographic Camera에서는 필요한 Direction 준비 방식이 다르므로 Chapter 03의 Light Direction/View Direction 구분을 따른다. 모든 L과 V를 Position 차이로 만든다는 뜻은 아니다. 같은 Space와 필요한 Unit Length 조건을 만족한 뒤 방향 관계를 계산한다.
+N은 Surface 기준 경로에서 준비하고, L과 V는 Surface Position과 Scene의 Light/Camera Data에서 준비한다. 즉 Material의 거친 정도를 정하는 경로와 Light·Camera의 방향을 준비하는 경로가 여기서 만난다.
+
+**Implementation Note — Direction Inputs.** Directional/Point/Spot Light와 Perspective/Orthographic Camera에서는 필요한 Direction 준비 방식이 다르므로 Chapter 03의 Light Direction/View Direction 구분을 따른다. 모든 L과 V를 Position 차이로 만든다는 뜻은 아니다. 같은 Space와 필요한 Unit Length 조건을 만족한 뒤 방향 관계를 계산한다.
 
 같은 Material이라도 L이나 V가 달라지면 Appearance가 달라질 수 있는 이유가 이 입력에 있다.
 

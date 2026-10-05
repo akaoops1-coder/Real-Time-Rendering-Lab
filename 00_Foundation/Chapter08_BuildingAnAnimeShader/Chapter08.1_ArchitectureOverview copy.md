@@ -71,6 +71,8 @@ Final Color
 
 ASF에서는 이러한 구조 대신 각 기능을 Material Function으로 분리한다.
 
+Index에서 보았듯이 Material Function은 입력을 받아 계산 결과를 돌려주는 재사용 단위다. 여기서는 Shadow의 구현을 바꾸더라도 다른 Module이 사용할 출력의 의미가 유지되도록 경계를 정한다. Graph가 작아지는 것만큼 중요한 것은, 무엇이 들어가고 무엇이 나오는지 읽을 수 있게 되는 것이다.
+
 ~~~text
                      ┌─ MF_BaseLighting
                      │
@@ -110,6 +112,8 @@ Processing은 해당 Module이 담당하는 실제 계산이다.
 
 Result는 계산된 결과를 다음 단계로 전달하는 출력이다.
 
+예를 들어 입력에 Normal이 있다는 것만으로는 충분하지 않다. 그 Normal의 Space와 길이 조건을 알아야 다음 계산에서 Dot Product를 올바르게 사용할 수 있다. 출력도 Scalar Mask인지 RGB Contribution인지 먼저 정해야 Master에서 곱할 값과 더할 값을 구분할 수 있다. 이처럼 Interface는 Pin 이름에 더해 Data의 의미를 약속하는 경계다.
+
 예를 들어 Base Lighting Module은 다음과 같은 형태가 된다.
 
 ~~~text
@@ -130,6 +134,8 @@ Module은 자신의 역할에 필요한 계산만 수행하고 결과를 반환�
 
 
 ### Material Function as an Implementation Unit
+
+앞에서는 어떤 기능을 나눌지 정했다. 이제는 그 기능을 Unreal의 Asset으로 어디에 담을지 결정한다. Index의 Master Material이 최종 조합 위치라면, Material Function은 그 조합에 사용할 계산 단위다.
 
 Rendering Module은 논리적인 책임이고 Material Function은 그 계산을 Unreal에서 재사용하는 구현 단위이다. 하나의 Module이 여러 Function을 쓰거나 일부 결합 연산을 Master Material에서 수행할 수 있다. Rendering Stage/Pass와도 구분한다.
 
@@ -210,6 +216,8 @@ Module은 일부 중간 결과를 전달하고 공통 N/L/V를 공유한다. 서
 따라서 ASF에서는 Module 사이의 데이터 흐름을 명확하게 정의해야 한다.
 
 기본적인 흐름은 다음과 같이 구성된다.
+
+아래 흐름은 하나의 직렬 줄이 아니라 여러 계산 Branch가 합류하는 구조다. Base Lighting과 Shadow는 앞 결과를 이어받고, Specular와 Rim은 필요한 방향에서 각자 Mask를 만든다. Master는 그 결과의 의미에 맞춰 곱하거나 더하거나 섞는다.
 
 ~~~text
 Surface / Material / Light / View Inputs
@@ -324,6 +332,8 @@ Master Material은 모든 계산을 직접 수행하는 장소가 아니다.
 각 Module은 Master Material에 연결하기 전에 자체적인 테스트가 가능해야 한다.
 
 이렇게 하면 복잡한 전체 Shader를 한 번에 디버깅하지 않고 각각의 기능을 개별적으로 검증할 수 있다.
+
+검증할 때는 먼저 입력 하나를 바꿨을 때 어떤 출력만 변해야 하는지 예상한다. 예를 들어 RimColor를 바꿀 때 방향에서 만든 RimMask까지 달라진다면, Mask 생성과 Color 합성의 책임이 섞였는지 확인할 수 있다. 이 예상과 실제 중간값을 비교하는 방식이 이후 Module 실습의 공통 기준이 된다.
 
 
 #### Define Data Meaning First

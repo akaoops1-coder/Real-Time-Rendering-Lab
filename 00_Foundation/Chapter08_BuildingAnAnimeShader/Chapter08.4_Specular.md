@@ -2,7 +2,7 @@
 
 ## 8.4 Phong Specular — From Reflection to Specular Highlight
 
-이 Section은 Chapter 05의 Reflection 관계를 Material Graph로 옮기는 교육용 Phong Response이다. 정규화된 Cook-Torrance PBR BRDF 구현이 아니다. 같은 Space의 Unit N/L/V와 Surface→Light, Surface→Camera 규칙을 사용한다.
+이번 절에서는 Chapter 05에서 이해한 Phong의 방향 관계를 Material Graph로 옮긴다. 먼저 Highlight가 필요한 상황을 떠올린 뒤, Reflection 방향을 만들고 Camera 방향과 비교하여 원하는 영역을 남긴다.
 
 ### Diffuse Does Not Explain Everything
 
@@ -113,6 +113,8 @@ Light Source
 > **`L = Surface → Light`**
 
 이 방향 정의를 이후의 Reflection 계산 전체에서 일관되게 사용한다.
+
+같은 Space의 Unit N/L/V와 Surface→Light, Surface→Camera 규칙을 사용한다. 이 Section의 계산은 교육용 Phong Response이며 정규화된 Cook-Torrance PBR BRDF 구현이 아니다. Chapter 05의 정확한 물리적 BRDF와, 여기서 방향 정렬을 Style Mask로 사용하는 목적을 구분한다.
 
 <img src="../Figures/Chapter08/Fig8_21.png" width="85%">
 
@@ -401,9 +403,18 @@ L · N
 
 두 Vector를 **Dot Product**에 연결하면 두 방향의 관계가 하나의 Scalar 값으로 출력된다.
 
+Reflection 계산에서는 Surface 뒤쪽인지도 방향 구성에 필요하므로 Dot의 부호 있는 원값을 사용한다. 앞의 Base Lighting에서처럼 Saturate를 거친 값과 여기서 사용할 값을 혼동하지 않는다. 같은 Dot 연산도 다음 단계의 목적에 따라 보존할 범위가 달라진다.
+
 <img src="../Figures/Chapter08/Fig8_10.png" width="90%">
 
-**Figure 8-10. Dot 계산을 표시한 기존 Material Graph.** 화면에서는 `LightDirection`만 명시적으로 Normalize되고 `PixelNormalWS`는 Dot에 직접 연결되어 있다. Dot 뒤의 Saturate 출력은 `[0,1]` 시각화용 값이며, Reflection Vector 구성에 필요한 부호 있는 `L · N` 원값 `[-1,1]`과 구분한다. 아래 구현 계약에서는 두 입력을 같은 공간의 Unit Vector로 준비하고 Reflection 계산에 Saturate 이전 값을 사용한다. 오른쪽 Lit 결과에는 조명과 화면 변환이 포함되므로 수치 검증 자료로 사용하지 않는다. 현재 계약을 명확히 보여주는 Graph와 통제된 Debug 출력의 재촬영이 필요하다.
+**Figure 8-10. Dot 계산을 표시한 기존 Material Graph.**
+
+<details>
+<summary>Verification Note</summary>
+
+화면에서는 `LightDirection`만 명시적으로 Normalize되고 `PixelNormalWS`는 Dot에 직접 연결되어 있다. Dot 뒤의 Saturate 출력은 `[0,1]` 시각화용 값이며, Reflection Vector 구성에 필요한 부호 있는 `L · N` 원값 `[-1,1]`과 구분한다. 아래 구현 계약에서는 두 입력을 같은 공간의 Unit Vector로 준비하고 Reflection 계산에 Saturate 이전 값을 사용한다. 오른쪽 Lit 결과에는 조명과 화면 변환이 포함되므로 수치 검증 자료로 사용하지 않는다. 현재 계약을 명확히 보여주는 Graph와 통제된 Debug 출력의 재촬영이 필요하다.
+
+</details>
 
 Graph에서는 `LightDirection`과 Surface Normal을 각각 Normalize한 뒤 **Dot Product**에 연결한다.
 
@@ -700,6 +711,8 @@ R
 
 `PixelNormalWS`에서 Surface Normal `N`을 가져오고, `LightDirection`에서 Light Direction `L`을 가져온다.
 
+Chapter 03의 Normalize 조건을 그대로 사용하여 N과 L을 같은 Space의 Unit Vector로 준비한다. 여기서 만든 Unit L을 Dot 입력과 마지막 Subtract 입력에 모두 재사용한다. 중간에 원래 길이의 L로 돌아가면 두 계산이 같은 Reflection Geometry를 구성하지 않기 때문이다.
+
 먼저 두 Vector를 **Dot Product**에 연결하여 `L · N`을 계산한다.
 
 그 다음 이 Scalar에 `2`를 곱하고 다시 `N`과 곱하여 `2(L · N)N`을 구성한다.
@@ -708,7 +721,14 @@ R
 
 <img src="../Figures/Chapter08/Fig8_14.png" width="90%">
 
-**Figure 8-14. Reflection Vector를 표시한 기존 Graph — 입력 분기 수정 후 재촬영 필요.** 캡처는 Dot에는 Normalize된 L을 사용하지만 `−L` 항에는 Normalize 이전 입력을 사용한다. 올바른 `R = 2(L·N)N − L`은 두 항에서 같은 Unit L을 사용해야 하며 마지막 Normalize만으로 이 오류를 일반적으로 복구할 수 없다. `0.5R + 0.5`는 RGB Debug 표시용 변환이지 Reflection 계산이나 최종 Highlight가 아니다. Base Color로 연결된 Lit 결과에는 조명과 화면 변환이 추가되므로 방향값의 직접 검증 자료로 해석하지 않는다.
+**Figure 8-14. Reflection Vector를 표시한 기존 Graph — 입력 분기 수정 후 재촬영 필요.**
+
+<details>
+<summary>Verification Note</summary>
+
+캡처는 Dot에는 Normalize된 L을 사용하지만 `−L` 항에는 Normalize 이전 입력을 사용한다. 올바른 `R = 2(L·N)N − L`은 두 항에서 같은 Unit L을 사용해야 하며 마지막 Normalize만으로 이 오류를 일반적으로 복구할 수 없다. `0.5R + 0.5`는 RGB Debug 표시용 변환이지 Reflection 계산이나 최종 Highlight가 아니다. Base Color로 연결된 Lit 결과에는 조명과 화면 변환이 추가되므로 방향값의 직접 검증 자료로 해석하지 않는다.
+
+</details>
 
 Material Graph의 전체 구조는 다음과 같이 읽을 수 있다.
 
@@ -863,7 +883,14 @@ R · V = 0
 
 <img src="../Figures/Chapter08/Fig8_15.png" width="90%">
 
-**Figure 8-15. R·V를 Base Color에 연결한 기존 Material Graph — 재촬영 필요.** 실제 이미지에서는 위쪽 Dot 출력이 Base Color로 연결되며, `0.5R + 0.5` Add 출력은 연결되지 않았다. 다만 Fig8_14와 같은 정규화 전/후 L 혼용 오류가 남아 있으므로 이 R을 올바른 Reflection Vector로 간주하지 않는다. 동일 Unit L 분기와 Unit N/V를 확인한 뒤 다시 촬영해야 한다. 오른쪽 Lit 결과는 조명과 화면 변환이 포함되어 부호 있는 R·V 원값의 직접 표시가 아니다.
+**Figure 8-15. R·V를 Base Color에 연결한 기존 Material Graph — 재촬영 필요.**
+
+<details>
+<summary>Verification Note</summary>
+
+실제 이미지에서는 위쪽 Dot 출력이 Base Color로 연결되며, `0.5R + 0.5` Add 출력은 연결되지 않았다. 다만 Fig8_14와 같은 정규화 전/후 L 혼용 오류가 남아 있으므로 이 R을 올바른 Reflection Vector로 간주하지 않는다. 동일 Unit L 분기와 Unit N/V를 확인한 뒤 다시 촬영해야 한다. 오른쪽 Lit 결과는 조명과 화면 변환이 포함되어 부호 있는 R·V 원값의 직접 표시가 아니다.
+
+</details>
 
 Graph의 핵심 흐름은 다음과 같다.
 
@@ -1047,6 +1074,8 @@ Highlight 부드러워짐
 
 이 차이는 실제 Material Graph의 결과를 비교하면 더욱 명확하게 확인할 수 있다.
 
+비교할 때에는 올바른 Unit L/N/V와 동일 Unit L의 Reflection 분기를 먼저 확인한다. 같은 Geometry·Normal·Light·Camera·Exposure·출력 경로에서 Exponent 8/32/128만 바꾸어야 Highlight 분포의 차이를 Power의 영향으로 해석할 수 있다. 아래 기존 Figure는 화면에서 보이는 연결을 읽는 참고이며, 이 통제된 비교의 완료 증거는 아니다.
+
 **Low Exponent**
 
 낮은 Exponent에서는 `R · V`가 1에서 어느 정도 떨어져 있는 영역에서도 Response가 유지된다.
@@ -1055,7 +1084,14 @@ Highlight 부드러워짐
 
 <img src="../Figures/Chapter08/Fig8_16.png" width="85%">
 
-**Figure 8-16. Exponent 8의 기존 표시 예시.** 보이는 계산은 `pow(saturate(R·V), 8)`이며 결과는 Lit Material의 Base Color에 연결되어 있다. 화면의 밝기는 Specular Mask 원값이 아니며 추가 조명과 화면 변환의 영향을 받는다. 잘린 R 입력 계산의 정확성이나 다른 Figure와의 통제 조건은 이 캡처만으로 검증할 수 없다. 올바른 Unit L/N/V와 Reflection 분기를 확인하고 같은 Camera·Exposure·출력 경로에서 Exponent만 바꾼 Debug 결과로 재촬영한다.
+**Figure 8-16. Exponent 8의 기존 표시 예시.**
+
+<details>
+<summary>Verification Note</summary>
+
+보이는 계산은 `pow(saturate(R·V), 8)`이며 결과는 Lit Material의 Base Color에 연결되어 있다. 화면의 밝기는 Specular Mask 원값이 아니며 추가 조명과 화면 변환의 영향을 받는다. 잘린 R 입력 계산의 정확성이나 다른 Figure와의 통제 조건은 이 캡처만으로 검증할 수 없다. 올바른 Unit L/N/V와 Reflection 분기를 확인하고 같은 Camera·Exposure·출력 경로에서 Exponent만 바꾼 Debug 결과로 재촬영한다.
+
+</details>
 
 ---
 
@@ -1067,7 +1103,14 @@ Exponent를 높이면 `1`에 가까운 `R · V` 값이 더 강조된다.
 
 <img src="../Figures/Chapter08/Fig8_17.png" width="85%">
 
-**Figure 8-17. Exponent 32의 기존 표시 예시.** `pow(saturate(R·V), 32)`가 Lit Material의 Base Color로 연결되어 있으며, 기존 Material의 Specular 값도 남아 있다. 화면 밝기를 Phong Mask 단독 결과로 해석하지 않는다. Fig8_16과 함께 올바른 R 입력을 확인한 뒤 Camera·Exposure·출력 경로를 고정하고 Exponent만 바꿔 재촬영한다. 잘린 입력부와 사용하지 않는 RGB remap 경로는 검증 범위와 구분한다.
+**Figure 8-17. Exponent 32의 기존 표시 예시.**
+
+<details>
+<summary>Verification Note</summary>
+
+`pow(saturate(R·V), 32)`가 Lit Material의 Base Color로 연결되어 있으며, 기존 Material의 Specular 값도 남아 있다. 화면 밝기를 Phong Mask 단독 결과로 해석하지 않는다. Fig8_16과 함께 올바른 R 입력을 확인한 뒤 Camera·Exposure·출력 경로를 고정하고 Exponent만 바꿔 재촬영한다. 잘린 입력부와 사용하지 않는 RGB remap 경로는 검증 범위와 구분한다.
+
+</details>
 
 ---
 
@@ -1079,7 +1122,14 @@ Exponent를 더욱 높이면 `R · V`가 `1`에 가까운 매우 좁은 영역�
 
 <img src="../Figures/Chapter08/Fig8_18.png" width="85%">
 
-**Figure 8-18. Exponent 128의 기존 표시 예시.** `pow(saturate(R·V), 128)`는 좁은 Mask를 만들지만 이 화면은 Lit Base Color와 기존 Specular 반응을 포함한다. 넓게 남은 밝기까지 Power의 결과로 해석하지 않는다. Fig8_16/17과 함께 정확한 R 입력을 확인하고 같은 Camera·Exposure·출력 경로에서 Exponent 8/32/128만 바꾸어 재촬영한다.
+**Figure 8-18. Exponent 128의 기존 표시 예시.**
+
+<details>
+<summary>Verification Note</summary>
+
+`pow(saturate(R·V), 128)`는 좁은 Mask를 만들지만 이 화면은 Lit Base Color와 기존 Specular 반응을 포함한다. 넓게 남은 밝기까지 Power의 결과로 해석하지 않는다. Fig8_16/17과 함께 정확한 R 입력을 확인하고 같은 Camera·Exposure·출력 경로에서 Exponent 8/32/128만 바꾸어 재촬영한다.
+
+</details>
 
 ---
 
@@ -1231,7 +1281,14 @@ Specular Contribution → Unlit Final Color
 
 이 Figure의 기존 Lit/Specular Pin 연결은 위에서 정의한 Unlit Color 합성과 구분한다. 직접 계산한 Phong Response를 Lit Specular Property에 연결한 모습이 있다면 현재 최종 Architecture의 근거로 사용하지 않는다. 수정된 Data Flow는 Mask × Color × Intensity → Final Color 합성이다.
 
-**Figure 8-19. 기존 Lit Specular Pin 연결 예시 — 현재 ASF 최종 합성의 증거가 아님.** 현재 캡처에는 정규화 전 L을 `−L` 항에 사용하는 오류도 남아 있다. 두 Reflection 항에서 동일 Unit L을 사용하도록 수정하고, `Mask × Color × Intensity`를 Unlit Final Color에 합성한 실제 Graph와 결과로 재촬영한다. Lit Specular Property를 조절하는 것과 사용자 Phong Response를 직접 출력하는 것은 구분한다.
+**Figure 8-19. 기존 Lit Specular Pin 연결 예시 — 현재 ASF 최종 합성의 증거가 아님.**
+
+<details>
+<summary>Verification Note</summary>
+
+현재 캡처에는 정규화 전 L을 `−L` 항에 사용하는 오류도 남아 있다. 두 Reflection 항에서 동일 Unit L을 사용하도록 수정하고, `Mask × Color × Intensity`를 Unlit Final Color에 합성한 실제 Graph와 결과로 재촬영한다. Lit Specular Property를 조절하는 것과 사용자 Phong Response를 직접 출력하는 것은 구분한다.
+
+</details>
 
 이제 Material Graph 안에서 계산된 Specular Response가 실제 Surface의 Shading에 반영된다.
 
@@ -1363,11 +1420,11 @@ Specular = pow(saturate(R · V), n)
 - Surface Normal
 - View Direction
 - Reflection Vector
-- Shininess
+- Shininess — 앞의 Power에서 사용한 Exponent를 Function 입력으로 드러낸 집중도 조절값
 
 이 서로 어떤 관계를 가지며 Specular Highlight를 만드는지 직접 확인하는 것이었다.
 
-이제 계산 원리와 결과가 검증되었으므로, 동일한 계산을 ASF의 Module Architecture에 맞게 독립적인 Material Function으로 분리한다.
+위 방향 계약과 Basic Validation으로 계산을 확인한 뒤, 동일한 계산을 ASF의 Module Architecture에 맞게 독립적인 Material Function으로 분리한다. Function으로 묶기 전후에 같은 입력에서 같은 Mask가 나오는지 비교하면, 모듈화가 계산의 의미를 바꾸지 않았는지 확인할 수 있다.
 
 새로운 Material Function의 이름은 다음과 같다.
 
@@ -1440,6 +1497,8 @@ Shininess
 `LightDirection`은 현재 Surface에서 Light 방향을 나타낸다.
 
 `ViewDirection`은 현재 Surface에서 Camera를 향하는 방향이다.
+
+`Shininess`는 앞의 Power에서 사용한 Exponent를 Function의 조절값으로 드러낸 이름이다. 그 값이 Highlight가 남는 영역의 집중도를 정하고, Color와 Intensity는 나중에 그 영역을 어떤 색과 세기로 표현할지 정한다.
 
 `Shininess`는 0보다 큰 값으로 설정한다. Color와 Intensity는 이 Function의 Input이 아니며 Master Material에서 곱한다. Normal/LightDirection/ViewDirection은 같은 Space의 비영 Vector여야 한다.
 
@@ -1663,7 +1722,14 @@ SpecularMask
 
 <img src="../Figures/Chapter08/Fig8_49.png" width="90%">
 
-*Figure 8-49. `MF_Specular` 내부 Graph. N과 L을 정규화하고 동일한 Unit L을 Dot 및 −L 분기에 사용한다. ViewDirection은 내부 Normalize 없이 연결되므로 호출부에서 같은 공간의 비영 Unit Vector V(Surface→Camera)를 제공해야 한다. Shininess는 0보다 커야 하며 출력은 `pow(saturate(R·V), Shininess)`인 교육용 Scalar Mask이다. Color/Intensity 합성이나 에너지 보존 BRDF를 이 Graph 자체가 제공하지는 않는다.*
+*Figure 8-49. `MF_Specular` 내부 Graph.*
+
+<details>
+<summary>Verification Note</summary>
+
+N과 L을 정규화하고 동일한 Unit L을 Dot 및 −L 분기에 사용한다. ViewDirection은 내부 Normalize 없이 연결되므로 호출부에서 같은 공간의 비영 Unit Vector V(Surface→Camera)를 제공해야 한다. Shininess는 0보다 커야 하며 출력은 `pow(saturate(R·V), Shininess)`인 교육용 Scalar Mask이다. Color/Intensity 합성이나 에너지 보존 BRDF를 이 Graph 자체가 제공하지는 않는다.
+
+</details>
 
 `MF_Specular` 내부에서는
 

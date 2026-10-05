@@ -1,64 +1,40 @@
 # Chapter 01 — Rendering Pipeline
 
-3D Character나 Environment를 제작할 때 우리는 보통 Modeling, Material, Lighting, Camera와 같은 요소를 개별적으로 다룬다.
+3D 프로그램에서 Character의 형태를 만들고 색을 입혔다고 생각해 보자. 제작한 형태는 공간 안에 있지만, Monitor가 보여줄 수 있는 결과는 평평한 Image다. 그렇다면 컴퓨터는 **공간에 있는 물체를 화면의 어느 위치에, 어떤 모습으로 보여줄지** 어떻게 정할까?
 
-실제 화면에 최종 Image를 만들려면 이러한 정보들이 연결되어야 한다. Renderer가 필요한 Data와 작업을 준비하고, GPU는 그 Data를 일정한 규칙에 따라 처리해 화면에 사용할 결과를 만든다.
+이 Image를 만드는 일을 **Rendering**이라고 한다. 여러 물체와 관찰·조명 정보가 함께 배치된 공간은 **Scene**이다. Scene의 정보를 사용해 2D Image를 만드는 과정은 하나의 계산으로 끝나지 않는다. 형태를 준비하고, 화면 위치를 찾고, 그 위치의 표면 결과를 계산한 뒤 결과를 저장해야 한다.
 
-이 전체 과정을 이해하기 위한 첫 번째 단계가 **Rendering Pipeline**이다.
+이처럼 서로 다른 문제를 맡은 처리 단계가 Data를 주고받으며 이어지는 흐름이 **Rendering Pipeline**이다. 여기서 `Pipeline`은 어떤 Data가 한 단계의 입력이 되고, 처리 결과가 다음 단계의 입력으로 이어지는 구조를 뜻한다.
 
-Rendering Pipeline은 3D Scene의 Geometry가 화면의 Pixel 결과로 변환되는 기본 흐름을 설명한다.
-
-Vertex는 어떻게 처리되는가, Triangle은 언제 만들어지는가, 화면 밖의 Geometry는 어떻게 제거되는가, Triangle은 어떤 과정을 통해 Pixel 후보로 바뀌는가, 그리고 최종적으로 어떤 Surface가 화면에 남는가는 모두 Rendering Pipeline 안에서 연결된 문제다.
-
-이 Chapter에서는 이러한 흐름을 단계적으로 따라가며 다음 질문에 답하는 것을 목표로 한다.
+이번 Chapter의 질문은 다음과 같다.
 
 > **3D Mesh는 어떤 과정을 거쳐 최종 Screen의 Pixel이 되는가?**
 
-Chapter 01에서는 우선 기본적인 **Rasterization-based Rendering Pipeline**에 집중한다.
+`Mesh`는 물체의 형태를 점과 면의 연결로 표현한 Data이며, `Pixel(Picture Element)`은 최종 Image를 구성하는 기본 단위다. 두 단위는 같은 것이 아니므로, 그 사이에 어떤 처리가 필요한지를 따라가야 한다.
 
-Coordinate Transformation에 필요한 수학은 Chapter 02에서, Lighting에 필요한 Vector Mathematics는 Chapter 03에서, Material과 Shader 구조는 Chapter 04에서 이어서 다룬다.
+먼저 Scene의 형태를 살펴보고, 그 형태를 이루는 입력 Data를 처리한다. 그다음 형태가 화면의 어느 위치를 덮는지 찾고, 해당 위치의 Surface, 즉 물체 표면이 어떻게 보일지 계산한다. 계산한 결과를 저장하고 표시하면 하나의 Image가 완성된다.
 
-따라서 이 Chapter에서는 세부 수학이나 고급 Rendering 기법보다 먼저, 이후 모든 Rendering 개념을 이해하기 위한 **전체 구조와 기본 용어**를 만드는 데 집중한다.
+각 단계에서는 네 가지 질문을 함께 확인한다.
 
-이 Chapter에서 다룰 주요 흐름은 다음과 같다.
+- 지금 Data는 어디에 있는가?
+- 왜 다음 처리가 필요한가?
+- 무엇을 입력받아 어떤 결과를 만드는가?
+- 그 결과는 다음 단계에서 어떻게 사용되는가?
 
-**Model  
-→ Vertex Processing  
-→ Primitive Assembly  
-→ Culling / Clipping  
-→ Rasterization  
-→ Interpolation  
-→ Fragment / Pixel Processing  
-→ Depth Test  
-→ Framebuffer  
-→ Final Image**
+아래 본문에서는 필요한 용어를 이 질문의 흐름 안에서 하나씩 소개한다. 전체 단계의 명칭을 한꺼번에 암기하기보다, Data의 형태가 어떻게 달라지는지 이해하는 것이 목표다.
 
-각 단계의 이름을 암기하는 것이 목적은 아니다.
-
-중요한 것은 각 단계에서
-
-- 어떤 Data가 입력되는지
-- 어떤 문제가 해결되는지
-- Data가 어떤 형태로 바뀌는지
-- 다음 단계로 무엇이 전달되는지
-
-를 이해하는 것이다.
-
-이 구조를 이해하면 이후 Unreal Engine의 Material, Shader, Optimization, Debugging을 볼 때도 현재 다루고 있는 계산이 Rendering Pipeline의 어느 위치에서 수행되는지 훨씬 명확하게 파악할 수 있다.
-
+좌표 기준을 바꾸는 수학은 Chapter 02에서, 방향을 비교하는 수학은 Chapter 03에서 이어서 살펴본다. Chapter 04에서는 표면 표현을 위한 Data와 Program 구조를, Chapter 05에서는 빛을 반사하는 관계를 확장한다. 따라서 여기서는 이후 개념이 들어갈 **전체 구조와 기본 용어**를 먼저 만든다.
 ---
 
 ## 1.1 What is Rendering?
 
-게임이나 3D 프로그램에서 우리가 보는 화면은 3D 공간 그 자체가 아니다.
+게임이나 3D 프로그램에서 Camera를 움직이면 같은 Character도 다르게 보인다. Character의 형태 자체는 그대로인데 최종 Image의 위치와 크기, 보이는 면이 달라지는 이유는 무엇일까?
 
-Blender나 Unreal Engine의 Viewport 안에는 Character, Environment, Light, Camera와 같은 여러 3D 요소가 존재하지만, 실제 Monitor가 표시할 수 있는 것은 결국 가로와 세로로 배열된 **2D Pixel의 집합**이다.
+Monitor는 Scene의 공간 정보를 직접 표시하지 않는다. 가로와 세로로 놓인 Pixel마다 어떤 값을 표시할지 정해야 한다. 따라서 공간의 형태뿐 아니라 표면의 특성, 빛, 관찰 위치를 함께 사용할 필요가 있다.
 
-따라서 컴퓨터는 3D 공간에 존재하는 Scene 정보를 그대로 화면에 표시할 수 없다.
+**Rendering**은 이러한 Scene 정보를 입력받아 최종 2D Image를 생성하는 과정이다. `Viewport`는 Blender나 Unreal Engine에서 작업 중인 Scene의 관찰 결과를 보여주는 화면 영역이다. Viewport에서 보는 것도 Scene 자체가 아니라 그 정보를 이용해 만든 Image다.
 
-3D Scene에 들어 있는 Geometry, Material, Light, Camera 등의 정보를 이용해 각 화면 위치에 어떤 결과를 표시할 것인지 계산해야 한다.
-
-이렇게 **3D Scene의 정보를 처리하여 최종적인 2D Image를 만들어 내는 과정**을 **Rendering**이라고 한다.
+먼저 Character 하나를 보여주려면 어떤 입력이 필요한지 살펴보자. 그 입력을 알면 이후 Pipeline이 왜 여러 단계로 나뉘는지도 이해할 수 있다.
 
 ---
 
@@ -123,7 +99,11 @@ Rendering 과정은 이러한 정보를 입력으로 받아 계산을 수행하�
 
 Character Modeling에서 우리가 다루는 Mesh 역시 Geometry의 한 종류다.
 
-Mesh는 일반적으로 여러 개의 **Vertex**와 그것들을 연결하여 만들어진 **Triangle**들로 구성된다.
+Mesh의 형태를 표현하려면 먼저 꼭짓점의 위치를 저장해야 한다. 이 꼭짓점을 **Vertex**라고 한다. 세 Vertex를 연결해 만든 삼각형 면이 **Triangle**이며, Mesh는 일반적으로 여러 Vertex와 Triangle의 연결로 구성된다.
+
+컴퓨터는 이 입력 Data를 실제 계산으로 처리한다. **GPU(Graphics Processing Unit)**는 많은 Geometry와 화면 위치의 계산을 병렬로 처리하도록 설계된 Processor, 즉 계산 장치다. GPU는 Character라는 의미를 이해하기보다, 전달된 점과 면의 Data를 정해진 Program으로 처리한다.
+
+그 계산이 수행되도록 프로그램의 상태와 작업 지시를 관리하는 장치가 **CPU(Central Processing Unit)**다. Rendering에서는 CPU와 Engine이 필요한 Data와 명령을 준비하고 GPU가 전달된 작업을 수행하는 기본 관계를 생각할 수 있다. 두 장치의 연결은 1.12에서 다시 살펴본다.
 
 예를 들어 Blender에서 Character의 얼굴을 Modeling했다고 하더라도 GPU가 이를 단순히 "얼굴"이라는 하나의 물체로 이해하는 것은 아니다.
 
@@ -131,7 +111,13 @@ Rendering 과정에서는 Mesh를 구성하는 Vertex와 Triangle 같은 Geometr
 
 이때 Vertex는 단순히 공간상의 점 하나만을 의미하지 않는다.
 
-Position 외에도 Normal, UV, Tangent, Vertex Color 등 여러 정보가 함께 전달될 수 있다.
+Vertex가 어디에 있는지 나타내는 값은 **Position**이다. 하지만 Position만으로는 그 위치에 어떤 색이나 데이터를 사용할지, 빛을 어느 방향으로 받을지 알 수 없다. 이러한 목적을 위해 Vertex에 함께 연결하는 속성 Data를 **Vertex Attribute**라고 한다. `Attribute`는 계산에 사용할 개별 속성을 뜻한다.
+
+방향을 이야기하려면 **Vector**라는 표현이 필요하다. Vector는 방향과 길이를 함께 가진 화살표로 생각할 수 있다. 표면이 어느 방향을 향하는지 나타내는 대표적인 방향 Data가 **Normal**이다. 여기서 Vertex에 저장한 Normal은 표면 표현에 사용할 방향이며, 실제 Triangle 평면에 수직인 방향과의 구분은 1.3에서 확인한다.
+
+Surface의 위치에 따라 다른 색이나 값을 사용하려면 **Texture**가 필요하다. Texture는 위치별 Color 또는 계산용 Data를 저장해 두고, 필요한 위치에서 값을 읽는 자원이다. 그중 2D Texture의 어느 위치를 사용할지 나타내는 두 좌표가 **UV**다. `U`와 `V`는 두 좌표축의 이름이며 약어를 풀어 만든 명칭이 아니다.
+
+**Tangent**는 Surface 위를 따라가는 기준 방향이고, **Vertex Color**는 Vertex마다 Color나 특정 효과에 사용할 Data를 저장하는 Attribute다. 이처럼 Position 외에도 Normal, UV, Tangent, Vertex Color 등 여러 정보가 함께 전달될 수 있다.
 
 이러한 Vertex Data의 구조는 이후 **1.3 Vertex and Vertex Attributes**에서 자세히 살펴본다.
 
@@ -141,23 +127,25 @@ Position 외에도 Normal, UV, Tangent, Vertex Color 등 여러 정보가 함께
 
 **Material**은 Surface가 어떻게 보일지를 결정하기 위해 필요한 정보를 제공한다.
 
-예를 들어 다음과 같은 정보가 Material과 연결될 수 있다.
+피부와 금속이 다르게 보이는 이유를 계산하려면, 형태 외에 Surface의 특성을 알려줄 입력이 필요하다. 이 입력은 무엇을 표현하는지에 따라 역할이 달라진다.
 
-- Base Color
-- Roughness
-- Metallic
-- Normal
-- Texture
-- Opacity
-- Emission
+- **Base Color**는 Surface의 기본 색을 제공한다.
+- **Roughness**는 반사 표현에서 사용할 표면 거칠기를 나타낸다.
+- **Metallic**은 금속성 해석에 사용할 Data다.
+- **Normal**은 Surface 계산에 사용할 방향을 제공한다.
+- **Texture**는 위치에 따라 달라지는 Color나 Data를 제공한다.
+- **Opacity**는 표면의 불투명도를 표현하는 데 사용한다.
+- **Emission**은 표면 자체의 발광 표현을 위한 출력에 연결된다.
+
+이러한 입력을 이용해 Surface가 어떻게 보일지를 계산하는 일을 **Shading**이라고 한다. Material이 제공하는 모든 Data가 같은 계산에 사용되는 것은 아니다. 어떤 결과를 만들지는 해당 Rendering 작업과 Material의 목적에 따라 달라진다.
 
 같은 Geometry를 사용하더라도 어떤 Material을 적용하느냐에 따라 금속처럼 보일 수도 있고, 피부처럼 보일 수도 있으며, Stylized Character처럼 표현할 수도 있다.
 
-ASF에서 뒤쪽 Chapter에서 다루는 BRDF나 Anime Shader 역시 결국 이 Surface Appearance를 계산하는 Rendering 영역과 연결된다.
+ASF, 즉 이 문서에서 구축할 Anime Shader Framework의 표면 표현도 이 역할과 연결된다. Anime Shader는 Anime의 표현 의도에 맞게 Surface 결과를 계산하는 Program이며, 뒤쪽 Chapter에서 반사 모델과 구현을 단계적으로 연결한다.
 
 하지만 모든 Material이 동일한 방식으로 Light를 계산하는 것은 아니다.
 
-예를 들어 Unlit Material처럼 Lighting 계산을 사용하지 않고 직접 Color를 출력하는 경우도 존재한다.
+**Lighting**은 Light와 Surface의 관계를 이용해 빛의 영향을 계산하는 과정이다. **Unlit Material**은 이 일반적인 Lighting 계산을 사용하지 않고 직접 Color를 출력하는 Material을 뜻한다.
 
 따라서 Material은 Rendering 결과를 결정하는 중요한 요소이지만,
 
@@ -185,9 +173,11 @@ Light에는 다음과 같은 여러 정보가 존재할 수 있다.
 - Intensity
 - Range
 
-예를 들어 Directional Light가 Character의 오른쪽 위에서 비추고 있다면, Surface가 그 Light를 향하고 있는지 반대쪽을 향하고 있는지에 따라 Lighting 결과가 달라진다.
+이 입력 가운데 **Direction**은 빛이 오는 방향, **Position**은 광원의 위치, **Intensity**는 빛의 세기, **Range**는 영향을 고려할 범위를 뜻한다. Color는 빛의 색 정보다. 모든 종류의 Light가 이 입력을 같은 방식으로 사용하는 것은 아니다.
 
-ASF의 뒤쪽 Chapter에서 다룰 Lambert Lighting, Phong Specular, Shadow 등의 계산도 이러한 Light와 Surface의 관계와 연결된다.
+예를 들어 **Directional Light**는 광원의 위치보다 일정한 빛의 방향을 사용하는 Light다. Character의 오른쪽 위에서 비추고 있다면, Surface가 그 Light를 향하고 있는지 반대쪽을 향하고 있는지에 따라 Lighting 결과가 달라진다.
+
+이후 Chapter의 여러 반사 모델도 이러한 Light와 Surface의 관계를 사용한다. **Shadow**는 Surface가 다른 Geometry에 가려져 Light의 영향을 직접 받지 못하는 상황과 연결된다. Camera에서 보이는가와 Light에 보이는가는 서로 다른 질문이며 1.10에서 구분한다.
 
 다만 모든 Rendering 결과가 반드시 Light 계산을 필요로 하는 것은 아니다.
 
@@ -205,13 +195,15 @@ ASF의 뒤쪽 Chapter에서 다룰 Lambert Lighting, Phong Specular, Shadow 등�
 
 Camera는 단순히 촬영 위치만 결정하는 것이 아니다.
 
-Camera의 Position과 Orientation뿐 아니라 다음과 같은 정보도 최종 화면에 영향을 줄 수 있다.
+Camera의 Position은 관찰 위치이고, **Orientation**은 어느 방향으로 바라보는지 나타내는 자세다. 위치와 자세를 정한 뒤에도, 공간의 어느 범위를 화면에 대응시킬지 정해야 한다.
 
-- Field of View
-- Aspect Ratio
-- Near / Far Range
-- Perspective Projection
-- Orthographic Projection
+- **Field of View**는 Camera가 바라보는 시야의 각도 범위다.
+- **Aspect Ratio**는 화면의 가로와 세로 비율이다.
+- **Near / Far Range**는 Camera에 가까운 경계와 먼 경계로 고려할 공간 범위를 정한다.
+- **Perspective Projection**은 가까운 부분을 크게, 먼 부분을 작게 보이도록 공간을 화면에 대응시키는 방식이다.
+- **Orthographic Projection**은 거리에 따른 이러한 원근 크기 변화를 사용하지 않는 대응 방식이다.
+
+여기서 **Projection**은 Camera가 관찰하는 공간 정보를 화면에 사용할 좌표 형태로 대응시키는 처리를 뜻한다. 두 방식의 수학적 관계는 Chapter 02에서 다룬다.
 
 즉, 같은 3D Scene이라도 Camera가 어디에 있고 어떤 설정을 사용하는지에 따라 전혀 다른 2D Image가 만들어질 수 있다.
 
@@ -231,7 +223,7 @@ Rendering을 이해하려면 최종 결과인 **Pixel**의 의미도 함께 알�
 
 즉, 하나의 Frame을 만든다는 것은 최종적으로 약 207만 개의 화면 위치에 어떤 값을 표시할 것인지 결정하는 것과 연결된다.
 
-각 Pixel은 일반적으로 RGB와 같은 Color 정보를 가진다.
+각 Pixel은 일반적으로 **RGB(Red, Green, Blue)**와 같은 Color 정보를 가진다. RGB는 Red, Green, Blue 세 색 성분으로 Color를 표현하는 방식이다. 이후 등장하는 **RGBA**는 RGB에 **Alpha** 성분을 더한 표현이며, Alpha는 해당 작업에서 불투명도나 혼합에 사용할 Data 등에 연결될 수 있다. 각 성분처럼 따로 저장하고 사용하는 값의 길을 **Channel**이라고 한다.
 
 하지만 여기서 중요한 점이 있다.
 
@@ -279,13 +271,11 @@ Unreal Engine 같은 Game Engine의 Renderer는 Scene 정보를 바탕으로 GPU
 
 예를 들어 다음과 같은 요소들이 Renderer와 관련된다.
 
-- Geometry
-- Material
-- Light
-- Shadow
-- Transparency
-- Post Process
-- Render Target
+- Geometry와 Material, Light처럼 Scene 결과를 만드는 입력과 계산
+- Shadow처럼 빛이 가려지는 관계의 처리
+- **Transparency**처럼 뒤의 Surface도 함께 보이도록 하는 투명 표현
+- **Post Process**처럼 이미 계산한 화면 결과를 입력으로 다시 처리하는 작업
+- **Render Target**처럼 계산 결과를 기록해 다음 작업에 사용할 개별 저장 대상
 
 하지만 Renderer가 이 모든 계산을 하나의 거대한 과정으로 한 번에 수행하는 것은 아니다.
 
@@ -311,7 +301,13 @@ Monitor가 최종적으로 필요로 하는 것은
 
 따라서 GPU는 3D Geometry를 곧바로 Pixel로 바꾸는 것이 아니라 여러 단계를 거쳐 처리한다.
 
-매우 단순화하면 다음과 같은 흐름으로 생각할 수 있다.
+먼저 Vertex의 위치와 Attribute를 뒤의 처리에서 사용할 수 있도록 준비한다. 이 과정이 **Vertex Processing**이다. GPU에서 특정 Rendering 계산을 수행하는 Program을 **Shader**라고 하며, Vertex 입력을 처리하는 Program이 **Vertex Shader**다.
+
+Vertex를 연결한 Triangle의 화면 위치를 알더라도 내부 전체를 바로 색칠할 수는 없다. 화면의 어떤 위치가 그 Triangle에 의해 덮이는지 찾아야 한다. 이 판정 과정을 **Rasterization**이라고 한다.
+
+이렇게 찾은 위치에서 이후 Surface 계산에 사용할 후보 Data가 **Fragment**다. Fragment는 아직 Image에 남을 Pixel이 아니다. 해당 후보에서 Texture와 Material 등을 이용해 Surface 결과를 계산하는 작업이 **Fragment Processing**이다.
+
+따라서 매우 단순화하면 다음과 같은 흐름으로 생각할 수 있다.
 
 **3D Model  
 → Vertex Processing  
@@ -344,59 +340,13 @@ Monitor가 최종적으로 필요로 하는 것은
 
 ## 1.2 From Model to Screen
 
-앞 절에서는 Rendering이 3D Scene의 정보를 처리하여 최종적인 2D Image를 만들어 내는 과정이라는 점을 살펴보았다.
+앞 절에서 Rendering은 Scene 정보를 이용해 Image를 만드는 일이라고 설명했다. 이제 완성된 Character Mesh 하나가 GPU에 입력되었다고 생각해 보자. GPU는 Mesh라는 하나의 이름을 받아 곧바로 완성된 Image를 내놓는가?
 
-하지만 실제 Rendering은 하나의 단계에서 모든 계산을 끝내는 방식으로 이루어지지 않는다.
+그렇게 처리하려면 서로 다른 질문을 한 번에 해결해야 한다. 꼭짓점은 어디에 놓이는가, 어떤 꼭짓점들이 면을 만드는가, 그 면은 화면 어디를 덮는가, 겹친 면 가운데 무엇이 보이는가를 구분해야 한다.
 
-3D Model이 화면에 표시되기까지는 여러 개의 Processing Stage를 순서대로 거친다.
+각 질문에서 사용하는 Data도 다르다. 처음에는 Vertex의 위치와 속성을 사용하지만, 화면 위치를 찾은 다음에는 그 위치에서 사용할 Surface 입력과 결과가 필요하다. 따라서 **Stage**, 즉 특정 문제를 맡은 처리 단계로 작업을 나눈다.
 
-이 과정에서 Data의 형태도 계속 바뀐다.
-
-처음에는 3D 공간 안에 존재하는 Mesh Data였던 것이 Vertex 단위로 처리되고, Triangle과 같은 Primitive로 구성되며, 이후 Screen 위의 영역으로 변환된다.
-
-그리고 최종적으로는 화면을 구성하는 Pixel 결과로 이어진다.
-
-Chapter 01에서는 이 전체 흐름을 하나씩 분리해서 살펴볼 것이다.
-
-이번 절에서는 먼저 각 단계를 깊게 들어가기 전에,
-
-> **3D Model이 어떤 큰 흐름을 따라 Final Image가 되는가**
-
-를 전체적으로 살펴본다.
-
----
-
-<img src="Figures/Chapter01/Fig1_02.png" width="90%">
-
-**Figure 1-2. A simplified view of the rendering pipeline from 3D model to final image.**
-
-Figure 1-2는 Rasterization-based Rendering Pipeline의 기본 흐름을 단순화하여 보여준다.
-
-실제 GPU Rendering Pipeline은 API나 Hardware, Rendering Technique에 따라 더 많은 Stage와 세부 과정을 포함할 수 있다.
-
-하지만 지금 단계에서는 다음과 같은 큰 흐름을 먼저 이해하면 충분하다.
-
-**3D Model  
-→ Vertex Processing  
-→ Primitive Assembly  
-→ Culling / Clipping  
-→ Rasterization  
-→ Interpolation  
-→ Fragment Processing  
-→ Depth Test  
-→ Framebuffer  
-→ Final Image**
-
-이 흐름에서 중요한 것은 각 단계의 이름을 암기하는 것이 아니다.
-
-각 Stage를 지나면서
-
-- 어떤 Data가 들어오는지
-- 어떤 Data가 새롭게 만들어지는지
-- 무엇이 제거되는지
-- 다음 Stage로 무엇이 전달되는지
-
-를 이해하는 것이 중요하다.
+이번 절에서는 각 Stage의 입력과 출력을 먼저 따라간다. 이후 1.3–1.11에서 같은 연결을 더 자세히 살펴볼 것이므로, 현재는 **Data가 어디에서 어떤 형태로 바뀌는지**에 집중하면 된다.
 
 ---
 
@@ -415,7 +365,7 @@ Modeling Tool에서는 이것을 하나의 Character Object로 보고 작업하�
 - UV
 - Tangent
 - Vertex Color
-- Index Data
+- **Index Data** — 특정 Vertex를 가리키는 번호들의 연결 정보
 
 즉, GPU가 받는 것은 단순히
 
@@ -423,7 +373,7 @@ Modeling Tool에서는 이것을 하나의 Character Object로 보고 작업하�
 
 라는 정보가 아니다.
 
-Mesh를 구성하는 각 Vertex의 위치와 Attribute, 그리고 어떤 Vertex들이 서로 연결되어 Triangle을 만드는지에 대한 Data를 받는다.
+Mesh를 구성하는 각 Vertex의 위치와 Attribute, 그리고 어떤 Vertex들이 서로 연결되어 Triangle을 만드는지에 대한 Data를 받는다. 그 연결에서 특정 Vertex를 가리키는 번호가 **Index**다. Index Data는 형태의 이름이 아니라, 어떤 입력을 함께 사용할지 알려준다.
 
 이러한 Vertex와 Vertex Attribute의 정확한 의미는 다음 절인 **1.3 Vertex and Vertex Attributes**에서 자세히 다룬다.
 
@@ -437,9 +387,11 @@ Rendering Pipeline에서 Geometry Data가 들어오면 먼저 Vertex 단위의 �
 
 각 Vertex는 독립적인 Data를 가지고 있으며 GPU는 이러한 Vertex들을 처리한다.
 
-대표적으로 Vertex Position은 여러 Coordinate Space를 거치면서 최종적으로 Camera와 Screen을 기준으로 사용할 수 있는 형태로 변환된다.
+같은 Mesh를 Scene의 서로 다른 곳에 두면, 저장된 Vertex Position이 같아도 화면 위치는 달라져야 한다. 따라서 저장된 Position의 기준만으로 화면 위치를 정할 수 없다.
 
-예를 들어 처음 Mesh 안에 저장되어 있던 Vertex Position은 Object 자체의 Local Space를 기준으로 표현될 수 있다.
+Position을 어떤 기준에서 표현하는지 정하는 공간이 **Coordinate Space**다. Mesh 내부 위치처럼 Object 자체를 기준으로 한 표현은 **Local Space**라고 한다. Scene 전체의 공통 기준은 **World Space**이며, Camera의 관찰 기준으로 표현하는 공간은 **View Space**다. 하나씩 기준을 바꾸며 같은 Vertex를 화면에 사용할 형태로 표현한다.
+
+이처럼 위치·회전·크기와 표현 기준의 관계를 반영해 값을 바꾸는 처리가 **Transform**이다. **Coordinate Transformation**은 서로 다른 Coordinate Space 사이에서 값을 변환하는 과정을 뜻한다. Vertex Shader는 필요한 이러한 처리를 수행해 다음 단계의 Position을 준비한다.
 
 하지만 화면에 표시하려면
 
@@ -463,7 +415,9 @@ Vertex를 각각 처리했다고 해서 아직 화면에 표시할 Surface가 �
 
 Surface를 구성하려면 Vertex들이 서로 연결되어야 한다.
 
-GPU는 Vertex와 Index Data를 이용하여 여러 Vertex를 묶고 **Primitive**를 구성한다.
+처리된 Vertex의 목록만으로는 어떤 점들이 한 면을 만드는지 알 수 없다. 연결 관계를 따라 Vertex를 묶어야 GPU가 처리할 도형이 된다.
+
+이 기본 도형 단위를 **Primitive**라고 한다. Point, Line, Triangle이 대표적인 예이며, 여기서는 Surface를 표현하는 Triangle을 중심으로 살펴본다. GPU는 Vertex와 Index Data를 이용하여 여러 Vertex를 묶고 Primitive를 구성한다.
 
 실시간 3D Rendering에서 가장 대표적인 Primitive는 **Triangle**이다.
 
@@ -474,7 +428,9 @@ GPU는 Vertex와 Index Data를 이용하여 여러 Vertex를 묶고 **Primitive*
 + Vertex C  
 → Triangle**
 
-이처럼 처리된 Vertex들을 이용해 Primitive를 구성하는 단계를 **Primitive Assembly**라고 한다.
+이처럼 처리된 Vertex들을 이용해 Primitive를 구성하는 단계를 **Primitive Assembly**라고 한다. 입력은 처리된 Vertex와 그 연결 관계이고, 출력은 이후 Geometry 처리에 사용할 Triangle 같은 Primitive다.
+
+여기서 연결 관계를 저장한 Data는 어디에 있는가? 이후 작업이 읽을 Data를 담아두는 저장 공간을 **Buffer**라고 한다. **Vertex Buffer**에는 Vertex와 Attribute Data가, **Index Buffer**에는 Vertex를 선택할 번호들이 저장된다. 이 저장 역할과 Indexed / Non-indexed Draw의 차이는 1.5에서 자세히 확인한다.
 
 왜 Real-time Rendering에서 Triangle을 기본 단위로 사용하는지, 그리고 Primitive가 정확히 무엇을 의미하는지는 **1.5 Primitive Assembly**에서 자세히 살펴본다.
 
@@ -541,7 +497,9 @@ Culling과 Clipping은 이름이 비슷하게 느껴질 수 있지만 역할은 
 
 이 역할을 하는 핵심 과정이 **Rasterization**이다.
 
-Rasterization은 Screen에 투영된 Triangle을 기준으로, 해당 Triangle이 화면의 어떤 Sample 또는 Pixel 영역을 덮고 있는지 판단한다.
+Rasterization은 Screen에 투영된 Triangle을 기준으로, 해당 Triangle이 화면의 어떤 위치를 덮고 있는지 판단한다. 여기서 판정에 사용할 대표 위치가 **Sample**이며, Triangle이 그 위치를 덮는가에 대한 결과를 **Coverage**라고 한다.
+
+입력은 화면에 대응된 Triangle이고, 출력은 Coverage를 만족한 위치와 그 위치에서 이후 처리할 Fragment다. 아직 Surface의 Color를 계산하거나 최종 Pixel을 확정한 것은 아니다.
 
 예를 들어 하나의 Triangle이 Screen 위에 다음과 같이 놓여 있다고 생각해 보자.
 
@@ -598,7 +556,7 @@ GPU는 세 Vertex가 가진 값을 이용하여 Triangle 내부의 각 위치에
 - Vertex Color
 - 기타 Vertex에서 전달된 Attribute
 
-Interpolation은 Texture Sampling과 Surface Shading을 이해하는 데 매우 중요한 개념이다.
+**Texture Sampling**은 사용할 UV를 받아 Texture의 해당 위치에서 값을 읽는 과정이다. Interpolation은 그 UV를 준비하고, Sampling은 준비된 UV로 저장된 값을 읽는다. 따라서 Interpolation은 Texture Sampling과 Surface Shading을 이해하는 데 매우 중요한 개념이다.
 
 따라서 **1.8 Interpolation**에서 별도로 자세히 다룬다.
 
@@ -610,11 +568,9 @@ Rasterization을 통해 Fragment가 생성되고 필요한 값이 Interpolation�
 
 이 과정을 여기서는 **Fragment Processing**이라고 부른다.
 
-GPU API나 문맥에 따라 다음과 같은 용어가 함께 등장할 수 있다.
+이 입력을 계산하는 Program이 **Fragment Shader**다. 프로그램이 Graphics 기능을 요청하는 정해진 인터페이스를 **API(Application Programming Interface)**라고 한다. Direct3D API에서는 같은 역할의 Stage를 **Pixel Shader**라고 부른다. `Pixel Processing`이라는 표현도 이 화면 위치의 Surface 계산과 연결해서 사용된다.
 
-- Fragment Shader
-- Pixel Shader
-- Pixel Processing
+이름에 Pixel이 들어 있어도 이미 완성된 Image의 Pixel을 읽어 수정한다는 뜻은 아니다. Rasterization과 Interpolation으로 준비한 Fragment 입력을 받아 Surface 결과를 출력한다.
 
 이 단계에서는 Material과 관련된 다양한 계산이 수행될 수 있다.
 
@@ -649,9 +605,9 @@ Camera에서 같은 Screen 위치를 바라보더라도 서로 다른 거리의 
 
 하지만 최종 화면에서는 일반적으로 Camera에 더 가까운 Surface가 보여야 한다.
 
-이러한 앞뒤 관계를 판단하기 위해 **Depth** 정보를 사용한다.
+이러한 앞뒤 관계를 판단하기 위해 **Depth** 정보를 사용한다. Depth는 같은 Screen 위치에서 Surface가 Camera 기준으로 앞인지 뒤인지 판단하는 값이며, 단순한 World Space 거리와 반드시 같은 값은 아니다.
 
-그리고 Fragment의 Depth를 기존에 저장된 Depth와 비교하여 해당 Fragment를 화면에 남길지 판단하는 과정을 **Depth Test**라고 한다.
+그리고 Fragment의 Depth를 기존에 저장된 Depth와 비교하여 해당 Fragment가 결과에 기여할 수 있는지 판단하는 과정을 **Depth Test**라고 한다. Camera에서 어떤 Surface가 실제로 보이는가에 대한 관계는 **Surface Visibility**라고 한다. 여기서는 앞쪽의 불투명한 Surface가 뒤쪽을 가리는 기본 상황을 먼저 생각한다.
 
 매우 단순화하면 다음과 같이 생각할 수 있다.
 
@@ -661,7 +617,7 @@ Camera에서 같은 Screen 위치를 바라보더라도 서로 다른 거리의 
 **뒤에 가려진 Surface  
 → 제거됨**
 
-이 과정에서 사용하는 대표적인 Buffer가 **Depth Buffer**, 또는 **Z-Buffer**다.
+기존 판정값을 다음 Fragment에서도 사용하려면 그 값을 저장해야 한다. 위치별 Depth를 저장하는 Buffer가 **Depth Buffer**, 또는 **Z-Buffer**다. Z-Buffer라는 이름은 앞뒤 방향을 Z축과 연결하는 관례에서 왔으며, World Space의 Z 좌표를 그대로 저장한다는 뜻은 아니다.
 
 Depth와 Depth Test는 **1.10 Depth Test and Surface Visibility**에서 자세히 살펴본다.
 
@@ -671,15 +627,17 @@ Depth와 Depth Test는 **1.10 Depth Test and Surface Visibility**에서 자세�
 
 여러 Rendering Stage를 거쳐 최종적으로 살아남은 Color 결과는 어디엔가 저장되어야 한다.
 
-이러한 Rendering 결과를 저장하는 공간과 관련된 개념이 **Framebuffer**다.
+Color와 Depth는 서로 다른 목적의 Data다. Color는 Image를 구성하는 데, Depth는 이후 앞뒤 비교에 사용하므로 각각 저장할 대상이 필요하다.
 
-단순하게 생각하면 Framebuffer에는 최종 Image를 만들기 위한 여러 Buffer가 연결될 수 있다.
+이러한 여러 저장 대상을 함께 사용하도록 구성한 집합 또는 연결 구조가 **Framebuffer**다. Framebuffer는 하나의 Color 값이나 개별 Texture 이름이 아니라, 현재 Rendering 작업이 어떤 저장 대상을 사용할지 연결하는 관계다.
 
 예를 들어 Color 결과가 저장되는 **Color Buffer**가 있을 수 있다.
 
 Rendering 과정에서 계산된 결과들이 이곳에 기록되고, 최종적으로 화면에 표시할 Image를 구성하게 된다.
 
-실제 Modern Rendering에서는 여러 Render Target, Depth Buffer, GBuffer 등 더 복잡한 구조가 사용될 수 있다.
+결과를 기록하는 개별 Texture나 Surface는 **Render Target**이라고 한다. 여러 Render Target과 Depth Buffer를 함께 구성해 사용할 수 있다.
+
+어떤 작업은 최종 Lighting Color 대신 Normal이나 Material Data를 먼저 기록한다. 이 Surface 정보를 뒤의 Lighting 계산에서 소비하는 방식이 **Deferred Rendering**이다. 이때 후속 계산에 필요한 Geometry / Surface 정보를 저장하는 Buffer 묶음을 **GBuffer(Geometry Buffer)**라고 한다. 지금은 계산 결과가 다음 계산의 입력으로 저장될 수 있다는 관계만 확인하고, 구조의 차이는 1.11과 Chapter 06에서 이어서 살펴본다.
 
 하지만 Chapter 01에서는
 
@@ -701,7 +659,7 @@ Rendering Pipeline의 여러 단계를 거쳐 최종적으로 하나의 2D Image
 
 Scene과 Character가 움직이고 Camera가 변하면 새로운 Image를 계속 만들어야 한다.
 
-예를 들어 60 FPS의 게임에서는 이상적으로 1초 동안 약 60개의 Frame을 생성하고 표시한다.
+예를 들어 **FPS(Frames Per Second)**는 1초에 만들어지거나 표시되는 Frame 수를 표현한다. 60 FPS의 게임에서는 이상적으로 1초 동안 약 60개의 Frame을 생성하고 표시한다.
 
 따라서 Real-time Rendering은
 
@@ -714,6 +672,34 @@ Scene과 Character가 움직이고 Camera가 변하면 새로운 Image를 계속
 이기도 하다.
 
 이 때문에 Rendering Pipeline의 각 Stage가 얼마나 많은 Data를 처리하는지 이해하는 것은 이후 Optimization을 공부할 때도 매우 중요하다.
+
+---
+
+<img src="Figures/Chapter01/Fig1_02.png" width="90%">
+
+**Figure 1-2. A simplified view of the rendering pipeline from 3D model to final image.**
+
+Figure 1-2는 Rasterization-based Rendering Pipeline의 기본 흐름을 단순화하여 보여준다.
+
+Figure의 이름을 지금 모두 외울 필요는 없다. 위에서 살펴본 Stage를 왼쪽의 Mesh Data부터 다시 따라가 보자. 화면의 Surface 후보와 저장 결과로 이어지는 방향을 확인하면 각 명칭이 어떤 문제를 해결했는지 연결할 수 있다.
+
+<details>
+<summary>Implementation Note — a logical pipeline overview</summary>
+
+실제 GPU Rendering Pipeline은 API, Hardware, Rendering Technique에 따라 더 많은 Stage와 세부 과정을 포함할 수 있다. API는 앞서 소개한 Graphics 기능의 인터페이스다. 그림은 각 Data의 의존 관계를 설명하는 기본 개요이며, 모든 Hardware의 실행 순서를 고정하는 설명은 아니다.
+
+</details>
+
+이 흐름에서 중요한 것은 각 단계의 이름을 암기하는 것이 아니다.
+
+각 Stage를 지나면서
+
+- 어떤 Data가 들어오는지
+- 어떤 Data가 새롭게 만들어지는지
+- 무엇이 제거되는지
+- 다음 Stage로 무엇이 전달되는지
+
+를 이해하는 것이 중요하다.
 
 ---
 
@@ -766,6 +752,19 @@ Rasterization을 기점으로 Geometry가 Screen의 위치와 연결되기 시�
 
 현재 단계에서는 모든 용어의 세부 동작을 완전히 이해할 필요는 없다.
 
+지금까지 설명한 Stage를 이름으로 연결하면 다음과 같다.
+
+**3D Model  
+→ Vertex Processing  
+→ Primitive Assembly  
+→ Culling / Clipping  
+→ Rasterization  
+→ Interpolation  
+→ Fragment Processing  
+→ Depth Test  
+→ Framebuffer  
+→ Final Image**
+
 우선 다음 연결 관계를 머릿속에 만들어 두는 것이 중요하다.
 
 **Mesh의 Vertex Data를 처리한다.**
@@ -812,27 +811,13 @@ Rasterization을 기점으로 Geometry가 Screen의 위치와 연결되기 시�
 
 ## 1.3 Vertex and Vertex Attributes
 
-앞 절에서는 Rendering Pipeline이 3D Model의 Geometry Data를 받아 여러 단계를 거쳐 최종 Image를 만든다는 전체 흐름을 살펴보았다.
+Modeling Tool에서 Cube의 모서리를 선택하면 하나의 점을 선택한 것처럼 보인다. 그런데 같은 점이 한쪽 Face에서는 다른 Texture 위치를 사용하고, 다른 Face에서는 다른 방향으로 빛을 받아야 한다면 어떻게 할까?
 
-그 흐름의 시작점에서 가장 먼저 만나게 되는 핵심 Data가 **Vertex**다.
+앞 절에서 Vertex를 Mesh의 꼭짓점이자 GPU에 전달되는 Data 단위로 소개했다. 이번 절에서는 **그 위치에 어떤 Data를 함께 연결해야 Surface를 계산할 수 있는가**를 살펴본다.
 
-3D Modeling을 오래 해왔다면 Vertex라는 단어 자체는 매우 익숙하다.
+Position은 형태의 위치를 알려주지만 Texture를 읽을 위치나 Shading의 방향까지 알려주지 않는다. 그 목적은 UV와 Normal 같은 서로 다른 Vertex Attribute가 담당한다. 이 Attribute의 의미를 하나씩 구분하면, 같은 Position에서도 Rendering용 Vertex가 분리될 수 있는 이유를 이해할 수 있다.
 
-보통 Modeling Tool에서는 Vertex를 Mesh를 구성하는 **점**으로 이해한다.
-
-이 설명은 틀리지 않는다.
-
-하지만 Rendering Pipeline에서 Vertex를 이해하려면 한 단계 더 나아갈 필요가 있다.
-
-Vertex의 위치와 연결 관계를 알면 Mesh의 형태를 설명할 수 있다. 하지만 아직 그 Surface에 Texture를 어디서 읽을지, 빛을 어느 방향으로 받을지는 알 수 없다.
-
-Texture 위치를 알려면 UV가 필요하고, Lighting에 사용할 Surface 방향을 알려면 Normal이 필요하다. 이처럼 같은 Vertex에 서로 다른 목적의 Data가 연결된다.
-
-GPU가 처리하는 Vertex는 이러한 Data를 함께 다루는 단위다. Position, Normal, UV, Tangent, Vertex Color처럼 각 Vertex에 연결된 개별 Data를 **Vertex Attribute**라고 한다.
-
-여기서는 먼저 각 Attribute가 해결하는 문제를 살펴본다. 그 뒤 같은 Position에서도 Attribute가 다르면 Vertex가 분리될 수 있는 이유를 연결한다.
-
-따라서 Rendering 관점에서는 Vertex를 다음과 같이 이해하는 것이 더 정확하다.
+입력은 Mesh의 Vertex와 각 Attribute다. 여기서 확인한 Data 묶음은 다음 절의 Vertex Shader에 전달되므로, 각 값의 역할을 알고 다음 계산으로 넘어가는 것이 중요하다.
 
 > **Vertex는 하나의 위치를 포함하여 Rendering에 필요한 여러 Attribute를 함께 가진 Data 단위다.**
 
@@ -915,7 +900,7 @@ GPU가 Rendering 과정에서 실제로 읽고 계산에 사용하는 입력값�
 - Position은 Vertex가 어디에 있는지를 알려주고,
 - Normal은 Surface의 방향을 알려주며,
 - UV는 Texture의 어느 위치를 사용할지 알려주고,
-- Tangent는 Normal Mapping에 필요한 기준 방향을 제공하며,
+- Tangent는 Texture에 저장한 방향 Data를 Surface에 대응시킬 때 필요한 기준 방향을 제공하며,
 - Vertex Color는 Vertex마다 Color나 Mask 값을 저장할 수 있게 해준다.
 
 각 Attribute는 서로 다른 목적을 가지고 있지만 하나의 Vertex Data 안에서 함께 사용될 수 있다.
@@ -950,6 +935,8 @@ Mesh에 저장되어 있는 Vertex Position은 일반적으로 Object 또는 Loc
 
 Rendering 과정에서는 이 Position이 이후 여러 Coordinate Space를 거쳐 변환된다.
 
+Camera가 고려할 영역의 경계에서 Geometry를 자르려면 그 판정에 사용할 좌표 형태가 필요하다. 이 목적의 표현이 **Clip Space**다. 이후 화면 위치로 대응하기 전에 거치는 표현이며, Clip Space가 최종 Pixel 좌표라는 뜻은 아니다.
+
 예를 들어 다음과 같은 흐름을 거칠 수 있다.
 
 ~~~text
@@ -972,7 +959,9 @@ Chapter 01에서는 우선 Position이
 
 ### Normal
 
-**Normal**은 Surface가 어느 방향을 향하고 있는지를 표현하는 방향 Vector다.
+Position이 같아도 Surface의 방향이 다르면 빛을 받는 모습이 달라진다. 바닥과 벽을 같은 Light 아래에 두면 이 차이를 떠올리기 쉽다. 따라서 Surface의 Shading 방향을 알려줄 Data가 필요하다.
+
+앞 절에서 소개한 **Normal**은 이 방향을 표현하는 Vector다. Vertex에 저장한 Normal은 해당 Vertex 주변에서 Shading에 사용할 Surface 방향을 알려준다.
 
 Normal은 특히 Lighting 계산에서 매우 중요하다.
 
@@ -994,7 +983,7 @@ Vertex Normal은 부드러운 Shading을 위해 인접 Surface의 방향을 반�
 
 Normal은 Position처럼 위치를 나타내는 값이 아니라 **방향을 나타내는 Vector**라는 점도 중요하다.
 
-Normal의 정확한 의미와 Dot Product를 이용한 Lighting 계산은 뒤쪽 Chapter에서 더 자세히 다룬다.
+두 방향이 얼마나 같은 쪽을 향하는지 숫자로 나타내는 계산이 **Dot Product**다. Normal의 정확한 의미와 Dot Product를 이용한 Lighting 계산은 Chapter 03에서 더 자세히 다룬다.
 
 현재는 다음 정도로 이해하면 된다.
 
@@ -1004,7 +993,9 @@ Normal의 정확한 의미와 Dot Product를 이용한 Lighting 계산은 뒤쪽
 
 ### UV
 
-**UV**는 Texture의 어느 위치를 사용할 것인지 나타내는 Coordinate다.
+Character의 옷에 줄무늬 Texture가 있다고 생각해 보자. Vertex Position은 옷의 형태를 정하지만, 줄무늬의 어느 위치를 옷의 어느 부분에 놓을지 알려주지는 않는다.
+
+이 연결을 위한 좌표가 **UV**다. UV는 Texture의 어느 위치를 사용할 것인지 나타낸다. 여기서 **Coordinate**는 정해진 기준축에서 위치를 숫자로 표현한 값이다.
 
 3D Geometry는 X, Y, Z 축을 사용하지만 Texture는 일반적으로 2D Image이므로 두 개의 Coordinate를 사용한다.
 
@@ -1041,17 +1032,19 @@ Vertex UV
 
 **Tangent**는 Surface를 따라가는 기준 방향을 나타내는 Vector다.
 
-특히 **Normal Mapping**에서 중요한 역할을 한다.
+특히 Texture로 Lighting 방향의 세부 표현을 만들 때 중요한 역할을 한다.
 
-Normal Map에 저장된 Normal 방향은 일반적으로 Mesh의 World Space 방향을 직접 저장하는 것이 아니다.
+**Normal Mapping**은 Geometry를 더 늘리지 않고 Texture에 저장한 방향 Data를 이용해 Lighting에 사용할 Normal을 세밀하게 바꾸는 방법이다. 이 방향 Data를 담은 Texture가 **Normal Map**이다.
 
-대신 Surface를 기준으로 한 **Tangent Space**에서 표현되는 경우가 많다.
+Normal Map에 저장된 Normal 방향은 일반적으로 Mesh의 World Space 방향을 직접 저장하는 것이 아니다. 그 방향이 어느 기준에서 표현되어 있는지를 알아야 실제 Surface 계산에 사용할 수 있다.
+
+Normal Map의 방향은 Surface를 기준으로 한 **Tangent Space**에서 표현되는 경우가 많다. Tangent Space는 표면을 따라가는 기준 방향과 Normal 방향으로 구성한 지역적인 좌표 기준이다. 같은 Texture Data라도 Surface가 Scene에서 어느 방향으로 놓였는지에 맞게 해석해야 Lighting 방향으로 사용할 수 있다.
 
 이 Tangent Space를 구성하기 위해 대표적으로 다음 방향들이 사용된다.
 
 - Normal
 - Tangent
-- Bitangent
+- **Bitangent** — Surface 위에서 Tangent와 함께 두 번째 기준 방향을 제공하는 Vector
 
 Normal이 Surface 바깥쪽 방향을 나타낸다면 Tangent는 Surface 위를 따라가는 하나의 기준 방향을 제공한다.
 
@@ -1083,7 +1076,7 @@ Vertex Color = (1.0, 0.0, 0.0, 1.0)
 
 하지만 Vertex Color를 반드시 실제 화면의 색으로 사용할 필요는 없다.
 
-실무에서는 Vertex Color의 각 Channel을 **Mask Data**로 사용하는 경우도 많다.
+실무에서는 Vertex Color의 각 Channel을 **Mask Data**로 사용하는 경우도 많다. **Mask**는 Surface의 어느 부분에 효과를 얼마만큼 적용할지 정하는 제어 Data다. 예를 들어 0인 부분에는 효과를 적용하지 않고 1인 부분에는 더 강하게 적용하도록 사용할 수 있다.
 
 예를 들어
 
@@ -1119,7 +1112,9 @@ Rendering 목적에 따라 필요한 Attribute가 달라질 수 있다.
 - Additional UV Channel
 - Custom Vertex Data
 
-특히 Skeletal Mesh에서는 Vertex가 어떤 Bone의 영향을 얼마나 받는지를 나타내는 Skinning Data도 필요하다.
+**Skeletal Mesh**는 뼈대의 움직임을 통해 형태가 변하는 Mesh다. 뼈대의 각 기준이 **Bone**이며, Vertex를 뼈대 움직임에 따라 변형하는 계산을 **Skinning**이라고 한다.
+
+Bone Index는 영향을 주는 Bone을 가리키는 번호이고, Bone Weight는 그 영향의 비율이다. Skeletal Mesh에서는 Vertex가 어떤 Bone의 영향을 얼마나 받는지를 나타내는 이러한 Skinning Data도 필요하다.
 
 따라서 Vertex를 고정된 구조라고 보기보다는
 
@@ -1147,6 +1142,8 @@ Modeling Tool에서 하나의 Position처럼 보이는 점이 Rendering Data에�
 
 #### UV Seam
 
+앞에서 Texture 대응 좌표로 소개한 UV가 Surface의 경계에서 나뉘면, 같은 Position에도 서로 다른 UV가 필요할 수 있다. 이 갈라지는 경계가 **UV Seam**이다.
+
 Cube의 한 Corner를 생각해 보자.
 
 3D 공간상에서는 하나의 위치다.
@@ -1155,7 +1152,7 @@ Cube의 한 Corner를 생각해 보자.
 Position = (1, 1, 1)
 ~~~
 
-하지만 Cube를 UV Unwrap하면 서로 다른 Face가 Texture의 서로 다른 위치에 배치될 수 있다.
+하지만 Cube를 **UV Unwrap**하면 서로 다른 Face가 Texture의 서로 다른 위치에 배치될 수 있다. UV Unwrap은 3D Surface의 Texture 대응을 2D UV 영역에 펼치는 작업이다. 펼친 영역이 갈라지는 경계인 **UV Seam**에서는 같은 3D 위치라도 양쪽 Face에 다른 UV가 필요할 수 있다.
 
 그러면 같은 3D Position이라도 각 Face에서 서로 다른 UV가 필요하다.
 
@@ -1189,7 +1186,7 @@ GPU 입장에서는 하나의 Vertex가 동시에 두 개의 서로 다른 UV �
 
 #### Hard Edges and Normals
 
-같은 현상은 Normal에서도 발생할 수 있다.
+인접한 면의 Shading 방향이 부드럽게 이어지지 않는 경계가 **Hard Edge**다. 같은 위치에 서로 다른 Normal이 필요한 경우이므로, UV에서 살펴본 Vertex 분리가 Normal에서도 발생할 수 있다.
 
 Cube의 모서리를 생각해 보자.
 
@@ -1211,7 +1208,7 @@ Normal = (0, 1, 0)
 
 이 경우에도 하나의 Vertex Data에 동시에 두 Normal을 저장할 수 없으므로 Vertex가 분리될 수 있다.
 
-이것이 **Hard Edge**, **Split Normal**, Vertex Count가 서로 연결되는 이유 중 하나다.
+이것이 **Hard Edge**, **Split Normal**, Vertex Count가 서로 연결되는 이유 중 하나다. Hard Edge는 인접 면의 Shading 방향을 부드럽게 이어주지 않는 경계이며, Split Normal은 같은 위치에서 면별로 구분해 사용하는 Normal이다. 두 방향을 한 Vertex 입력에 동시에 넣을 수 없으므로 Rendering Data가 나뉠 수 있다.
 
 ---
 
@@ -1242,7 +1239,7 @@ Modeling Tool에서는 하나의 Vertex처럼 보이더라도
 
 따라서 Modeler와 Technical Artist의 관점에서는
 
-> **Geometry Topology뿐 아니라 Vertex Attribute의 분리도 Rendering Data의 양에 영향을 준다.**
+> **Geometry Topology, 즉 Vertex와 Edge, Face가 연결된 구조뿐 아니라 Vertex Attribute의 분리도 Rendering Data의 양에 영향을 준다.**
 
 는 점을 알아둘 필요가 있다.
 
@@ -1286,21 +1283,13 @@ GPU는 이러한 Vertex Data를 입력으로 받아 Rendering Pipeline의 다음
 
 ## 1.4 Vertex Processing
 
-앞 절에서는 Vertex가 단순한 점이 아니라 Position, Normal, UV, Tangent, Vertex Color와 같은 여러 Attribute를 함께 가진 Rendering Data라는 점을 살펴보았다.
+같은 Character Mesh를 Scene의 왼쪽과 오른쪽에 각각 놓았다고 생각해 보자. Mesh에 저장된 Vertex Position은 두 Object에서 같아도, Camera에서 보이는 위치는 달라져야 한다. 그러면 저장된 Data에 무엇을 더 적용해야 할까?
 
-같은 Character Mesh를 Scene의 서로 다른 위치에 두었다고 생각해 보자. Mesh에 저장된 Position은 같지만, Camera에서 보이는 위치는 달라져야 한다.
+앞 절에서 Vertex는 Position과 여러 Attribute를 가진 Data 단위라고 설명했다. 저장된 Position의 기준은 Object 자체다. 화면에서 사용할 위치를 얻으려면 Object의 배치와 Camera의 관찰 기준을 반영해야 한다.
 
-따라서 Vertex Data를 그대로 화면에 사용할 수는 없다. Object의 배치와 Camera의 관찰 기준을 반영해 Position을 변환해야 한다. UV나 Normal처럼 뒤의 Surface 계산에 필요한 Data도 함께 준비해야 한다.
+이러한 처리를 Vertex마다 수행하는 과정이 **Vertex Processing**이고, 입력값을 계산하는 Program이 **Vertex Shader**다. Vertex Shader는 필요한 Transform Data를 이용해 Position을 바꾼다. Normal이나 UV처럼 뒤의 Surface 계산에 사용할 Attribute는 목적에 따라 가공하거나 전달한다.
 
-이 작업을 Vertex 단위로 수행하는 과정을 **Vertex Processing**이라고 한다. 이 과정에서 Vertex Data를 처리하는 Program이 **Vertex Shader**다.
-
-Vertex Shader는 입력 Position을 필요한 Coordinate Space로 변환한다. 다른 Attribute는 목적에 따라 가공하거나 다음 단계로 전달한다. 그 출력은 아직 Pixel이 아니라, 다음 단계에서 Primitive를 구성하는 데 사용할 Vertex Data다.
-
-즉, Vertex Processing은 단순히 Vertex를 읽는 단계가 아니라
-
-> **3D Geometry를 이후 Rendering Pipeline에서 사용할 수 있는 형태로 준비하는 단계**
-
-라고 이해하면 된다.
+출력은 아직 Pixel이 아니다. 다음 단계에서 Triangle을 구성하고 화면 위치를 찾는 데 사용할 **처리된 Vertex Data**다. 이번 절에서는 같은 Mesh 입력이 다른 배치와 관찰 조건을 만나 어떤 Data로 준비되는지 따라간다.
 
 ---
 
@@ -1345,9 +1334,9 @@ Vertex Input
 → Vertex Output
 ~~~
 
-각 Vertex는 독립적인 Data 단위로 처리된다.
+이 Program에 입력되는 기본 처리 단위는 하나의 Vertex다. 입력에는 그 Vertex의 Position과 Attribute가 있고, 출력에는 처리된 Position과 뒤에서 사용할 Data가 있다.
 
-즉, Vertex Shader는 기본적으로 한 Vertex를 처리할 때 주변 Vertex의 정보를 자동으로 알고 있는 것이 아니다.
+따라서 Vertex Shader는 기본적으로 한 Vertex를 처리할 때 주변 Vertex의 정보를 자동으로 알고 있는 것이 아니다. 세 Vertex가 어떤 Triangle을 이루는지는 이후 연결 단계가 다룬다.
 
 이 점은 이후 Primitive Assembly와 Rasterization을 이해할 때 중요하다.
 
@@ -1389,7 +1378,7 @@ Local Space
 
 이 과정을 통해 Vertex는 최종적으로 Rasterization에 사용할 수 있는 위치 정보로 변환된다.
 
-각 Space의 정확한 의미와 Matrix Transformation은 Chapter 02에서 자세히 다룬다.
+각 Space의 정확한 의미와 **Matrix Transformation**은 Chapter 02에서 자세히 다룬다. Matrix는 변환에 사용할 여러 수를 행과 열로 배열한 구조이며, Matrix Transformation은 이 수들의 관계를 이용해 Position이나 Direction을 바꾸는 계산이다. 여기서는 변환이 필요한 목적부터 이해하고, Matrix의 구성과 계산은 다음 Chapter에서 연결한다.
 
 Chapter 01에서는 우선 다음 개념을 잡는 것이 중요하다.
 
@@ -1411,7 +1400,7 @@ Mesh를 Modeling Tool에서 만들 때 Vertex Position은 보통 Object 자체�
 
 ### World Space
 
-Object가 Scene에 배치되면 Local Space의 Position은 World를 기준으로 한 Position으로 변환될 수 있다.
+서로 다른 Object의 위치를 비교하려면 Object마다 다른 Local Space만으로는 부족하다. Scene 전체가 함께 사용하는 기준이 필요하다. Object가 Scene에 배치되면 Local Space의 Position은 이 공통 기준인 World를 기준으로 한 Position으로 변환될 수 있다.
 
 이 공간을 **World Space**라고 한다.
 
@@ -1447,15 +1436,17 @@ View Space에서는 Camera를 기준으로 Scene의 Position을 표현한다.
 
 ### Clip Space
 
-Vertex Position은 이후 **Clip Space**로 변환된다.
+Camera 기준의 위치를 얻어도, 그 위치가 Camera가 고려할 영역 안에 있는지는 더 판단해야 한다. Vertex Position은 Projection을 적용해 이 판정에 적합한 **Clip Space**의 좌표 형태로 변환된다.
 
-Clip Space는 이후 Clipping과 Projection 과정에서 사용하는 중요한 Coordinate Space다.
+Clip Space는 Clipping, 즉 유효한 영역의 경계에 걸친 Geometry를 잘라내는 처리에 사용하는 Coordinate Space다. 이 공간에서 GPU는 Primitive가 Camera가 볼 수 있는 영역 안에 있는지 검사할 수 있다.
 
-이 공간에서 GPU는 Vertex가 Camera가 볼 수 있는 영역 안에 있는지 판단할 수 있다.
+이 출력이 곧바로 Pixel 좌표는 아니다. Clipping을 거친 뒤 화면 영역에 대응되는 위치로 바뀌며, 1.7에서 이 연결을 다시 확인한다.
 
 다만 Clip Space는 우리가 Modeling Tool에서 직접 다루는 일반적인 XYZ Coordinate와는 조금 다른 성격을 가진다.
 
-Perspective Projection과 Homogeneous Coordinate까지 연결되기 때문에 자세한 내용은 Chapter 02에서 별도로 다룬다.
+**Homogeneous Coordinate**는 위치의 XYZ와 함께 `W` 성분을 사용하는 좌표 표현이다. 이 표현은 위치를 옮기는 변환과 Projection을 연결하는 데 사용된다. Chapter 01에서는 `W`로 어떤 계산을 하는지보다 Clip Space가 아직 화면 Pixel 좌표가 아니라는 점을 먼저 이해한다.
+
+앞서 소개한 Matrix는 Transform과 Projection의 수치를 묶어 표현할 수 있다. Matrix의 **Row**와 **Column**은 각각 행과 열을 뜻한다. Matrix로 위치와 방향을 어떻게 바꾸는지는 Chapter 02에서 설명한다. 여기서는 이러한 수학적 표현이 Vertex Position을 다음 처리에 필요한 형태로 만드는 데 쓰인다는 목적을 연결한다.
 
 현재는 다음 정도만 이해하면 충분하다.
 
@@ -1482,11 +1473,11 @@ Vertex Shader는 단순히 Coordinate Space를 변환하는 역할만 하는 것
 - 물결치는 Surface
 - Character의 Vertex Animation
 - World Position Offset
-- Procedural Deformation
+- **Procedural Deformation** — 정한 계산 규칙에 따라 Vertex Position을 바꾸는 변형
 
 이러한 효과들은 Vertex Shader Stage에서 Vertex Position을 변경하는 방식으로 구현될 수 있다.
 
-Unreal Engine Material에서 사용하는 **World Position Offset** 역시 이 개념과 연결된다.
+Unreal Engine Material에서 사용하는 **World Position Offset** 역시 이 개념과 연결된다. World Position Offset은 기존 Vertex Position에 더할 World 기준의 위치 변화량을 제공하는 입력이다. **Material Graph**는 이러한 Material 계산을 Node, 즉 입력과 출력이 있는 계산 단위로 연결한 구조다.
 
 즉, Material Graph에서 World Position Offset에 값을 넣는다는 것은 단순히 Material 색을 바꾸는 것이 아니라,
 
@@ -1527,7 +1518,7 @@ Geometry만 회전하고 Normal은 원래 방향에 그대로 남아 있다면 L
 
 다만 Normal Transformation은 Position Transformation과 완전히 같은 방식으로 처리되지 않는 경우가 있다.
 
-특히 Non-uniform Scale이 포함되면 별도의 처리가 필요하다.
+**Scale**은 형태의 크기를 바꾸는 Transform이다. 축마다 같은 비율로 바꾸지 않는 **Non-uniform Scale**이 포함되면 Normal에 별도의 처리가 필요하다. 표면을 한 방향으로 더 길게 늘렸을 때 Surface의 기울기도 달라질 수 있기 때문이다. 정확한 보정 관계는 Chapter 03에서 문제와 직관부터 살펴본다.
 
 이 부분은 이후 Coordinate System과 Normal Transformation을 다룰 때 더 자세히 살펴본다.
 
@@ -1543,7 +1534,7 @@ Geometry만 회전하고 Normal은 원래 방향에 그대로 남아 있다면 L
 
 UV는 Position과 달리 반드시 Coordinate Transformation을 거쳐야 하는 Data는 아니다.
 
-많은 경우 Mesh에 저장된 UV가 그대로 다음 Stage로 전달된다.
+많은 경우 Mesh에 저장된 UV가 그대로 다음 Stage로 전달된다. Position을 바꾸어 Object가 다른 곳에 놓여도 Texture의 대응을 함께 다시 만들 필요는 없을 수 있다. 따라서 모든 Attribute에 같은 Transform을 적용하는 것이 아니라, 해당 Data의 목적에 맞는 처리를 선택한다.
 
 예를 들어 다음 UV가 있다고 해 보자.
 
@@ -1557,10 +1548,10 @@ UV = (0.25, 0.75)
 
 예를 들어
 
-- Tiling
-- Offset
-- Rotation
-- Procedural UV Animation
+- **Tiling** — UV의 반복 횟수 조정
+- **Offset** — 사용할 UV 위치의 이동
+- **Rotation** — UV 좌표의 회전
+- **Procedural UV Animation** — 입력 규칙이나 시간에 따라 UV를 계산해서 변화시키는 효과
 
 같은 효과를 만들 수 있다.
 
@@ -1596,7 +1587,7 @@ Vertex Color
 
 Vertex Shader가 하나의 Vertex를 처리하면 Output Data를 만든다.
 
-대표적으로 반드시 중요한 값은 처리된 **Position**이다.
+다음 단계는 이 Vertex들을 이용해 Primitive를 구성하고 화면에 대응시켜야 한다. 따라서 대표적으로 중요한 출력은 처리된 **Position**이다. 이 Position과 뒤에서 필요한 Attribute를 연결하면 다음 Stage가 입력 Geometry를 처리할 수 있다.
 
 그리고 이후 Stage에서 사용할 Attribute도 함께 출력할 수 있다.
 
@@ -1733,19 +1724,13 @@ Vertex Input
 
 ## 1.5 Primitive Assembly
 
-앞 절에서는 Vertex Shader가 각 Vertex를 독립적으로 처리하고, Position과 여러 Attribute를 다음 단계에서 사용할 수 있는 형태로 준비한다는 점을 살펴보았다.
+Vertex Shader가 Cube의 꼭짓점을 모두 처리했다고 생각해 보자. 위치를 아는 점들이 모였다고 해서 어느 점 사이에 면을 만들어야 하는지는 아직 알 수 없다. 같은 점을 다르게 연결하면 다른 형태가 만들어질 수 있다.
 
-하지만 Vertex가 각각 처리되었다고 해서 아직 Surface가 만들어진 것은 아니다.
+앞 절의 출력은 각각 처리된 Vertex다. 다음 계산에서 Surface를 다루려면 **어떤 Vertex들이 함께 하나의 도형을 이루는가**라는 연결 관계가 필요하다.
 
-3개의 Vertex가 있다고 해도 GPU가
+GPU가 다루는 기본 도형이 Primitive이고, 처리된 Vertex들을 이 도형으로 묶는 과정이 **Primitive Assembly**다. 여기서는 세 Vertex가 하나의 Triangle을 이루는 경우를 중심으로 살펴본다.
 
-> "이 세 Vertex가 하나의 Triangle을 구성한다."
-
-라는 관계를 알지 못하면 Surface를 만들 수 없다.
-
-따라서 처리된 Vertex들을 서로 연결하여 Triangle과 같은 기본 도형을 구성하는 단계가 필요하다.
-
-이 과정을 **Primitive Assembly**라고 한다.
+먼저 Triangle을 사용하는 이유를 확인한 뒤, 연결 번호인 Index와 그 저장 공간을 살펴본다. 이 관계를 알면 Vertex 공유, Attribute 때문에 공유할 수 없는 경우, 면의 앞뒤를 정하는 순서까지 연결된다.
 
 ---
 
@@ -1767,7 +1752,7 @@ GPU는 이 Index Data를 참조하여 오른쪽과 같이 Triangle을 구성한�
 
 **Primitive**는 GPU가 Geometry를 구성하고 Rendering하기 위해 사용하는 기본 도형 단위다.
 
-Graphics API나 Rendering 방식에 따라 여러 종류의 Primitive가 존재할 수 있다.
+하나의 점을 표시할 때와 선을 표시할 때, 면을 표시할 때는 입력을 묶는 방식이 다르다. Graphics API나 Rendering 방식에 따라 여러 종류의 Primitive가 존재할 수 있다.
 
 대표적으로 다음과 같은 형태가 있다.
 
@@ -1777,7 +1762,7 @@ Graphics API나 Rendering 방식에 따라 여러 종류의 Primitive가 존재�
 
 하지만 일반적인 Real-time 3D Rendering에서는 **Triangle**이 가장 중요한 Primitive다.
 
-우리가 Modeling Tool에서 Quad나 N-gon으로 작업하더라도 실제 GPU Rendering에서는 대부분 Triangle로 변환되어 처리된다.
+우리가 Modeling Tool에서 **Quad**, 즉 네 꼭짓점의 면이나 **N-gon**, 즉 여러 꼭짓점의 면으로 작업하더라도 실제 GPU Rendering에서는 대부분 Triangle로 변환되어 처리된다. 복잡한 면을 Triangle로 나누는 일을 **Triangulation**이라고 한다.
 
 즉,
 
@@ -1863,7 +1848,7 @@ Triangle B = Vertex 0, 2, 3
 
 ### Index
 
-**Index**는 Vertex Buffer에 저장된 특정 Vertex를 가리키는 번호다.
+연결 관계를 저장할 때 같은 Vertex의 모든 Attribute를 매번 복사하지 않아도 된다. 이미 저장한 Vertex를 번호로 가리키면 어떤 입력을 사용할지 알릴 수 있다. 이 번호가 **Index**이며, Vertex Buffer에 저장된 특정 Vertex를 가리킨다.
 
 예를 들어 Vertex Buffer에 다음과 같은 Vertex들이 저장되어 있다고 하자.
 
@@ -2031,16 +2016,16 @@ Triangle을 구성할 때는 어떤 세 Vertex를 사용하는지만 중요한 �
 
 이러한 Vertex의 순서를 **Winding Order**라고 한다.
 
-대표적으로 다음 두 방향이 있다.
+세 점을 화면에서 어떤 방향으로 따라 연결하는지 생각해 보면 순서의 의미를 이해하기 쉽다. 대표적으로 다음 두 방향이 있다.
 
-- Counter-Clockwise, CCW
-- Clockwise, CW
+- **Counter-Clockwise(CCW)** — 반시계 방향으로 따라가는 순서
+- **Clockwise(CW)** — 시계 방향으로 따라가는 순서
 
-Rendering System은 Winding Order를 기준으로 Triangle의 **Front Face**와 **Back Face**를 구분할 수 있다.
+Rendering System은 Winding Order와 설정을 기준으로 Triangle의 **Front Face**, 즉 앞면으로 취급할 면과 **Back Face**, 즉 뒷면으로 취급할 면을 구분할 수 있다. 앞뒤는 Lighting의 Vertex Normal 방향과 같은 Data가 아니라, 도형의 연결과 판정 규칙에 관한 관계다.
 
 다만 실무에서 Modeler가 Winding Order의 Index 순서를 직접 확인하거나 외울 일은 거의 없다.
 
-일반적으로 DCC Tool에서는 다음과 같은 기능을 이용해 Surface 방향을 시각적으로 확인한다.
+일반적으로 **DCC(Digital Content Creation) Tool**, 즉 모델링과 콘텐츠 제작 도구에서는 다음과 같은 기능을 이용해 Surface 방향을 시각적으로 확인한다.
 
 - Face Orientation
 - Normal Display
@@ -2050,7 +2035,12 @@ Rendering System은 Winding Order를 기준으로 Triangle의 **Front Face**와 
 
 > **Triangle의 Vertex 순서가 Front Face와 Back Face를 판정하는 기준으로 사용된다.**
 
-어떤 Winding Order를 Front Face로 사용하는지는 Graphics API나 Rendering 설정에 따라 달라질 수 있으므로, CCW나 CW 중 하나를 절대적인 규칙처럼 외울 필요는 없다.
+<details>
+<summary>Technical Note — front-face convention</summary>
+
+어떤 Winding Order를 Front Face로 사용하는지는 Graphics API나 Rendering 설정에 따라 달라질 수 있으므로, CCW나 CW 중 하나를 절대적인 규칙처럼 외울 필요는 없다. 도형의 순서와 현재 Front Face 설정을 함께 확인한다.
+
+</details>
 
 ---
 
@@ -2152,31 +2142,13 @@ Primitive Assembly가 끝나면 GPU는 Rendering할 Triangle들을 알게 된다
 
 ## 1.6 Culling and Clipping
 
-앞 절에서는 Vertex Processing을 거친 Vertex들이 Index Data를 이용해 Triangle과 같은 Primitive로 구성되는 **Primitive Assembly** 과정을 살펴보았다.
+Character의 몸처럼 닫힌 Mesh를 생각해 보자. Camera를 바라보는 면뿐 아니라 몸 안쪽을 향하는 면도 있고, Camera 화면 밖에 있는 다른 Object도 Scene 안에 존재한다. 그 Geometry를 모두 끝까지 계산해야 할까?
 
-이제 GPU는 어떤 Vertex들이 어떤 Triangle을 구성하는지 알게 되었다.
+앞 절에서 Primitive Assembly는 Vertex를 연결해 Triangle을 만들었다. 이제 어떤 Geometry가 현재 작업에 필요하고, 어떤 Geometry의 일부만 유효한 영역에 놓이는지 구분해야 한다.
 
-하지만 만들어진 모든 Triangle을 끝까지 Rendering할 필요는 없다.
+필요하지 않다고 판정한 대상을 통째로 제외하는 과정이 **Culling**이다. 반면 Triangle의 절반이 유효 영역 안에 있다면 전체를 제거할 수 없다. 경계 밖 부분만 잘라내 유효한 부분을 남기는 과정이 **Clipping**이다.
 
-어떤 Triangle은 Camera에서 보이지 않을 수 있고, 어떤 Geometry는 Camera가 볼 수 있는 영역 밖에 완전히 존재할 수 있다.
-
-또 어떤 Triangle은 Camera가 볼 수 있는 영역의 경계에 걸쳐 있을 수도 있다.
-
-이러한 Geometry를 모두 그대로 Rasterization 단계까지 보내면 불필요한 계산이 늘어난다.
-
-따라서 Rendering Pipeline에서는 다음 단계로 넘어가기 전에
-
-- 필요하지 않은 Geometry를 제거하고
-- 경계에 걸친 Geometry는 유효한 영역만 남기도록 잘라내는
-
-과정이 필요하다.
-
-이때 등장하는 핵심 개념이 **Culling**과 **Clipping**이다.
-
-두 용어는 비슷하게 들리지만 역할이 다르다.
-
-> **Culling은 불필요한 Geometry를 제거하는 과정이고,  
-> Clipping은 경계에 걸친 Primitive를 잘라 유효한 부분만 남기는 과정이다.**
+두 과정은 뒤의 화면 위치 계산에 넘길 Geometry를 준비한다. 먼저 제거와 잘라내기의 차이를 이해한 뒤, 면의 앞뒤, Camera의 공간 범위, Object 단위 선별이 서로 어떤 기준을 사용하는지 살펴본다.
 
 ---
 
@@ -2210,11 +2182,9 @@ Real-time Rendering에서는 Scene에 매우 많은 Object와 Triangle이 존재
 
 따라서 가능하면 이른 단계에서 불필요한 Geometry를 제거하는 것이 효율적이다.
 
-대표적인 Culling 방식에는 다음과 같은 것들이 있다.
+Culling은 하나의 기준만 사용하는 이름이 아니다. **Backface Culling**은 도형의 뒷면 판정을, **Frustum Culling**은 검사할 View의 공간 범위를, **Occlusion Culling**은 다른 Geometry에 가려지는 관계를 이용한다.
 
-- Backface Culling
-- Frustum Culling
-- Occlusion Culling
+여기서 **View**는 Camera나 Light 등 특정 관찰 기준으로 Scene을 처리하는 단위다. 각 판정의 대상과 수행 위치는 다를 수 있으므로, 모두 같은 Hardware Stage라고 생각하지 않는다.
 
 Chapter 01에서는 이 중 Rendering Pipeline의 기본 개념과 직접 연결되는 **Backface Culling**과 **Frustum Culling**을 중심으로 살펴본다.
 
@@ -2249,6 +2219,9 @@ Back Face
 
 ---
 
+<details>
+<summary>Technical Note — winding is different from shading normal data</summary>
+
 ### Winding and Normal Data
 
 Backface Culling을 처음 배울 때
@@ -2275,7 +2248,12 @@ DCC Tool에서는 보통 다음과 같은 기능을 통해 Face 방향을 확인
 
 따라서 실무에서는 시각적으로 확인하되, 내부적으로는 Triangle의 방향 판정이 존재한다는 정도를 이해하면 충분하다.
 
+</details>
+
 ---
+
+<details>
+<summary>Implementation Note — two-sided surfaces and cost</summary>
 
 ### Two-Sided Materials and Backface Culling
 
@@ -2297,11 +2275,13 @@ Two Sided Material을 사용하면 원래 Culling되었을 Back Face도 Renderin
 
 이라고 볼 수 있다.
 
+</details>
+
 ---
 
 ### View Frustum
 
-Camera가 볼 수 있는 공간에는 범위가 있다.
+앞뒤 면의 판정과 별개로, Camera가 볼 수 있는 공간 자체에도 범위가 있다. 같은 방향을 향한 면이라도 이 범위 밖에 있으면 현재 Camera의 화면에는 들어오지 못한다.
 
 Camera 앞의 모든 공간을 무한히 보는 것이 아니다.
 
@@ -2352,9 +2332,16 @@ Scene에 있는 Object 가운데 현재 View의 화면에 들어올 수 있는 �
 
 **Frustum Culling**은 이 목적을 위해 검사 대상 View의 Frustum 밖에 완전히 있는 Object나 Geometry를 해당 View의 Rendering 후보에서 제외하는 방식이다.
 
-여기서 판단 범위는 **해당 View**다. Main Camera 밖의 Object라도 Shadow나 Reflection Pass에는 기여할 수 있다.
+현재 제외 여부는 **검사한 View에만 적용되는 판단**이다. 다른 관찰 목적에 필요한 Geometry까지 모두 불필요하다는 뜻은 아니다.
+
+<details>
+<summary>Implementation Note — view scope and frustum selection</summary>
+
+Main Camera 밖의 Object라도 Shadow나 **Reflection**, 즉 빛이 Surface에서 반사되어 보이는 결과를 계산하는 작업에는 기여할 수 있다. 특정 목적을 위해 Scene이나 저장된 Data를 처리하는 작업 단위를 **Render Pass**라고 한다. Shadow Pass와 Reflection Pass는 Main Camera 화면과 다른 입력 또는 관찰 기준을 사용할 수 있다.
 
 Object 단위 선별은 CPU 또는 GPU에서 구현할 수 있다. 따라서 Frustum Culling이라는 이름이 Primitive Clipping처럼 하나의 고정 실행 위치를 뜻하지는 않는다.
+
+</details>
 
 예를 들어 Camera 뒤쪽에 있는 Object나 화면에서 매우 멀리 벗어난 Object는 현재 Frame에 보일 가능성이 없다.
 
@@ -2376,7 +2363,7 @@ Object 단위 선별은 CPU 또는 GPU에서 구현할 수 있다. 따라서 Fru
 
 Frustum Culling은 반드시 Triangle 하나하나를 검사하는 방식만을 의미하지 않는다.
 
-실제 Game Engine에서는 Performance를 위해 Object의 **Bounding Box**나 **Bounding Sphere** 같은 단순한 Bounding Volume을 사용하여 먼저 판정하는 경우가 많다.
+Character의 모든 Triangle을 검사하기 전에, 전체를 감싸는 단순한 부피만 검사할 수 있다. 이 감싸는 영역이 **Bounding Volume**이며, 상자 형태는 **Bounding Box**, 구 형태는 **Bounding Sphere**라고 한다. 실제 Game Engine에서는 Performance를 위해 이러한 영역을 사용하여 먼저 판정하는 경우가 많다.
 
 예를 들어 Character 전체를 감싸는 Bounding Box가 View Frustum 밖에 있다면 내부의 수만 개 Triangle을 하나씩 검사할 필요 없이 Character 전체를 Rendering 대상에서 제외할 수 있다.
 
@@ -2640,23 +2627,13 @@ Rasterization은 3D Geometry 중심의 처리에서 Screen과 Fragment 중심의
 
 ## 1.7 Rasterization
 
-앞 절에서는 Primitive Assembly를 통해 Triangle이 구성되고, Culling과 Clipping을 통해 실제로 Rendering할 필요가 있는 Geometry만 남기는 과정을 살펴보았다.
+화면 위에 Triangle의 세 꼭짓점만 찍으면 Surface 전체가 보일까? 모서리의 위치는 알 수 있어도, 그 사이에 있는 넓은 영역은 아직 어떤 화면 위치에서 계산해야 할지 정하지 못했다.
 
-여기까지는 여전히 **Geometry 중심의 처리**였다.
+앞 절까지는 Vertex와 Triangle 같은 Geometry를 처리했다. Culling과 Clipping을 거친 유효한 Triangle을 화면에 대응시킨 뒤에는, 그 Triangle이 **어떤 Screen 위치를 덮는가**라는 질문에 답해야 한다.
 
-GPU는 어떤 Vertex들이 Triangle을 구성하는지 알고 있고, 어떤 Triangle이 이후 Rendering에 사용될지도 알고 있다.
+이 판정 과정이 **Rasterization**이다. 화면의 Sample 위치가 Triangle 안에 들어오는지 검사하고, 영향을 받는 위치에 이후 처리할 Fragment를 준비한다. 여기서 바뀌는 것은 Data의 단위다. Triangle이라는 도형에서 화면 위치별 후보로 넘어간다.
 
-하지만 최종적으로 Monitor에 표시되는 것은 Triangle 자체가 아니다.
-
-화면은 결국 수많은 **Pixel**로 구성된 2D Image다.
-
-따라서 이제 Rendering Pipeline은 중요한 질문에 답해야 한다.
-
-> **이 Triangle은 Screen의 어느 위치에 영향을 주는가?**
-
-이 질문을 해결하는 단계가 **Rasterization**이다.
-
-Rasterization은 지금까지 다뤄온 Geometry 중심의 처리에서, Screen과 Fragment 중심의 처리로 넘어가는 중요한 전환점이다.
+Rasterization은 Geometry와 Screen 처리를 연결하지만, 그 위치의 Color까지 결정하는 과정은 아니다. 이번 절에서는 위치의 판정과 후보 생성이 Surface 계산과 어떻게 다른지 따라간다.
 
 ---
 
@@ -2737,7 +2714,16 @@ Local Space
 
 View Space에서 Clip Space로 옮길 때 Projection이 이미 적용된다. Clip Space는 Camera의 유효 범위를 검사하기 위한 형태이며, 아직 화면의 Pixel 좌표 자체는 아니다.
 
-Clipping 이후에는 **Perspective Divide**로 정규화된 좌표를 얻고, **Viewport Transform**으로 실제 화면 영역의 좌표에 대응시킨다. Chapter 02에서 이 변환과 `W`의 역할을 자세히 다룬다. 여기서는 Projection을 Clip Space 이후에 다시 수행하는 것으로 이해하지 않도록 순서만 구분한다.
+Clipping 이후에는 Clip 좌표를 화면에 사용할 범위의 좌표로 바꾸어야 한다. **Perspective Divide**는 Clip 좌표의 `W`를 이용해 좌표를 나누는 처리이며, 이 결과로 정규화된 좌표를 얻는다.
+
+그 좌표를 실제 화면의 크기와 위치에 맞추는 처리가 **Viewport Transform**이다. 이 처리를 거치면 Triangle의 세 꼭짓점이 실제 화면 영역의 어느 위치에 대응되는지 알 수 있다.
+
+<details>
+<summary>Technical Note — projection and screen mapping order</summary>
+
+View Space에서 Clip Space로 옮길 때 Projection이 이미 적용된다. Perspective Divide와 Viewport Transform은 Clipping 이후의 화면 대응 처리이며, Projection을 Clip Space 이후에 다시 수행하는 것으로 이해하지 않는다. Chapter 02에서 변환과 `W`의 역할, 좌표 범위의 관례를 자세히 다룬다.
+
+</details>
 
 이렇게 Screen과 대응되는 위치에 놓인 Triangle을 여기서는 **Screen-Space Triangle**이라고 부른다.
 
@@ -2817,7 +2803,14 @@ Pixel
 
 Triangle이 이 Sample 위치를 덮으면 해당 위치는 Triangle의 영향을 받는다고 판단할 수 있다.
 
-Anti-Aliasing에서 사용하는 **MSAA**처럼 하나의 Pixel에 여러 Sample을 사용하는 경우도 있지만, 이 부분은 Chapter 01의 범위를 넘어가므로 여기서는 기본 개념만 알아둔다.
+화면의 유한한 Pixel 격자 때문에 경계가 계단처럼 보이는 현상을 줄이는 처리가 **Anti-Aliasing**이다. **MSAA(Multisample Anti-Aliasing)**는 하나의 Pixel에 여러 Sample을 사용해 이러한 경계 표현을 개선하는 방식과 연결된다.
+
+<details>
+<summary>Technical Note — samples are not fixed to one per pixel</summary>
+
+가장 단순한 학습 예에서는 Pixel마다 하나의 Sample을 상상할 수 있지만, MSAA처럼 하나의 Pixel에 여러 Sample을 사용하는 경우도 있다. 따라서 Sample 수와 Pixel 수를 항상 같은 것으로 세지 않는다. 상세 동작은 Chapter 01의 범위를 넘어가므로 여기서는 판정 위치라는 의미만 알아둔다.
+
+</details>
 
 현재는 다음과 같이 이해하면 충분하다.
 
@@ -2880,7 +2873,7 @@ Rasterization은 기본적으로
 - Normal
 - Lighting
 - Roughness
-- Specular
+- **Specular** — 반사 방향과 관찰 방향의 관계에 따라 달라지는 반사 성분의 계산
 - Emission
 
 따라서 다음 두 개를 구분해야 한다.
@@ -2981,9 +2974,9 @@ Character Triangle도 해당 위치에 Fragment를 만들 수 있고, Wall Trian
 
 따라서 Fragment가 생성된 뒤에도
 
-- Depth Test
-- Stencil Test
-- Blending
+- **Depth Test** — 저장된 Depth와 새 Depth를 비교하는 앞뒤 판정
+- **Stencil Test** — 별도 판정 Data와 규칙을 이용해 결과 기록이 허용되는지 확인하는 처리
+- **Blending** — 새 결과와 이미 저장한 결과를 정해진 규칙으로 결합하는 처리
 - 기타 Rendering 처리
 
 등을 거칠 수 있다.
@@ -3120,7 +3113,7 @@ Triangle이 작으면 생성되는 Fragment가 적을 가능성이 높지만, �
 
 GPU는 Rasterization을 일정한 Hardware 단위로 처리하며, 아주 작은 Triangle이 지나치게 많아지면 Geometry Processing과 Rasterization Efficiency 측면에서 다른 문제가 생길 수도 있다.
 
-이러한 **Micro Triangle** 문제는 Optimization에서 더 자세히 다룰 수 있다.
+이러한 **Micro Triangle**, 즉 화면에서 매우 작은 영역만 덮는 Triangle의 문제는 Optimization에서 더 자세히 다룰 수 있다. 작은 Triangle이 많을 때 처리 효율이 단순한 Fragment 개수만으로 설명되지 않을 수 있다는 뜻이다.
 
 Chapter 01에서는 우선 다음 관계만 기억하면 충분하다.
 
@@ -3209,27 +3202,13 @@ Fragment 위치에는 원래 Vertex가 없어도 Fragment Processing에는 UV, N
 
 ## 1.8 Interpolation
 
-앞 절에서는 Rasterization을 통해 Triangle이 Screen의 어떤 위치를 덮는지 판단하고, 해당 위치에 Fragment가 생성되는 과정을 살펴보았다.
+Triangle의 꼭짓점에는 UV가 저장되어 있다. 그런데 화면에 넓게 나타난 Triangle의 중앙에서 Texture를 읽으려면 어떤 UV를 사용해야 할까? 중앙에는 Mesh에 저장한 별도 Vertex가 없을 수 있다.
 
-이제 새로운 문제가 생긴다.
+앞 절의 Rasterization은 Triangle이 덮는 위치를 찾아 Fragment를 준비했다. 하지만 위치를 찾는 일과 그 위치에서 사용할 Attribute를 준비하는 일은 다르다.
 
-Triangle의 세 Vertex에는 UV, Normal, Vertex Color 같은 여러 Attribute가 저장되어 있다.
+**Interpolation**, 즉 보간은 이미 알고 있는 Vertex의 값들을 이용해 그 사이 Fragment 위치에 맞는 값을 계산하는 과정이다. 두 값 사이의 중간 위치에서 중간값을 구하는 직관을 Triangle의 세 Vertex로 확장하면 된다.
 
-하지만 Rasterization으로 만들어진 Fragment는 대부분 Vertex가 존재하지 않는 **Triangle 내부의 위치**에 생성된다.
-
-그렇다면 Fragment에서 사용할 UV, Normal, Vertex Color는 어디에서 가져오는가?
-
-이 문제를 해결하는 과정이 **Interpolation**이다.
-
-Interpolation은 한국어로 보통 **보간**이라고 한다.
-
-하지만 `보간`이라는 단어 자체가 익숙하지 않다면 다음처럼 이해하는 편이 좋다.
-
-> **이미 알고 있는 Vertex의 값들을 이용해서, 그 사이에 있는 위치에 맞는 중간값을 계산해 채우는 것**
-
-이것이 Interpolation의 기본 의미다.
-
-즉, Vertex에만 저장되어 있던 Attribute를 Triangle 내부의 Fragment에서도 사용할 수 있도록, 각 Fragment 위치에 맞는 값을 새로 계산해주는 과정이라고 보면 된다.
+입력은 Triangle의 세 Vertex가 가진 Attribute와 내부 위치의 관계다. 출력은 해당 Fragment에서 사용할 UV, Normal, Vertex Color 등의 값이다. 이 값은 다음 Fragment Shader의 입력이 되므로, 이번 절에서는 **위치에 따른 비율을 구하는 일**과 **그 비율로 Attribute를 만드는 일**을 순서대로 연결한다.
 
 ---
 
@@ -3338,7 +3317,9 @@ Fragment가 Triangle 내부의 어디에 위치하는지에 따라 각 Vertex가
 
 세 Vertex의 값으로 내부 위치의 값을 만들려면 먼저 각 Vertex의 값이 어느 비율로 기여할지 정해야 한다. 이 비율을 **Weight**라고 한다.
 
-Vertex 가까이에서 해당 Attribute의 영향이 커진다고 생각하면 출발점을 잡기 쉽다. 하지만 GPU가 단순히 거리의 역수로 세 값을 섞는 것은 아니다. 위치를 Triangle의 세 꼭짓점에 대한 비율로 표현하는 **Barycentric Weight**를 사용한다.
+어떤 Vertex 쪽에 가까운 위치를 표현한다면 그 Vertex의 값이 더 많이 기여한다고 생각할 수 있다. 이렇게 Triangle 내부의 위치를 세 꼭짓점의 기여 비율로 표현하는 Weight가 **Barycentric Weight**다. 같은 의미를 좌표 표현으로 부를 때는 Barycentric Coordinate라고 한다.
+
+이는 단순히 거리의 역수로 세 값을 섞는 방식이 아니다. 먼저 Triangle의 위치 관계를 비율로 표현하고, 그 비율로 Attribute를 계산한다. 원근에 대한 보정은 뒤에서 따로 연결한다.
 
 먼저 이 비율의 의미를 살펴보고, 이후 Perspective가 있을 때 필요한 보정을 연결한다.
 
@@ -3530,7 +3511,7 @@ Vertex마다 서로 다른 Mask 값을 저장하면 이 값도 Triangle 내부�
 
 Normal도 Vertex에서 Fragment로 전달될 때 Interpolation될 수 있다.
 
-이 개념은 **Smooth Shading**을 이해하는 데 중요하다.
+이 개념은 **Smooth Shading**을 이해하는 데 중요하다. Smooth Shading은 Lighting에 사용할 Normal을 Surface 내부에서 부드럽게 이어주어, 여러 평평한 Triangle의 Shading이 부드럽게 보이도록 하는 방식이다. 실제 Geometry가 더 둥글게 변하는 것은 아니다.
 
 Triangle은 Geometry적으로는 평평한 면이다.
 
@@ -3610,7 +3591,9 @@ Normal은 방향을 표현하는 Vector이기 때문에 일반적으로 길이�
 
 하지만 여러 Vertex Normal을 섞어서 중간값을 만들면 결과 Vector의 길이가 정확히 1이 아닐 수 있다.
 
-따라서 Lighting 계산 전에 다시 **Normalize**할 수 있다.
+방향만 비교하려면 Vector의 길이가 계산에 섞이지 않도록 기준 길이를 정할 필요가 있다. **Unit Vector**는 길이가 1인 Vector다. **Normalize**는 방향을 유지하면서 Vector의 길이를 1로 맞추는 처리다.
+
+여러 Normal을 섞으면 길이가 1이 아닐 수 있으므로, Lighting 계산 전에 다시 Normalize할 수 있다. 여기서는 그 목적을 먼저 이해하고, 길이의 계산과 예외 조건은 Chapter 03에서 살펴본다.
 
 전체 흐름은 다음처럼 생각할 수 있다.
 
@@ -3802,7 +3785,7 @@ Fragment Attribute
 
 Vertex Shader에서 Fragment Shader로 전달하는 Attribute가 많아질수록 GPU가 처리해야 하는 Data도 증가할 수 있다.
 
-Shader Programming에서는 이런 값을 **Interpolator** 또는 **Varying**과 관련된 Data라고 표현하기도 한다.
+Shader Programming에서는 이런 값을 **Interpolator** 또는 **Varying**과 관련된 Data라고 표현하기도 한다. 이 이름들은 Vertex Stage에서 다음 화면 위치 계산으로 전달되어, Fragment 위치에 맞는 값을 준비하는 입력과 연결된다. API와 Shader 언어별 정확한 인터페이스는 구분해서 확인한다.
 
 따라서 어떤 값을 Vertex Stage에서 계산하고,
 
@@ -3886,23 +3869,15 @@ Rasterization으로 Fragment 위치를, Interpolation으로 UV, Normal, Vertex C
 
 ## 1.9 Fragment / Pixel Processing
 
-앞 절에서는 Interpolation을 통해 Vertex에 저장되어 있던 UV, Normal, Vertex Color 같은 Attribute가 Triangle 내부의 Fragment 위치에 맞게 계산되는 과정을 살펴보았다.
+Rasterization으로 화면 위치를 찾고 Interpolation으로 UV와 Normal을 준비했다. 그런데 같은 위치와 같은 형태라도, 피부 Texture를 쓸 때와 금속 Material을 쓸 때는 다르게 보여야 한다. 이제 무엇을 계산해야 할까?
 
-이제 각 Fragment에는 Surface를 계산하기 위해 필요한 Data가 준비되어 있다.
+앞 절의 출력은 Fragment에서 사용할 Attribute다. UV는 Texture를 읽을 위치이고 Normal은 Shading 방향이며, 이 입력 자체가 아직 Surface의 완성된 결과는 아니다.
 
-예를 들어 다음과 같은 값들을 사용할 수 있다.
+**Fragment Shader / Pixel Shader**는 이 Data와 Material 입력을 이용해 현재 Fragment의 Surface Result를 계산하는 Program이다. Texture에서 값을 읽고, 필요한 Material 계산을 연결하며, 목적에 따라 Light의 영향도 계산한다.
 
-- UV
-- Normal
-- Vertex Color
-- Fragment Position
-- 기타 Shader에서 전달된 Data
+이번 절에서는 입력을 읽는 일, Material의 특성을 계산하는 일, 출력 Data를 다음 작업에 넘기는 일을 나누어 살펴본다. Texture에서 위치마다 값을 읽을 수도 있고, 외부에서 조절할 값을 입력으로 제공할 수도 있다. 이렇게 외부에 노출한 조절 입력이 Material Parameter다.
 
-이제 다음 질문에 답해야 한다.
-
-> **이 Fragment에서 실제 Surface 결과를 어떻게 계산할 것인가?**
-
-이 역할을 담당하는 것이 **Fragment Shader**, 또는 문맥에 따라 **Pixel Shader**라고 부르는 Shader Stage다.
+출력은 현재 Render Pass가 필요로 하는 결과이며, 아직 최종 Pixel에 남는다고 확정된 것은 아니다.
 
 ---
 
@@ -4092,7 +4067,7 @@ Material에 설정된 여러 Parameter도 사용할 수 있다.
 
 이러한 Parameter는 Texture와 함께 사용될 수도 있고, 독립적인 값으로 사용될 수도 있다.
 
-예를 들어 Roughness를 Texture에서 읽지 않고 Scalar Parameter 하나로 지정할 수도 있다.
+예를 들어 Roughness를 Texture에서 읽지 않고 **Scalar Parameter** 하나로 지정할 수도 있다. Parameter는 외부에서 설정해 계산에 사용하는 입력이고, **Scalar**는 하나의 숫자 값이다. 여러 위치에 같은 Roughness를 쓰고 싶다면 이런 한 값의 입력을 사용할 수 있다.
 
 즉, Fragment Shader는 다양한 Input Data를 조합하여 Surface의 특성을 계산한다.
 
@@ -4134,14 +4109,16 @@ Fragment Shader에서는 Light와 Surface의 관계를 계산할 수 있다.
 
 이러한 값들을 이용해서
 
-- Diffuse
+- **Diffuse** — 여러 방향으로 퍼지는 반사 성분의 계산
 - Specular
 - Shadow 영향
 - 기타 Lighting Result
 
 를 계산할 수 있다.
 
-ASF의 뒤쪽 Chapter에서 다뤘던 Lambert Lighting, Phong Specular, BRDF 등의 개념도 결국 이 Surface Shading 계산과 연결된다.
+여기서 **Diffuse**는 여러 방향으로 퍼지는 반사 성분을, **Specular**는 반사 방향과 관찰 방향의 관계에 따라 달라지는 반사 성분을 표현하는 데 쓰인다. 각각의 모델과 정확한 구분은 Chapter 05에서 다룬다.
+
+서로 다른 반사 모델을 공통된 방향 관계로 표현하는 함수가 **BRDF(Bidirectional Reflectance Distribution Function)**다. BRDF는 들어오는 빛의 방향과 나가는 관찰 방향에 따라 Surface가 빛을 얼마나 반사하는지 표현한다. 이후 Chapter의 Lambert Lighting, Phong Specular, BRDF 설명도 이 Surface Shading 계산과 연결된다.
 
 Chapter 01에서는 자세한 Lighting 수학을 다시 설명하지 않는다.
 
@@ -4208,7 +4185,7 @@ Surface Result는 지금 수행하는 **Render Pass**가 다음 단계에 넘겨
 
 따라서 Shader Output의 형태는 Rendering Pipeline과 Render Pass의 목적에 따라 달라진다.
 
-예를 들어 Deferred Rendering에서는 여러 Surface 정보를 **GBuffer**라는 Buffer 묶음에 기록한 뒤, 뒤의 작업에서 그 Data를 이용해 Lighting을 계산할 수 있다. Surface Result가 항상 최종 Lighting Color라는 뜻은 아니다.
+1.2에서 소개한 Deferred Rendering은 계산의 목적을 나누는 예다. 여러 Surface 정보를 **GBuffer**라는 Buffer 묶음에 기록한 뒤, 다음 작업에서 그 Data를 이용해 Lighting을 계산할 수 있다. 따라서 같은 Fragment Shader Stage라도 Surface Data를 준비하는 Pass와 Lighting 결과를 만드는 Pass의 출력은 다를 수 있다. Surface Result가 항상 최종 Lighting Color라는 뜻은 아니다.
 
 Chapter 06의 Forward / Deferred 비교에서 이 저장·소비 관계를 이어서 설명한다.
 
@@ -4364,7 +4341,7 @@ Surface Result
 
 이 차이는 Performance 관점에서도 중요하다.
 
-Vertex Shader는 주로 Vertex 수와 관련된다.
+여기서 **Invocation**은 Program이 입력을 처리하기 위해 한 번 실행되는 경우를 뜻한다. 어떤 입력 단위의 작업이 많이 필요한지부터 구분해 보면 실행량과 비용의 출발점을 이해할 수 있다. Vertex Shader의 작업은 주로 Vertex 수와 관련된다.
 
 예를 들어 Mesh에 50,000개의 Rendering Vertex가 있다면 많은 Vertex Processing이 필요할 수 있다.
 
@@ -4518,9 +4495,9 @@ Rasterization 과정에서는 Character와 Wall 모두 같은 Screen 위치에 F
 
 그렇다면 최종 화면에는 어떤 Surface가 보여야 할까?
 
-일반적으로 Camera에 더 가까운 Surface가 보여야 한다.
+앞의 불투명한 Surface가 뒤의 Surface를 가리는 상황이라면 Camera에 더 가까운 Surface가 보여야 한다. 각 후보의 앞뒤 값을 사용할 수 있어야 이 질문에 답할 수 있다.
 
-이 판단을 위해 사용하는 것이 **Depth**와 **Depth Test**다.
+이 앞뒤 판정값이 **Depth**이며, 새 후보의 값과 해당 화면 위치에 저장한 값을 비교하는 과정이 **Depth Test**다. 이전 후보의 Depth를 저장할 공간인 Depth Buffer가 함께 필요하다. 이번 절에서는 값을 비교하는 일과 비교 결과를 저장하는 일을 순서대로 연결한다.
 
 ---
 
@@ -4536,9 +4513,16 @@ Figure 1-10은 같은 Screen 위치에 여러 Surface가 존재할 때 Depth 값
 
 오른쪽에서는 Camera에 더 가까운 Character Fragment가 유지되고, 더 먼 Wall Fragment는 제거된다.
 
-이 그림은 **Opaque Surface**, **작은 Depth가 가까운 규약**, **Depth Function = LESS**, **Depth Write = On**인 예시다. 새 Fragment를 기존 Depth Buffer 값과 비교한다. 두 Surface를 반드시 동시에 비교하는 것은 아니다.
+이 Figure는 앞의 불투명한 Surface가 뒤의 Surface를 가리는 기본 예를 보여준다. **Opaque Surface**는 뒤의 Surface를 투명하게 비추지 않는 불투명한 표면이다. 먼저 앞뒤 비교라는 목적을 이해하고, 아래 숫자 예시에서 비교 규칙을 확인한다.
 
-Depth Test를 통과하고 Depth Write도 켜져 있다면 새 Depth를 **Depth Buffer**에 저장한다. Color 기록은 Color Output과 Write 설정의 영향도 받는다.
+<details>
+<summary>Verification Note — conditions of Figure 1-10</summary>
+
+이 그림은 **Opaque Surface**, **작은 Depth가 가까운 규약**, **Depth Function = LESS**, **Depth Write = On**인 예시다. Depth Function은 어느 비교 결과를 통과로 취급할지 정하는 규칙이며, `LESS`는 새 값이 저장값보다 작은 경우를 뜻한다. Depth Write는 통과한 값을 저장하는 설정이다.
+
+새 Fragment를 기존 Depth Buffer 값과 비교한다. 두 Surface를 반드시 동시에 비교하는 것은 아니다. Depth Test를 통과하고 Depth Write도 켜져 있다면 새 Depth를 **Depth Buffer**에 저장한다. Color 기록은 Color Output과 Write 설정의 영향도 받는다.
+
+</details>
 
 전체 흐름을 이 조건에서 단순화하면 다음과 같다.
 
@@ -4644,7 +4628,12 @@ New Fragment Depth = 0.7
 
 이라면 기존 Surface보다 뒤에 있다고 판단되어 Depth Test에 실패할 수 있다.
 
-다른 Depth Function을 사용하면 통과 조건도 달라진다. Reversed-Z처럼 큰 Depth가 가까운 규약에서는 `GREATER` 계열 비교를 사용할 수 있다. 따라서 `0.2 < 0.4`라는 숫자 관계 자체를 모든 Renderer의 앞뒤 규칙으로 외우지 않는다.
+<details>
+<summary>Technical Note — depth comparison conventions</summary>
+
+다른 Depth Function을 사용하면 통과 조건도 달라진다. **Reversed-Z**는 큰 Depth가 가까운 쪽을 나타내는 반대 방향의 Depth 규약이다. 이 규약에서는 `GREATER`, 즉 새 값이 저장값보다 큰 경우를 통과로 보는 계열 비교를 사용할 수 있다. 따라서 `0.2 < 0.4`라는 숫자 관계 자체를 모든 Renderer의 앞뒤 규칙으로 외우지 않는다.
+
+</details>
 
 기본 개념은 다음과 같다.
 
@@ -4758,7 +4747,7 @@ Visible Surface 결정
 
 여기서 중요한 구분이 하나 있다.
 
-Chapter 08의 8.3 Shadow에서는 **Light 기준 Visibility**를 다룬다. 여기서는 Camera 기준 판단과 연결하되 두 기준을 구분한다.
+Camera 앞에 보이는 Surface라도 Light와의 사이에 다른 Geometry가 놓이면 그 Light에 직접 보이지 않을 수 있다. Camera가 보는가와 Light가 보는가는 다른 관찰 관계이기 때문이다. Chapter 08의 8.3 Shadow에서는 **Light 기준 Visibility**를 다룬다. 여기서는 Camera 기준 판단과 연결하되 두 기준을 구분한다.
 
 하지만 지금 설명하는 Depth Test와 Shadow Map의 Visibility는 기준이 다르다.
 
@@ -4774,7 +4763,7 @@ Chapter 08의 8.3 Shadow에서는 **Light 기준 Visibility**를 다룬다. 여�
 
 #### Shadow Map Comparison
 
-Shadow Map은 Light 관점에서 저장한 Depth 자원이다. 현재 Surface를 같은 Light 좌표와 Depth 규약으로 변환한 뒤 저장값과 비교하여 **Light 기준 Visibility**를 구한다.
+**Shadow Map**은 Light 관점에서 본 Scene의 Depth를 저장한 자원이다. Light가 처음 만나는 Surface의 앞뒤 정보를 저장해 두면, 현재 Surface가 그 뒤에 가려졌는지 검사할 수 있다. 현재 Surface를 같은 Light 좌표와 Depth 규약으로 변환한 뒤 저장값과 비교하여 **Light 기준 Visibility**를 구한다.
 
 즉,
 
@@ -4988,13 +4977,13 @@ Opaque Surface에서는 앞쪽 Surface가 뒤쪽 Surface를 완전히 가리는 
 
 이 경우에는 Depth Test뿐 아니라
 
-- Sorting
-- Blending
+- **Sorting** — 함께 보일 Surface를 어떤 순서로 처리할지 정하는 작업
+- **Blending** — 새 결과와 저장한 결과를 결합하는 작업
 - Depth Write 설정
 
 등이 함께 중요해진다.
 
-Transparency와 Overdraw의 자세한 내용은 **Chapter 09 - Rendering Debug and Optimization**에서 다시 다룬다.
+같은 화면 위치가 여러 Surface의 계산을 반복해 받는 현상이 **Overdraw**다. Transparency와 Overdraw의 자세한 내용은 **Chapter 09 - Rendering Debug and Optimization**에서 다시 다룬다.
 
 현재 Chapter에서는 Opaque Surface를 기준으로 Depth Test의 기본 원리를 이해하는 데 집중한다.
 
@@ -5068,7 +5057,7 @@ Depth Test로 기여할 수 있는 Fragment를 판단했으므로, 이제 계산
 
 ## 1.11 Framebuffer and Final Image
 
-앞 절에서는 Depth Test를 통해 같은 Screen 위치에 여러 Fragment가 존재할 때 어떤 Surface가 실제로 보일지를 판단하는 과정을 살펴보았다.
+Fragment의 Color를 계산하고 앞뒤 조건을 검사했다고 생각해 보자. 계산한 값을 저장하지 않으면 다음 Fragment는 기존의 결과를 비교할 수 없고, 다음 작업도 Image를 이어서 처리할 수 없다. 앞 절의 Depth Test는 이처럼 저장된 값과 새 값을 연결해 Camera 기준으로 어떤 Surface가 보일지 판단했다.
 
 이제 계산된 결과를 어디에 남길지 생각해 보자. 다음 Fragment가 들어왔을 때 앞뒤를 비교하려면 Depth를 기억해야 한다. 뒤의 작업에서 Image를 완성하려면 Color도 기억해야 한다.
 
@@ -5095,7 +5084,14 @@ Color는 Fragment Shader의 출력으로 얻을 수 있다. 기본 Depth는 Rast
 
 Figure 1-11은 Fragment Shader에서 계산된 결과가 Framebuffer에 기록되고, 이후 Final Image로 이어지는 흐름을 보여준다.
 
+왼쪽은 결과로 기록할 Color와 Depth를, 가운데는 이 Data를 저장하는 서로 다른 대상을 보여준다. 저장값은 이후 처리에 다시 사용할 수 있으므로, 오른쪽의 최종 Image로 이어지는 관계를 함께 본다.
+
+<details>
+<summary>Verification Note — how to read Figure 1-11</summary>
+
 왼쪽의 Color/Alpha는 Fragment Shader 출력으로 읽고, Depth는 기본 raster depth와 선택적인 Shader override를 구분해서 읽는다. 현재 Figure는 기본 Raster Depth와 선택적인 Shader Override를 별도로 표시하며, 서로 다른 Scene 삽화는 독립적인 설명 예시로 구분한다.
+
+</details>
 
 가운데에서는 이러한 결과가 Color Buffer, Depth Buffer, 기타 Render Target에 기록된다.
 
@@ -5337,7 +5333,7 @@ Chapter 01에서는 MRT의 세부 동작까지 다루지 않는다.
 
 Chapter 06의 Forward / Deferred 비교에서 이어서 설명할 **Deferred Rendering**에서는 여러 Surface 정보를 각각의 Buffer에 저장한다.
 
-이러한 Buffer 묶음을 **GBuffer**라고 부른다.
+1.2에서 소개한 이 Buffer 묶음이 **GBuffer(Geometry Buffer)**다. 저장한 Surface Data를 뒤의 Lighting 작업이 읽는다는 관계가 핵심이다.
 
 예를 들어 GBuffer에는 다음과 같은 Data가 저장될 수 있다.
 
@@ -5399,11 +5395,11 @@ Rendering Pipeline에서는 이후에도 여러 단계가 존재할 수 있다.
 
 예를 들어
 
-- Post Process
-- Tone Mapping
-- Color Grading
-- UI Composite
-- Final Resolve
+- Post Process — 이미 저장한 화면 결과를 입력으로 다시 처리
+- **Tone Mapping** — 계산된 밝기 범위를 표시할 범위에 대응시키는 처리
+- **Color Grading** — 최종 색 표현을 조정하는 처리
+- **UI Composite** — User Interface, 즉 화면 안내 요소를 기존 결과에 결합하는 처리
+- **Final Resolve** — 여러 Sample 등으로 준비된 결과를 이후 표시나 처리에 사용할 형태로 정리하는 작업
 
 같은 작업이 수행될 수 있다.
 
@@ -5467,7 +5463,14 @@ Swap
 새 Frame 표시
 ~~~
 
-이 분리는 GPU가 다음 Frame을 준비하는 동안 표시 중인 Image를 보존하는 데 도움이 된다. 다만 Double Buffering만으로 tearing 방지나 일정한 Frame 간격이 보장되지는 않는다. 실제 표시는 Present 방식, 동기화, swap chain 설정에 의존한다. 구체 API 동작은 대상 환경에서 확인한다.
+이 분리는 GPU가 다음 Frame을 준비하는 동안 표시 중인 Image를 보존하는 데 도움이 된다. 표시용 결과와 작성 중인 결과의 역할을 나누는 것이 기본 직관이다.
+
+<details>
+<summary>Implementation Note — buffering does not define presentation timing</summary>
+
+Double Buffering만으로 **tearing**, 즉 한 화면에 서로 다른 Frame의 일부가 섞여 보이는 현상의 방지나 일정한 Frame 간격이 보장되지는 않는다. 실제 표시는 Present 방식, 동기화, swap chain 설정에 의존한다. 구체 API 동작은 대상 환경에서 확인한다.
+
+</details>
 
 ---
 
@@ -5662,23 +5665,19 @@ Screen
 
 ---
 
-지금까지는 GPU가 Geometry를 처리해 Final Image로 연결하는 흐름을 살펴보았다. 그렇다면 GPU는 어떤 Mesh를 그릴지 어떻게 알까? CPU와 Game Engine은 Scene의 Object, Material, Shader, Buffer 정보를 준비하고 **Draw Call**로 Rendering 작업을 요청한다. 다음 절에서는 CPU의 Rendering 준비와 GPU의 Pipeline 실행이 어떻게 연결되는지 살펴본다.
+지금까지는 GPU가 Geometry를 처리해 Final Image로 연결하는 흐름을 살펴보았다. 그렇다면 GPU는 어떤 Mesh를 그릴지 어떻게 알까? CPU와 Game Engine은 Scene의 Object, Material, Shader, Buffer 정보를 준비한다. 준비된 Geometry와 설정으로 Primitive를 그리라고 요청하는 명령 단위가 **Draw Call**이다. 다음 절에서는 CPU의 Rendering 준비와 GPU의 Pipeline 실행이 어떻게 연결되는지 살펴본다.
 
 ---
 
 ## 1.12 CPU, GPU and Draw Calls
 
-지금까지 Chapter 01에서는 주로 GPU 내부에서 Geometry가 어떻게 처리되는지를 따라왔다.
+Scene에 같은 Character Mesh를 두 개 배치했다고 생각해 보자. GPU가 사용할 Mesh Data는 같아도 각 Character의 위치와 Material 설정은 다를 수 있다. GPU는 그중 어떤 Data와 설정으로 지금의 작업을 수행해야 하는가?
 
-Vertex Processing에서 시작해서 Primitive Assembly, Culling / Clipping, Rasterization, Interpolation, Fragment Processing, Depth Test, Framebuffer까지 이어지는 흐름을 살펴보았다.
+앞 절까지는 GPU가 Geometry를 처리하고 결과를 저장하는 흐름을 따라왔다. 그 흐름을 실행하기 전에는 사용할 Mesh, Material, Transform, Shader와 기록 설정을 준비해야 한다.
 
-이 흐름을 실행하려면 먼저 어떤 Mesh와 Material을 사용하고, 어디에 배치하며, 어떤 설정으로 결과를 기록할지 정해야 한다. GPU가 Geometry만 받아 Scene의 의도를 자동으로 알 수는 없다.
+이번 절은 **CPU가 Draw를 준비하는 기본 흐름**을 기준으로 설명한다. 1.1에서 소개한 CPU와 Engine이 Scene 상태와 작업에 사용할 Data를 준비하고, GPU는 제출된 명령에 따라 계산을 실행한다.
 
-이번 절은 **CPU가 Draw를 준비하는 기본 흐름**을 기준으로 설명한다. CPU와 Game Engine은 Scene의 상태를 관리하고, Mesh / Material / Transform / Shader State를 사용할 수 있도록 준비한다.
-
-그 뒤 CPU가 Rendering Command를 제출하면 GPU가 지정된 작업을 실행한다. 이 구분을 알면 Scene에 Object를 추가하는 작업과, 그 Object를 실제로 그리는 GPU 작업을 연결할 수 있다.
-
-이때 등장하는 핵심 개념이 **Draw Call**이다.
+그 연결에서 Geometry를 그리라고 요청하는 단위가 **Draw Call**이다. 먼저 준비와 요청, 실행의 역할을 구분한 뒤, 한 Object가 왜 여러 Draw로 나뉠 수 있는지 살펴본다. 이 구분은 Data의 저장량, 제출 비용, GPU의 실제 계산 비용을 혼동하지 않는 데 필요하다.
 
 ---
 
@@ -5688,7 +5687,16 @@ Vertex Processing에서 시작해서 Primitive Assembly, Culling / Clipping, Ras
 
 Figure 1-12는 CPU / Engine이 Scene과 Object를 확인하고 Rendering에 필요한 Data를 준비한 뒤, Draw Call을 통해 GPU에 작업을 전달하는 기본적인 CPU-driven 흐름을 보여준다.
 
-그림 중앙은 **필요할 때 자원을 생성·업로드하는 단계**, **준비된 자원과 State를 바인딩·참조하는 단계**, **Draw 명령을 제출하는 단계**를 구분한다. 매 Draw마다 Vertex / Index Buffer 전체를 다시 복사하는 것은 아니다. 하나의 Object가 여러 Draw로 나뉘는 목록도 예시이며, 실제 Draw 수는 Pass, Section, Instancing 등에 따라 달라진다.
+그림 중앙은 먼저 필요한 Data를 준비하고, 그 Data를 현재 작업에 연결한 뒤 Draw를 요청하는 관계다. **State**는 어떤 Program과 자원을 사용하고 어떤 규칙으로 검사·기록할지 정한 설정이다. 준비와 요청을 같은 일로 보지 않는 것이 중요하다.
+
+<details>
+<summary>Implementation Note — creation, binding, and submission are different operations</summary>
+
+그림 중앙은 **필요할 때 자원을 생성·업로드하는 단계**, **준비된 자원과 State를 바인딩·참조하는 단계**, **Draw 명령을 제출하는 단계**를 구분한다. 업로드는 Data를 GPU가 사용할 자원에 전달하는 작업이며, 바인딩은 현재 작업에서 사용할 자원을 연결하는 작업이다. 제출은 준비된 명령의 실행을 요청하는 일이다.
+
+매 Draw마다 Vertex / Index Buffer 전체를 다시 복사하는 것은 아니다. 하나의 Object가 여러 Draw로 나뉘는 목록도 예시이며, 실제 Draw 수는 Pass, Section, Instancing 등에 따라 달라진다. 아래 본문에서 이 분리와 반복 Drawing을 연결한다.
+
+</details>
 
 <details>
 <summary>Figure / Implementation Note — resource references and verification scope</summary>
@@ -5862,7 +5870,7 @@ GPU
 
 하지만 실제로는 반드시 그렇지 않다.
 
-하나의 Object가 여러 Material Slot을 가지고 있다면 여러 Draw Call로 나뉠 수 있다.
+하나의 Object가 여러 **Material Slot**을 가지고 있다면 여러 Draw Call로 나뉠 수 있다. Material Slot은 Mesh의 일부에 어떤 Material을 사용할지 연결하는 자리다. 같은 Mesh라도 서로 다른 Material을 쓰는 부분은 별도의 처리 단위인 **Section**으로 나뉠 수 있다.
 
 예를 들어 Character가 다음과 같은 Material을 사용한다고 하자.
 
@@ -5923,7 +5931,7 @@ Character Modeling에서 Material Slot을 여러 개 사용하는 경우가 많�
 
 ### Draw Call Inputs
 
-Draw Call을 실행하려면 GPU가 어떤 Geometry와 State를 사용할지 알아야 한다.
+Draw Call을 실행하려면 GPU가 어떤 Geometry와 State를 사용할지 알아야 한다. 여기서 입력을 준비한다는 것은 자원 전체를 매 Draw마다 복사한다는 뜻이 아니다. 이미 만들어진 자원을 현재 작업에 연결하고, 필요한 값과 설정을 지정한 뒤 Draw 명령을 제출할 수 있다.
 
 대표적으로 다음과 같은 Data가 필요할 수 있다.
 
@@ -5994,7 +6002,7 @@ Vertex 2
 ...
 ~~~
 
-GPU의 Vertex Shader는 이 Vertex Buffer의 Data를 읽어 Vertex Processing을 수행한다.
+GPU의 Vertex Shader는 이 Vertex Buffer의 Data를 읽어 Vertex Processing을 수행한다. Vertex Buffer는 입력을 저장하는 자원이고, Vertex Shader는 그 입력을 계산하는 Program이다. 저장 공간과 실행 단계를 구분하면 같은 Mesh 자원을 여러 Object가 공유하는 경우도 이해할 수 있다.
 
 ---
 
@@ -6182,7 +6190,7 @@ Scene이 복잡해질수록 Draw Call 수도 증가할 수 있다.
 
 ### Draw Submission Cost
 
-Draw Call은 GPU가 Vertex와 Fragment를 계산하는 비용과는 조금 다른 종류의 Cost를 가진다.
+어떤 계산이 빨라도 그 작업을 지시하는 준비가 늦으면 Frame 전체가 늦어질 수 있다. 이처럼 현재 전체 진행을 제한하는 작업을 **Bottleneck**이라고 한다. Draw Call의 제출 작업은 GPU가 Vertex와 Fragment를 계산하는 비용과는 조금 다른 종류의 Cost를 가진다.
 
 CPU가 Draw Call을 만들고,
 
@@ -6210,15 +6218,14 @@ CPU Cost 증가 가능
 
 라고 생각하는 것도 정확하지 않다.
 
-현대 Rendering Engine에는
+<details>
+<summary>Implementation Note — draw count and modern submission strategies</summary>
 
-- Batching
-- Instancing
-- GPU Driven Rendering
-- Multi Draw
-- 기타 Optimization
+현대 Rendering Engine에는 여러 작업을 묶어 제출하는 **Batching**, 같은 Mesh를 여러 배치 정보로 반복해서 그리는 **Instancing**, GPU가 작업 선별·실행 요청의 일부를 준비하는 **GPU Driven Rendering**, 여러 Draw 요청을 함께 처리하는 **Multi Draw** 등 다양한 방식이 존재한다.
 
-같은 다양한 방식이 존재한다.
+이 방식들은 작업을 조직하는 방법과 비용을 바꿀 수 있다. 따라서 Draw 수만으로 전체 비용을 확정하지 않는다. 실제 구조와 측정 결과를 함께 확인한다.
+
+</details>
 
 따라서 Draw Call Cost와 실제 최적화 방법은 **Chapter 09 - Rendering Debug and Optimization**에서 자세히 다룬다.
 
@@ -6226,7 +6233,7 @@ CPU Cost 증가 가능
 
 ### CPU and GPU Bottlenecks
 
-Rendering Performance 문제는 크게 CPU와 GPU 양쪽에서 발생할 수 있다.
+CPU가 준비를 마쳐야 GPU가 다음 작업을 받을 수 있고, GPU가 계산을 마쳐야 결과를 이어서 사용할 수 있다. 어느 쪽의 작업이 현재 Frame을 제한하는지에 따라 대응이 달라진다. Rendering Performance 문제는 크게 CPU와 GPU 양쪽에서 발생할 수 있다.
 
 예를 들어 Draw Call이 지나치게 많다면 CPU가 GPU에 Command를 준비하는 데 시간이 많이 걸릴 수 있다.
 
@@ -6303,7 +6310,7 @@ Draw
 
 GPU는 이러한 Command를 순서대로 처리하면서 Frame을 Rendering한다.
 
-실제 Graphics API에서는 더 복잡한 Command Buffer와 Queue 구조를 사용하지만, Chapter 01에서는
+실제 Graphics API에서는 명령들을 담는 **Command Buffer**와 제출된 작업을 관리하는 **Queue** 같은 더 복잡한 구조를 사용하지만, Chapter 01에서는
 
 > **CPU가 Rendering Command를 준비하고 GPU가 이를 실행한다.**
 
@@ -6374,7 +6381,7 @@ ASF처럼 Character Shader를 구현할 때도 단순히 Shader Instruction 수�
 
 Rendering Pipeline 전체 구조를 함께 봐야 한다.
 
-이 관계는 Chapter 09의 9.6 Draw Call Cost와 9.7 LOD and Culling에서 다시 연결한다.
+뒤에서는 관찰 조건에 맞는 Geometry의 세부 수준을 선택하는 LOD(Level of Detail)도 살펴본다. 여기서는 준비할 Geometry가 달라지면 GPU에 전달할 작업도 달라질 수 있다는 연결만 확인한다. 이 관계는 Chapter 09의 9.6 Draw Call Cost와 9.7 LOD and Culling에서 다시 연결한다.
 
 ---
 
@@ -6471,7 +6478,7 @@ Rendering
 
 ## 1.13 Complete Rendering Pipeline
 
-지금까지 Chapter 01에서는 3D Scene의 Geometry Data가 어떤 과정을 거쳐 최종 Screen Image가 되는지를 단계별로 살펴보았다.
+Chapter의 처음에는 3D Mesh가 어떻게 최종 Screen의 Pixel이 되는지 질문했다. 이제 Character 하나를 화면에 보여주는 일을 다시 따라가 보자. Scene에서 필요한 Data를 준비하고, 각 Vertex를 계산하고, Triangle을 구성한 뒤, 화면 위치별 Surface 후보를 계산해 결과를 저장한다. 지금까지 Chapter 01에서는 이 연결을 단계별로 살펴보았다.
 
 처음에는 단순하게
 
@@ -6487,13 +6494,13 @@ Rendering
 
 CPU / Engine은 Scene과 Object의 상태를 확인하고 Rendering에 필요한 Data와 Command를 준비한다.
 
-그 다음 Draw Call을 통해 GPU에 Rendering 작업을 요청한다.
+그다음 Draw Call을 통해 GPU에 Rendering 작업을 요청한다.
 
 GPU는 전달받은 Geometry Data와 Shader State를 사용하여 Vertex Processing, Primitive Assembly, Rasterization, Fragment Processing과 같은 여러 Stage를 수행한다.
 
 그리고 최종 결과는 Framebuffer에 기록되고 Present 과정을 거쳐 Screen에 표시된다.
 
-이번 절에서는 지금까지 배운 내용을 하나의 **Complete Rendering Pipeline**으로 다시 연결한다.
+이번 절에서는 지금까지 배운 내용을 하나의 **Complete Rendering Pipeline**으로 다시 연결한다. 이미 배운 개념의 뜻을 새로 암기하는 구간이 아니라, 각 단계의 출력이 다음 단계의 입력이 되는지를 확인하는 구간이다. CPU의 준비, GPU의 계산, 결과의 저장과 표시는 서로 다른 역할이라는 점을 따라간다.
 
 ---
 
@@ -6503,7 +6510,14 @@ GPU는 전달받은 Geometry Data와 Shader State를 사용하여 Vertex Process
 
 Figure 1-13은 Chapter 01에서 살펴본 전체 Rendering 흐름을 하나의 Diagram으로 정리한 것이다.
 
-이 Figure의 여섯 **Processing Group**은 준비, Geometry 처리, Screen / Fragment 처리, 저장 자원, 표시 흐름을 묶은 교육용 개요다. Object / Bounds Frustum 선별은 `Preparation / Selection`에 따로 표시하고, GPU Geometry 처리의 Backface / Clipping과 구분한다. `Framebuffer / Output Bindings` 아래에는 개별 Color Render Target, Depth / Stencil Buffer, 기타 Render Target을 나누어 표시한다. 본문의 1.6과 1.11 구분을 함께 읽는다.
+이 Figure의 여섯 **Processing Group**은 준비, Geometry 처리, Screen / Fragment 처리, 저장 자원, 표시 흐름을 묶은 교육용 개요다. 먼저 Data가 왼쪽에서 오른쪽으로 이동하며 어떤 처리 단위로 바뀌는지 본다. 각 Group은 기능을 이해하기 위해 묶은 영역이며 하나의 Hardware Stage를 뜻하지 않는다.
+
+<details>
+<summary>Verification Note — selection and output groups in Figure 1-13</summary>
+
+Object / Bounds Frustum 선별은 `Preparation / Selection`에 따로 표시하고, GPU Geometry 처리의 Backface / Clipping과 구분한다. `Framebuffer / Output Bindings` 아래에는 개별 Color Render Target, Depth / Stencil Buffer, 기타 Render Target을 나누어 표시한다. 본문의 1.6과 1.11 구분을 함께 읽는다.
+
+</details>
 
 <details>
 <summary>Figure / Implementation Note — processing groups and verification scope</summary>
@@ -6553,7 +6567,7 @@ Rendering은 GPU에서 시작되지 않는다.
 - Transform 준비
 - Camera 관련 Data 준비
 - Render State 준비
-- LOD 선택
+- **LOD(Level of Detail)** 선택 — 관찰 조건에 맞는 Geometry의 세부 수준 선택
 - Culling 관련 판단
 - Rendering Command 생성
 
@@ -7298,7 +7312,7 @@ Rendering Pipeline을 이해하면 Unreal Engine에서 사용하는 여러 기�
 
 ### Rendering Work and Cost
 
-Rendering Performance 역시 하나의 숫자로만 볼 수 없다.
+같은 Data Flow를 비용의 관점에서도 다시 읽을 수 있다. 많은 Vertex를 처리하는 일과 넓은 화면의 Fragment를 계산하는 일은 다른 작업이다. CPU에서 Draw를 준비하는 비용도 별도로 존재한다. 따라서 Rendering Performance 역시 하나의 숫자로만 볼 수 없다.
 
 각 Stage에서 서로 다른 Cost가 발생할 수 있다.
 

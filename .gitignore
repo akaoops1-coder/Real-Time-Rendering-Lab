@@ -6,6 +6,7 @@ Thumbs.db
 .vscode/
 
 # Temporary / backup files
+*_backup*
 *.tmp
 *.bak
 *.log
@@ -18,7 +19,6 @@ Thumbs.db
 00_Project/Project_Management/Foundation_Phase2_Figure_Revision_Log.md
 00_Project/Project_Management/Foundation_Chapter02_Compact_Edit_Report.md
 00_Project/Project_Management/Chapter01-04_Rewrite_Audit.md
-00_Foundation/Chapter01_RnderingPipeline_backup.md
-00_Foundation/Chapter02_CoodinateSystem_backup.md
-00_Foundation/Chapter03_LightingMathematics_backup.md
-00_Foundation/Chapter04_MaterialArchitecture_backup.md
+Chapter06-09_Rewrite_Summary.md
+Chapter06-09_Style_Audit.md
+Chapter01-05_Rewrite_Audit.md

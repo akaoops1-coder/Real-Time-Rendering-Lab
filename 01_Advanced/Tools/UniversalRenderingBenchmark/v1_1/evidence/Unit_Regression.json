@@ -1,0 +1,23 @@
+{
+  "baseline": {
+    "tests": 85,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2,
+    "pass": true,
+    "exit_code": 0,
+    "test_directory": "local path withheld"
+  },
+  "v1_1": {
+    "tests": 96,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2,
+    "pass": true,
+    "exit_code": 0,
+    "test_directory": "local path withheld"
+  },
+  "environment_note": "TemporaryDirectory is assigned to this version's writable evidence/TestTemp. Default Windows container temporary directory denies atomic directory rename. No production code is patched.",
+  "skip_note": "Two inherited symlink tests skip because Windows account lacks symlink privilege.",
+  "pass": true
+}

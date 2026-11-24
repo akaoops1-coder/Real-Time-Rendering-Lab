@@ -1,0 +1,109 @@
+{
+  "pass": true,
+  "v1_complete": true,
+  "physical_user_workflow_verified": true,
+  "verified_utc": "2026-11-03T12:01:47.743949+00:00",
+  "gates": {
+    "native_19_cases": true,
+    "required_tests_A_H": true,
+    "physical_user_workflow_I": true,
+    "physical_escape_cancellation": true,
+    "missing_gpu_diagnostic": true,
+    "actual_html_visual_qa": true,
+    "actual_hair_visible_without_pawn_occlusion": true,
+    "metadata_only_source_change": true,
+    "report_presentation_only_change": true,
+    "report_statistics_exactly_preserved": true,
+    "corrected_fixture_runtime": true,
+    "persisted_asset_reload": true,
+    "additional_visible_runs": true,
+    "regression_83_pass_2_explicit_skips": true,
+    "installed_binary_matches_validation": true,
+    "tool_ignored_and_untracked": true,
+    "production_and_previous_content_unchanged": true
+  },
+  "native_case_count": 19,
+  "required_test_coverage": {
+    "A": [
+      "AA"
+    ],
+    "B": [
+      "HairPDO"
+    ],
+    "C": [
+      "General"
+    ],
+    "D": [
+      "Scalar"
+    ],
+    "E": [
+      "VisibilityActor",
+      "VisibilityComponent",
+      "VisibilityNoShadows",
+      "VisibilityNoHiddenShadows"
+    ],
+    "F": [
+      "ConsoleVariable",
+      "ConsoleBloom"
+    ],
+    "G": [
+      "MissingTarget",
+      "InvalidSlot",
+      "UnsupportedCVar",
+      "ApplyFailure",
+      "ChangedDuringCapture",
+      "CancelWarmup",
+      "CancelCapture",
+      "CaptureBusy"
+    ],
+    "H": [
+      "Reuse"
+    ]
+  },
+  "unit_tests": {
+    "total": 85,
+    "passed": 83,
+    "skipped": 2,
+    "reason": "Windows account cannot create test symlinks"
+  },
+  "native_binary_sha256": "190C110A0B8F9D4F0B8D1BB31C6AE1C503EB2CC11D249359315F5665339D7E87",
+  "analyzer_version": "0.3.1",
+  "native_version": "1.0.0-V1",
+  "additional_result_directories": [
+    "local path withheld",
+    "local path withheld"
+  ],
+  "additional_report_bundles": [
+    "local path withheld",
+    "local path withheld"
+  ],
+  "gitignore": {
+    "ignored": true,
+    "tracked_tool_files": 0,
+    "rule": "/01_Advanced/Tools/UniversalRenderingBenchmark/"
+  },
+  "limits": [
+    "Windows UE 5.8.3 DX12 SM6 on this PC",
+    "Hair fixture is an isolated static copy, not a full PBR Character Scene",
+    "SceneStateDeclaredStatic is a user assertion, not a full dynamic scene proof",
+    "Performance confidence thresholds are adjustable RTR candidate policy",
+    "Force termination restoration is not guaranteed",
+    "Hair example retains read-only project texture/function references"
+  ],
+  "evidence_sha256": {
+    "Phase4_Native_Verification.json": "4BD5B50882CC1656814243EE8DCA49A63035D6B178D2B873F0BA2CFBCD5E3547",
+    "UI_Workflow.json": "85D006D8F84B622BE97695173852ECF30300A06468B662EF3BA9A28D34E35CAD",
+    "MissingGPU_Diagnostic_Verification.json": "8987E62BD2CB0F22272EFCA4C8FCAF135696D3573916FC2EF1C21C4D0FF963AC",
+    "VisualQA.json": "43EE80931AD02AC2692D6D8FDAB5CACC40C90FE29DA327AFE5748B26E8EF8E25",
+    "Details_Metadata_Verification.json": "A62D9CA63AE7FB92613A2115612A43F79938DE1334F3A12C2DC6AD785D597579",
+    "AssetReload_Verification.json": "6C8C2248FB43C02B2093A428894907AC458FAC363E3A924B632B74D3001AA1B2",
+    "Additional_Native_Verification.json": "1872D57A1DE1748CF871AD1E23F6F495CEBBFA036783AD9C62D92FC1662B1BB7",
+    "Analyzer_031_Regression.log": "8D15158E4981BF6795397888E184B3A26CE37485C2CE34FEF4CA3D4809F2C80D",
+    "Fixture_Visual_Verification.json": "50EA48ADDFEE1214EC5721C50AAF7D082E4F25118015E15D693B3D9E60FCC292",
+    "Fixture_Correction.json": "175A0D5A62EEACCD178959A1F8BF0DF24D526BFC17F1751A990AAA8C96D457A5",
+    "Analyzer_Presentation_Verification.json": "3A1A391678DAD3CB1DC224A33671138B8FC30150CFC46792B7EA4BED63A2BAAC",
+    "Report_Version_Migration_Verification.json": "D30E50BF9DF3C7B7C788BB6E489F3547D4D06206063C33543A41C02E3E92EA2C",
+    "Fixture_Runtime_Verification.json": "B76E141814F691ECC00D0EF8685F5A867B0CA7B875AA6287C8EEBC85D6C7FB6A",
+    "UI_Escape_Verification.json": "B659D6F095C7E9678DB50A0EB0D6E7B1D2800E48D7FA509C16DBFB8AC0B72DD5"
+  }
+}

@@ -1,0 +1,2453 @@
+{
+	"schemaVersion": 3,
+	"sourceSnapshotStable": true,
+	"runID": "20261103T114935_URB4_Scalar_30CCDBF0",
+	"testID": "URB4_Scalar",
+	"preset": "/URBenchmark/Phase4/Presets/DA_URB4_Scalar.DA_URB4_Scalar",
+	"actionType": "ScalarParameter",
+	"engineVersion": "5.8.3-58210709+++UE5+Release-5.8",
+	"gpu": "NVIDIA GeForce RTX 5080",
+	"rhi": "D3D12",
+	"featureLevel": "SM6",
+	"scope": "Phase3 provenance for external Analyzer; unchanged action and CSV capture core",
+	"validationScenario": "",
+	"autoExit": false,
+	"startedUTC": "2026-11-03T11:49:35.849Z",
+	"status": "COMPLETED",
+	"message": "All requested captures validated",
+	"captures": [
+		{
+			"captureIndex": 0,
+			"variant": "A",
+			"mode": "Calibration",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "A",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:49:38.908Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AA_000_A.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "0208dbfa744704fa8a34458c59addc7f04cfb534ddb4eb33093f73271e8f83a2",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:49:40.948Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 1,
+			"variant": "B",
+			"mode": "Calibration",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "A",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:49:41.713Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AA_001_B.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "3ef24db730c1f83396c89343fec8c78bdf284300b1199866138032bc54a15c28",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:49:43.809Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 2,
+			"variant": "B",
+			"mode": "Calibration",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "A",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:49:44.617Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AA_002_B.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "4dbe2b648f4e32b999612e817963d78dbed6c515112e09073d75c7be6db11966",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:49:46.727Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 3,
+			"variant": "A",
+			"mode": "Calibration",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "A",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:49:47.518Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AA_003_A.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "9aa6c568c64b9220c14e5c6c0029bbf314d1b7e778a271278f8f86d3123f6418",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:49:49.586Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 4,
+			"variant": "A",
+			"mode": "Calibration",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "A",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:49:50.367Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AA_004_A.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "60dfa4be86b9d6d0ddb89d2bab23e26d48fe5cdd03acda1eb38e0f078bf33631",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:49:52.446Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 5,
+			"variant": "B",
+			"mode": "Calibration",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "A",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:49:53.234Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AA_005_B.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "45311c02dea3af8a6afc0a05a1d28783b7e6aadaa724a3a8e1d42b2f5c007488",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:49:55.269Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 6,
+			"variant": "A",
+			"mode": "Benchmark",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "A",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:49:56.054Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AB_006_A.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "732867875734d1a5fad24c9bc4c8dcb5f72f85836cd77c0c3ba9be953faa2500",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:49:58.283Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 7,
+			"variant": "B",
+			"mode": "Benchmark",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "B",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "B",
+				"parameter": "URB_Blend",
+				"expectedValue": 1,
+				"actualValue": 1,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:49:59.107Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AB_007_B.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "4bee9fd3bb441323fe69164bf3a0d9bf861fbc37c58697429f2c2f67ef3d0454",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:50:01.141Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "B",
+				"parameter": "URB_Blend",
+				"expectedValue": 1,
+				"actualValue": 1,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 8,
+			"variant": "B",
+			"mode": "Benchmark",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "B",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "B",
+				"parameter": "URB_Blend",
+				"expectedValue": 1,
+				"actualValue": 1,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:50:01.931Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AB_008_B.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "9831a7039aad498f29e7065aa2d9dd4726bad4bb60ffa8d3ab2a84512be8c684",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:50:03.956Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "B",
+				"parameter": "URB_Blend",
+				"expectedValue": 1,
+				"actualValue": 1,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 9,
+			"variant": "A",
+			"mode": "Benchmark",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "A",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:50:04.752Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AB_009_A.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "2e5cb4d974fe9ede7a83bc5999e6ff1b750adcb23f2529139787b8cd802379ac",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:50:06.817Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 10,
+			"variant": "A",
+			"mode": "Benchmark",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "A",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:50:07.586Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AB_010_A.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "c0c1967a424778ec194cf69faf06831d4f6f12ba22d53f2059572939ffdf1f90",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:50:09.626Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "A",
+				"parameter": "URB_Blend",
+				"expectedValue": 0,
+				"actualValue": 0,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		},
+		{
+			"captureIndex": 11,
+			"variant": "B",
+			"mode": "Benchmark",
+			"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+			"actionType": "ScalarParameter",
+			"actualActionVariant": "B",
+			"actionReadbackBeforeCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "B",
+				"parameter": "URB_Blend",
+				"expectedValue": 1,
+				"actualValue": 1,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"invariantEnvironmentVerifiedBefore": true,
+			"captureStartedUTC": "2026-11-03T11:50:10.402Z",
+			"measurementFingerprintSHA256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270",
+			"environmentReadbackBeforeCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"captureFramesRequested": 300,
+			"warmupFramesActual": 120,
+			"status": "PASS",
+			"file": "AB_011_B.csv",
+			"screenMessagesDisabledForCapture": true,
+			"sha256": "a7ce6d9359032a6cedffb5ea1938b348533c76f90ef64d876be9180a8560a4db",
+			"invariantEnvironmentVerifiedAfter": true,
+			"captureCompletedUTC": "2026-11-03T11:50:12.400Z",
+			"validFrames": 300,
+			"error": "",
+			"actionReadbackAfterCapture":
+			{
+				"actionType": "ScalarParameter",
+				"actualVariant": "B",
+				"parameter": "URB_Blend",
+				"expectedValue": 1,
+				"actualValue": 1,
+				"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"dynamicMaterialObjectID": 64260,
+				"actualMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+				"verified": true
+			},
+			"actionStateVerifiedAfterCapture": true,
+			"environmentReadbackAfterCapture": [
+				{
+					"name": "r.ScreenPercentage",
+					"expectedValue": "100.0",
+					"actualValueString": "100",
+					"actualValue": 100,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"expectedTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+					"verified": true
+				},
+				{
+					"name": "r.VSync",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"expectedTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+					"verified": true
+				},
+				{
+					"name": "t.MaxFPS",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"expectedTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+					"verified": true
+				},
+				{
+					"name": "r.DynamicRes.OperationMode",
+					"expectedValue": "0",
+					"actualValueString": "0",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"expectedTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+					"verified": true
+				},
+				{
+					"name": "r.GPUCsvStatsEnabled",
+					"expectedValue": "1",
+					"actualValueString": "1",
+					"actualValue": 1,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"expectedTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+					"verified": true
+				},
+				{
+					"name": "csv.AlwaysShowFrameCount",
+					"expectedValue": "0",
+					"actualValueString": "false",
+					"actualValue": 0,
+					"actualPriority": 251658240,
+					"expectedPriority": 251658240,
+					"actualTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"expectedTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+					"verified": true
+				}
+			],
+			"environmentStateVerifiedAfterCapture": true
+		}
+	],
+	"testName": "URB Phase 4 Scalar",
+	"target": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.URBTestTarget_0.PrimaryMesh",
+	"camera": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.CameraActor_0",
+	"calibrationReferenceRunID": "",
+	"warmupFrames": 120,
+	"captureFrames": 300,
+	"repeatCount": 3,
+	"targetFPSBudgetOnly": 60,
+	"screenPercentageRequested": 100,
+	"sceneType": "GeneralValidation",
+	"runMode": "StandardBenchmark",
+	"runCalibration": true,
+	"expectedCaptures": 12,
+	"action":
+	{
+		"actionType": "ScalarParameter",
+		"target": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.URBTestTarget_0.PrimaryMesh",
+		"actor": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.URBTestTarget_0",
+		"component": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.URBTestTarget_0.PrimaryMesh",
+		"snapshotTaken": true,
+		"original":
+		{
+			"actorHiddenInGame": false,
+			"material": "/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original",
+			"scalarValue": 0.34999999403953552
+		},
+		"materialSlot": 0,
+		"parameter": "URB_Blend",
+		"valueA": 0,
+		"valueB": 1,
+		"dynamicMaterial": "/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0",
+		"dynamicMaterialObjectID": 64260,
+		"reusesSingleTransientDMI": true
+	},
+	"sourceContentSHA256": "7249445c4617d1590613e04331ce08d8e3b33e8c683a3965aada684a43406c7d",
+	"measurementFingerprint":
+	{
+		"schema_version": 1,
+		"payload":
+		{
+			"engineVersion": "5.8.3-58210709+++UE5+Release-5.8",
+			"gpu": "NVIDIA GeForce RTX 5080",
+			"driver": "617.42",
+			"os": "10.0.26200.1.256.64bit",
+			"cpu": "AMD Ryzen 7 5800X 8-Core Processor             ",
+			"rhi": "D3D12",
+			"featureLevel": "SM6",
+			"resolution": [
+				1920,
+				1080
+			],
+			"screenPercentage": 100,
+			"warmupFrames": 120,
+			"captureFrames": 300,
+			"targetFPSBudgetOnly": 60,
+			"sceneType": "GeneralValidation",
+			"sceneStatePolicy": "DeclaredStatic",
+			"worldPackage": "/URBenchmark/Phase4/Maps/L_URB_GenericActions",
+			"contentSHA256": "7249445c4617d1590613e04331ce08d8e3b33e8c683a3965aada684a43406c7d",
+			"camera":
+			{
+				"location": [
+					-1100,
+					0,
+					180
+				],
+				"rotation": [
+					0,
+					0,
+					-5.0000000000000018
+				],
+				"fov": 90
+			},
+			"scalability":
+			{
+				"sg.ResolutionQuality": "0",
+				"sg.ViewDistanceQuality": "3",
+				"sg.AntiAliasingQuality": "3",
+				"sg.ShadowQuality": "3",
+				"sg.GlobalIlluminationQuality": "3",
+				"sg.ReflectionQuality": "3",
+				"sg.PostProcessQuality": "3",
+				"sg.TextureQuality": "3",
+				"sg.EffectsQuality": "3",
+				"sg.FoliageQuality": "3",
+				"sg.ShadingQuality": "3"
+			},
+			"environmentCVars":
+			{
+				"r.ScreenPercentage": "100",
+				"r.VSync": "0",
+				"t.MaxFPS": "0",
+				"r.DynamicRes.OperationMode": "0",
+				"r.GPUCsvStatsEnabled": "1",
+				"csv.AlwaysShowFrameCount": "false"
+			},
+			"sceneTransformSHA256": "490ea957129a5773f02472e28ada50c6e219a204d566e2e81401e420781a8119",
+			"runnerBuildSHA256": "190c110a0b8f9d4f0b8d1bb31c6ae1c503eb2cc11d249359315f5665339d7e87",
+			"actionA":
+			{
+				"actionType": "ScalarParameter",
+				"targetActorTag": "URB4_Target",
+				"targetComponentTag": "URB4_Mesh",
+				"materialSlot": 0,
+				"parameterName": "URB_Blend",
+				"valueA": 0,
+				"materialA": "/URBenchmark/Materials/MI_URB_Detail_OFF.MI_URB_Detail_OFF",
+				"visibilityScope": "Component",
+				"visibleA": true,
+				"hiddenInGameA": false,
+				"shadowPolicy": "PreserveOriginal",
+				"cvarName": "r.Tonemapper.Sharpen",
+				"cvarValueA": 0,
+				"originalMaterial": "/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original",
+				"originalScalar": 0.34999999403953552
+			}
+		},
+		"payloadJson": "{\"engineVersion\":\"5.8.3-58210709+++UE5+Release-5.8\",\"gpu\":\"NVIDIA GeForce RTX 5080\",\"driver\":\"617.42\",\"os\":\"10.0.26200.1.256.64bit\",\"cpu\":\"AMD Ryzen 7 5800X 8-Core Processor             \",\"rhi\":\"D3D12\",\"featureLevel\":\"SM6\",\"resolution\":[1920,1080],\"screenPercentage\":100,\"warmupFrames\":120,\"captureFrames\":300,\"targetFPSBudgetOnly\":60,\"sceneType\":\"GeneralValidation\",\"sceneStatePolicy\":\"DeclaredStatic\",\"worldPackage\":\"/URBenchmark/Phase4/Maps/L_URB_GenericActions\",\"contentSHA256\":\"7249445c4617d1590613e04331ce08d8e3b33e8c683a3965aada684a43406c7d\",\"camera\":{\"location\":[-1100,0,180],\"rotation\":[0,0,-5.0000000000000018],\"fov\":90},\"scalability\":{\"sg.ResolutionQuality\":\"0\",\"sg.ViewDistanceQuality\":\"3\",\"sg.AntiAliasingQuality\":\"3\",\"sg.ShadowQuality\":\"3\",\"sg.GlobalIlluminationQuality\":\"3\",\"sg.ReflectionQuality\":\"3\",\"sg.PostProcessQuality\":\"3\",\"sg.TextureQuality\":\"3\",\"sg.EffectsQuality\":\"3\",\"sg.FoliageQuality\":\"3\",\"sg.ShadingQuality\":\"3\"},\"environmentCVars\":{\"r.ScreenPercentage\":\"100\",\"r.VSync\":\"0\",\"t.MaxFPS\":\"0\",\"r.DynamicRes.OperationMode\":\"0\",\"r.GPUCsvStatsEnabled\":\"1\",\"csv.AlwaysShowFrameCount\":\"false\"},\"sceneTransformSHA256\":\"490ea957129a5773f02472e28ada50c6e219a204d566e2e81401e420781a8119\",\"runnerBuildSHA256\":\"190c110a0b8f9d4f0b8d1bb31c6ae1c503eb2cc11d249359315f5665339d7e87\",\"actionA\":{\"actionType\":\"ScalarParameter\",\"targetActorTag\":\"URB4_Target\",\"targetComponentTag\":\"URB4_Mesh\",\"materialSlot\":0,\"parameterName\":\"URB_Blend\",\"valueA\":0,\"materialA\":\"/URBenchmark/Materials/MI_URB_Detail_OFF.MI_URB_Detail_OFF\",\"visibilityScope\":\"Component\",\"visibleA\":true,\"hiddenInGameA\":false,\"shadowPolicy\":\"PreserveOriginal\",\"cvarName\":\"r.Tonemapper.Sharpen\",\"cvarValueA\":0,\"originalMaterial\":\"/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original\",\"originalScalar\":0.34999999403953552}}",
+		"sha256": "56c765837ff2d0e336430047b59cfc441b3a17d00afbfdc57c48c225aaa2c270"
+	},
+	"actualResolution": "1920x1080",
+	"measurementStatus": "PASS",
+	"sourceContentSHA256After": "7249445c4617d1590613e04331ce08d8e3b33e8c683a3965aada684a43406c7d",
+	"actionRestoration":
+	{
+		"original":
+		{
+			"actorHiddenInGame": false,
+			"material": "/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original",
+			"scalarValue": 0.34999999403953552
+		},
+		"expectedMaterial": "/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original",
+		"actualMaterial": "/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original",
+		"material": true,
+		"originalScalar": 0.34999999403953552,
+		"actualOriginalScalar": 0.34999999403953552,
+		"actualTransientScalar": 0.34999999403953552,
+		"scalar": true,
+		"transientScalar": true,
+		"snapshotTaken": true,
+		"restored": true
+	},
+	"environmentRestoration": [
+		{
+			"name": "r.ScreenPercentage",
+			"originalValue": "0",
+			"originalPriority": 0,
+			"originalFlags": 320,
+			"originalTag": "None",
+			"temporaryTag": "URBenchmark_BF8AB3A94BE59BAD6FE562B946446D84",
+			"overrideMode": "TemporaryTaggedOverride",
+			"snapshotTaken": true,
+			"actualValueString": "0",
+			"actualPriority": 0,
+			"actualTag": "None",
+			"restored": true
+		},
+		{
+			"name": "r.VSync",
+			"originalValue": "0",
+			"originalPriority": 50331648,
+			"originalFlags": 50332000,
+			"originalTag": "None",
+			"temporaryTag": "URBenchmark_B048D5D848D09207189E51BD2E10C862",
+			"overrideMode": "TemporaryTaggedOverride",
+			"snapshotTaken": true,
+			"actualValueString": "0",
+			"actualPriority": 50331648,
+			"actualTag": "None",
+			"restored": true
+		},
+		{
+			"name": "t.MaxFPS",
+			"originalValue": "0",
+			"originalPriority": 33554432,
+			"originalFlags": 33554432,
+			"originalTag": "None",
+			"temporaryTag": "URBenchmark_EAF26D3A474A92F5DD0EBB808FD38A31",
+			"overrideMode": "TemporaryTaggedOverride",
+			"snapshotTaken": true,
+			"actualValueString": "0",
+			"actualPriority": 33554432,
+			"actualTag": "None",
+			"restored": true
+		},
+		{
+			"name": "r.DynamicRes.OperationMode",
+			"originalValue": "0",
+			"originalPriority": 0,
+			"originalFlags": 32,
+			"originalTag": "None",
+			"temporaryTag": "URBenchmark_E01C1DAC44470BB390A9F78954D10385",
+			"overrideMode": "TemporaryTaggedOverride",
+			"snapshotTaken": true,
+			"actualValueString": "0",
+			"actualPriority": 0,
+			"actualTag": "None",
+			"restored": true
+		},
+		{
+			"name": "r.GPUCsvStatsEnabled",
+			"originalValue": "0",
+			"originalPriority": 0,
+			"originalFlags": 0,
+			"originalTag": "None",
+			"temporaryTag": "URBenchmark_70648BCB45F16220FD514FB3EB7A7E4C",
+			"overrideMode": "TemporaryTaggedOverride",
+			"snapshotTaken": true,
+			"actualValueString": "0",
+			"actualPriority": 0,
+			"actualTag": "None",
+			"restored": true
+		},
+		{
+			"name": "csv.AlwaysShowFrameCount",
+			"originalValue": "false",
+			"originalPriority": 0,
+			"originalFlags": 0,
+			"originalTag": "None",
+			"temporaryTag": "URBenchmark_EDBE405C44ABEDFA92E4D2BF39EAC17E",
+			"overrideMode": "TemporaryTaggedOverride",
+			"snapshotTaken": true,
+			"actualValueString": "false",
+			"actualPriority": 0,
+			"actualTag": "None",
+			"restored": true
+		}
+	],
+	"restoration":
+	{
+		"action": true,
+		"camera": true,
+		"cvarsAndPriorities": true,
+		"resolution": true,
+		"runtimeChangesMade": true
+	},
+	"finishedUTC": "2026-11-03T11:50:12.841Z"
+}

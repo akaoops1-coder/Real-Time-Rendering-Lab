@@ -1,0 +1,32 @@
+{
+  "product": "Report V1.1",
+  "analyzer_version": "0.4.0",
+  "native_version_unchanged": "1.0.0-V1",
+  "gates": {
+    "unit_tests": true,
+    "same_statistics_grades_sources": true,
+    "browser_48_viewports": true,
+    "manual_screenshot_review": true,
+    "existing_v1_actual_run_plugin_protected": true,
+    "new_document_links_and_figures": true
+  },
+  "missing_new_document_links": [],
+  "unit_tests": {
+    "tests": 96,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2,
+    "pass": true,
+    "exit_code": 0,
+    "test_directory": "local path withheld"
+  },
+  "actual_sample": "examples/ActualScalarReport/0.4.0_4CF2BD549D9F/Report.html",
+  "new_native_measurement": false,
+  "physical_mobile_touch_tested": false,
+  "changed_existing_package_files": [
+    "__init__.py",
+    "report.py"
+  ],
+  "protected_files": 3059,
+  "pass": true
+}

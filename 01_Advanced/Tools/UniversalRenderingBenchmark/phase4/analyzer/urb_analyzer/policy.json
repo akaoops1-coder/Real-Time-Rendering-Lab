@@ -1,0 +1,11 @@
+{
+  "version": "RTR-V1-Phase3-Candidate-1",
+  "minimum_noise_floor_ms": 0.05,
+  "maximum_relative_spread_percent": 5.0,
+  "minimum_variant_runs": 3,
+  "minimum_calibration_runs": 6,
+  "impact_green_max_percent": 2.0,
+  "impact_yellow_max_percent": 5.0,
+  "budget_green_max_percent": 70.0,
+  "budget_yellow_max_percent": 100.0
+}

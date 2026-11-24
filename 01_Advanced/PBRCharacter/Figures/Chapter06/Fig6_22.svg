@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="965" viewBox="0 0 1640 965" role="img" aria-labelledby="title desc">
+  <title id="title">Mobile Hair Production Material Pin Map</title>
+  <desc id="desc">Verified Mobile Hair Production data flow for the Base Color, Opacity Mask, Roughness and Custom Specular Emissive paths.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L11 5 L0 10 Z" fill="#526781"/></marker>
+    <style>
+      text {font-family: "Segoe UI", Arial, sans-serif; fill:#17263c}
+      .title {font-size:42px; font-weight:700}
+      .subtitle {font-size:24px; fill:#53647a}
+      .lane-title {font-size:27px; font-weight:700; fill:#294a77}
+      .label {font-size:23px; font-weight:700}
+      .line {font-size:20px; fill:#364c66}
+      .note {font-size:20px; fill:#485c77}
+      .box {fill:#fff;stroke:#b9c9dd;stroke-width:2}
+      .output {fill:#eff5ff;stroke:#2f6bff;stroke-width:2}
+      .switch {fill:#f2f8f3;stroke:#43a047;stroke-width:2}
+      .wire {fill:none;stroke:#526781;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1640" height="965" fill="#fff"/>
+  <text class="title" x="66" y="79">Mobile Hair Production Material Pin Map</text>
+  <text class="subtitle" x="67" y="120">M_Mobile_Hair_Production  ·  Female01  ·  UE 5.8.3 Mobile Forward</text>
+
+  <rect x="66" y="156" width="1508" height="274" rx="12" fill="#f5f8fc"/>
+  <text class="lane-title" x="93" y="197">Card Surface</text>
+  <rect class="box" x="93" y="225" width="423" height="76" rx="8"/>
+  <text class="label" x="113" y="257">Root.R → Power → Color Lerp</text>
+  <text class="line" x="113" y="283">Root_Color → Tip_Color</text>
+  <rect class="box" x="93" y="328" width="423" height="76" rx="8"/>
+  <text class="label" x="113" y="360">Depth Shading (D)</text>
+  <text class="line" x="113" y="386">Depth.R → Lerp from 1 → Saturate</text>
+  <rect class="box" x="565" y="257" width="212" height="78" rx="8"/>
+  <text class="label" x="585" y="289">Multiply</text>
+  <text class="line" x="585" y="316">Tint × D</text>
+  <rect class="output" x="827" y="257" width="210" height="78" rx="8"/>
+  <text class="label" x="847" y="304">Base Color</text>
+  <path class="wire" d="M516 262 H545 V273 H561"/>
+  <path class="wire" d="M516 366 H545 V318 H561"/>
+  <path class="wire" d="M778 296 H823"/>
+  <rect class="output" x="1085" y="225" width="457" height="76" rx="8"/>
+  <text class="label" x="1105" y="257">Opacity Mask</text>
+  <text class="line" x="1105" y="283">hair_bake_opacity.R → Coverage</text>
+  <rect class="output" x="1085" y="328" width="457" height="76" rx="8"/>
+  <text class="label" x="1105" y="360">Roughness</text>
+  <text class="line" x="1105" y="386">Roughness Scalar → Default Lit</text>
+
+  <rect x="66" y="461" width="1508" height="437" rx="12" fill="#f5f8fc"/>
+  <text class="lane-title" x="93" y="505">Custom Specular</text>
+  <rect class="box" x="93" y="539" width="301" height="88" rx="8"/>
+  <text class="label" x="113" y="574">World-Space Vectors</text>
+  <text class="line" x="113" y="603">Card Tangent T · Half Vector H</text>
+  <rect class="box" x="432" y="539" width="274" height="88" rx="8"/>
+  <text class="label" x="452" y="574">Kajiya-Kay Lobe</text>
+  <text class="line" x="452" y="603">T · H and Specular_Shape</text>
+  <rect class="box" x="744" y="539" width="381" height="88" rx="8"/>
+  <text class="label" x="764" y="574">Strength, Color and Attenuation</text>
+  <text class="line" x="764" y="603">× LightFacing × Root attenuation × D</text>
+  <rect class="switch" x="1163" y="539" width="379" height="88" rx="8"/>
+  <text class="label" x="1183" y="574">Use_CustomSpecular</text>
+  <text class="line" x="1183" y="603">ON → Custom Specular · OFF → 0</text>
+  <path class="wire" d="M394 583 H428"/>
+  <path class="wire" d="M706 583 H740"/>
+  <path class="wire" d="M1125 583 H1159"/>
+  <rect class="box" x="93" y="714" width="499" height="103" rx="8"/>
+  <text class="label" x="113" y="751">Mobile CSM Visibility</text>
+  <text class="line" x="113" y="782">One Shadow Map sample → depth comparison</text>
+  <rect class="switch" x="704" y="714" width="472" height="103" rx="8"/>
+  <text class="label" x="724" y="751">Use_CSM_Visibility</text>
+  <text class="line" x="724" y="782">ON → × Visibility · OFF → Pass through</text>
+  <rect class="output" x="1260" y="714" width="282" height="103" rx="8"/>
+  <text class="label" x="1280" y="773">Emissive Color</text>
+  <path class="wire" d="M592 765 H700"/>
+  <path class="wire" d="M1352 627 V666 H940 V710"/>
+  <path class="wire" d="M1176 765 H1256"/>
+  <text class="note" x="93" y="867">Single-Sample Visibility is read in the Mobile Base Pass. The Card Surface outputs feed Default Lit.</text>
+  <text class="note" x="67" y="938">Source: Production Material expression pins and outputs, audited 2026-11-18.</text>
+</svg>

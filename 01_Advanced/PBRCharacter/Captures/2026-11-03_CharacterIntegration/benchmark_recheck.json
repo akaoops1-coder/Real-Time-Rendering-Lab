@@ -1,0 +1,192 @@
+{
+  "date_kst": "2026-11-03",
+  "scope": "Read-only recomputation of preserved isolated Hair PDO GPU CSV data; no new Unreal capture or full Character scene validation.",
+  "source_root": "local path withheld",
+  "run_id": "20261103T113641_URB4_HairPDO_6D992167",
+  "source_manifest": {
+    "path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Manifest.json",
+    "sha256": "AC5EEEFDF037D296D6A725E1A80CF1F01581483BC825425527762C28EE611A1A"
+  },
+  "source_analysis": {
+    "path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/examples/ActualHairReport/Analysis.json",
+    "sha256": "AE28F4A811AA73FA6EC74176A5234258F768209E65EA55506DE0DBAF816C3323",
+    "analyzer_version": "0.3.1"
+  },
+  "captures": [
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AA_000_A.csv",
+      "mode": "Calibration",
+      "filename_variant": "A",
+      "actual_action_variant": "A",
+      "manifest_sha256": "87D4E257E83CF76B72FD5F33CD7EF6FA61B12D67735697597783B48D805536E7",
+      "actual_sha256": "87D4E257E83CF76B72FD5F33CD7EF6FA61B12D67735697597783B48D805536E7",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.38255
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AA_001_B.csv",
+      "mode": "Calibration",
+      "filename_variant": "B",
+      "actual_action_variant": "A",
+      "manifest_sha256": "5CA88AA0D3918050A010266BAE7C6B1711004A4690CCC024F9B93B39632326B9",
+      "actual_sha256": "5CA88AA0D3918050A010266BAE7C6B1711004A4690CCC024F9B93B39632326B9",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.37235
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AA_002_B.csv",
+      "mode": "Calibration",
+      "filename_variant": "B",
+      "actual_action_variant": "A",
+      "manifest_sha256": "15748746ADF0652FEDEEE312DDEDDB9C1A1EE886716BCB1D72DABB058400C0CC",
+      "actual_sha256": "15748746ADF0652FEDEEE312DDEDDB9C1A1EE886716BCB1D72DABB058400C0CC",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.372
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AA_003_A.csv",
+      "mode": "Calibration",
+      "filename_variant": "A",
+      "actual_action_variant": "A",
+      "manifest_sha256": "B095BE2ACA6E9AEB5318C68E2EE4FA7ECCFF7D82137A36FE5744261447C7CDC3",
+      "actual_sha256": "B095BE2ACA6E9AEB5318C68E2EE4FA7ECCFF7D82137A36FE5744261447C7CDC3",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.37495
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AA_004_A.csv",
+      "mode": "Calibration",
+      "filename_variant": "A",
+      "actual_action_variant": "A",
+      "manifest_sha256": "CAAAA562154B04C12141FC402EBC3ED9C3761E74FA7FDF3BA771B1CAF3731196",
+      "actual_sha256": "CAAAA562154B04C12141FC402EBC3ED9C3761E74FA7FDF3BA771B1CAF3731196",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.3432000000000004
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AA_005_B.csv",
+      "mode": "Calibration",
+      "filename_variant": "B",
+      "actual_action_variant": "A",
+      "manifest_sha256": "0FD155F4057AF8D2D996C8BB87ACE9F27E7BEBEB35C354755AB6D4635C2A887F",
+      "actual_sha256": "0FD155F4057AF8D2D996C8BB87ACE9F27E7BEBEB35C354755AB6D4635C2A887F",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.3474500000000003
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AB_006_A.csv",
+      "mode": "Benchmark",
+      "filename_variant": "A",
+      "actual_action_variant": "A",
+      "manifest_sha256": "9E655D5BB16664BEA96A4F5707A7C9DD89434585399572BDDFE8831DF681C92D",
+      "actual_sha256": "9E655D5BB16664BEA96A4F5707A7C9DD89434585399572BDDFE8831DF681C92D",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.34795
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AB_007_B.csv",
+      "mode": "Benchmark",
+      "filename_variant": "B",
+      "actual_action_variant": "B",
+      "manifest_sha256": "5C1DBE9D0131BFA80FFE9F759166CAF093337D347C9A4AC8A76E6A51B2645EE0",
+      "actual_sha256": "5C1DBE9D0131BFA80FFE9F759166CAF093337D347C9A4AC8A76E6A51B2645EE0",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.4657999999999998
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AB_008_B.csv",
+      "mode": "Benchmark",
+      "filename_variant": "B",
+      "actual_action_variant": "B",
+      "manifest_sha256": "EE066EDA783113DE951E2BD68F2A917825188B43A7D6F869E86DEC55943E042A",
+      "actual_sha256": "EE066EDA783113DE951E2BD68F2A917825188B43A7D6F869E86DEC55943E042A",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.48555
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AB_009_A.csv",
+      "mode": "Benchmark",
+      "filename_variant": "A",
+      "actual_action_variant": "A",
+      "manifest_sha256": "CE90DB50674217D8AE118F5E7E8DC97577195312D97ECA1D2BAC6114BBFD555D",
+      "actual_sha256": "CE90DB50674217D8AE118F5E7E8DC97577195312D97ECA1D2BAC6114BBFD555D",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.35365
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AB_010_A.csv",
+      "mode": "Benchmark",
+      "filename_variant": "A",
+      "actual_action_variant": "A",
+      "manifest_sha256": "67B24FB55BA08283F93BB1B9D58F27386512D7DFCDFF0099CCA277BDFEFB9B89",
+      "actual_sha256": "67B24FB55BA08283F93BB1B9D58F27386512D7DFCDFF0099CCA277BDFEFB9B89",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.34645
+    },
+    {
+      "source_path": "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/results/20261103T113641_URB4_HairPDO_6D992167/Raw/AB_011_B.csv",
+      "mode": "Benchmark",
+      "filename_variant": "B",
+      "actual_action_variant": "B",
+      "manifest_sha256": "706DBCF985020B2004CEC673FA07E149F73CFA40852E3C103461EB949C939F34",
+      "actual_sha256": "706DBCF985020B2004CEC673FA07E149F73CFA40852E3C103461EB949C939F34",
+      "sha256_matches_manifest": true,
+      "gpu_sample_count": 300,
+      "gpu_median_ms": 3.46875
+    }
+  ],
+  "summary": {
+    "capture_count": 12,
+    "all_raw_sha256_match_manifest": true,
+    "all_capture_gpu_sample_count_300": true,
+    "calibration_capture_count": 6,
+    "calibration_actual_variants": [
+      "A"
+    ],
+    "variant_a_run_medians_ms": [
+      3.34795,
+      3.35365,
+      3.34645
+    ],
+    "variant_b_run_medians_ms": [
+      3.4657999999999998,
+      3.48555,
+      3.46875
+    ],
+    "representative_method": "median of run medians",
+    "gpu_a_recomputed_ms": 3.34795,
+    "gpu_b_recomputed_ms": 3.46875,
+    "gpu_delta_recomputed_ms": 0.12080000000000002,
+    "noise_floor_reported_ms": 0.05,
+    "aa_range_recomputed_ms": 0.039349999999999774,
+    "impact_percent_60fps_budget_recomputed": 0.7248000000000001,
+    "a_matches_analysis": true,
+    "b_matches_analysis": true,
+    "delta_matches_analysis": true,
+    "reported_measurement_status": "PASS",
+    "reported_confidence": "RELIABLE",
+    "reported_impact_grade": "GREEN"
+  },
+  "source_figure_paths": [
+    "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/evidence/Hair_Actual_Standalone.png",
+    "01_Advanced/Tools/UniversalRenderingBenchmark/phase4/evidence/Report_Hair_Desktop.png"
+  ],
+  "version_note": "Preserved actual Hair analysis is Analyzer0.3.1. Installed v1_1/examples contains ActualScalarReport and OriginalV1Report only; no actual Hair V1.1 reanalysis found. V1.1 is UI/interpretation update with unchanged measurement/statistics/policy.",
+  "limits": [
+    "This recheck verifies stored raw GPU samples, hashes and representative arithmetic, not rendering correctness or a new benchmark.",
+    "Noise floor, confidence and grade are reported existing analyzer outputs; this artifact does not claim independently rerunning the complete confidence policy.",
+    "Hair_Actual_Standalone.png is the separate preview run, not a screenshot of this representative performance run.",
+    "No full Character Scene GPU benchmark, Skin/Eye cost or PDO pass absolute timing is established."
+  ]
+}

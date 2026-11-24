@@ -1,0 +1,19 @@
+{
+  "CanonicalOriginalImport": "local path withheld",
+  "CanonicalOriginalImportMD5": "2ED9EDB1B3C07A7F4CFDC160A2A1601F",
+  "OriginalTga": "local path withheld",
+  "CorrectedRgbPng": "local path withheld",
+  "CorrectedPngGChangedPixelCount": 407384,
+  "OriginalPngVsTgaChangedTexelsBGRA": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "CanonicalOriginalAlphaZero": 1021400,
+  "CanonicalOriginalAlpha255": 322,
+  "CandidateRgbaPng": "local path withheld",
+  "CandidateSha256": "E18A12C9AF797F28B4D50359392396AA7C45CBCE8E3637B1E461B26CE2B3E5EE",
+  "CandidateMd5": "7A05E243E3E64494CF4B88EB1EB27674",
+  "CandidateVerification": "Decoded G matches corrected PNG exactly. Decoded R/B/A match canonical original import exactly."
+}

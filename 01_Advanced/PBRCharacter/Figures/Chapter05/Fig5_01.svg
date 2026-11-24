@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="990" viewBox="0 0 1640 990">
+<rect width="100%" height="100%" fill="white"/>
+<text x="64" y="86" font-family="Arial,sans-serif" font-size="44" font-weight="bold" fill="#2F6BFF">Character Integration</text>
+<text x="64" y="137" font-family="Arial,sans-serif" font-size="29" font-weight="normal" fill="#424242">Independent surfaces share one observation context.</text>
+<text x="64" y="203" font-family="Arial,sans-serif" font-size="25" font-weight="bold" fill="#424242">SURFACE INPUTS / IMPLEMENTATION</text>
+<text x="624" y="203" font-family="Arial,sans-serif" font-size="25" font-weight="bold" fill="#424242">SCENE CONDITIONS</text>
+<text x="1160" y="203" font-family="Arial,sans-serif" font-size="25" font-weight="bold" fill="#424242">EVIDENCE</text>
+<rect x="64" y="236" width="430" height="142" rx="12" fill="#FFF8E1" stroke="#9E9E9E" stroke-width="2"/>
+<text x="88" y="284" font-family="Arial,sans-serif" font-size="32" font-weight="bold" fill="#424242">Skin</text>
+<text x="88" y="323" font-family="Arial,sans-serif" font-size="25" font-weight="normal" fill="#424242">Surface / Thickness / Profile</text>
+<text x="88" y="357" font-family="Arial,sans-serif" font-size="25" font-weight="normal" fill="#424242">SSS contribution</text>
+<rect x="64" y="414" width="430" height="142" rx="12" fill="#EAF2FF" stroke="#9E9E9E" stroke-width="2"/>
+<text x="88" y="462" font-family="Arial,sans-serif" font-size="32" font-weight="bold" fill="#424242">Hair</text>
+<text x="88" y="501" font-family="Arial,sans-serif" font-size="25" font-weight="normal" fill="#424242">Color / Tangent / Coverage</text>
+<text x="88" y="535" font-family="Arial,sans-serif" font-size="25" font-weight="normal" fill="#424242">Backlit / Roughness / PDO</text>
+<rect x="64" y="592" width="430" height="142" rx="12" fill="#EAF8FA" stroke="#9E9E9E" stroke-width="2"/>
+<text x="88" y="640" font-family="Arial,sans-serif" font-size="32" font-weight="bold" fill="#424242">Eye</text>
+<text x="88" y="679" font-family="Arial,sans-serif" font-size="25" font-weight="normal" fill="#424242">Shared Final UV / Eye BSDF</text>
+<text x="88" y="713" font-family="Arial,sans-serif" font-size="25" font-weight="normal" fill="#424242">Wetness / Occlusion</text>
+<rect x="624" y="236" width="380" height="498" rx="12" fill="#F6F8FC" stroke="#2F6BFF" stroke-width="2"/>
+<text x="652" y="292" font-family="Arial,sans-serif" font-size="27" font-weight="normal" fill="#424242">Camera / Pose</text>
+<text x="652" y="368" font-family="Arial,sans-serif" font-size="27" font-weight="normal" fill="#424242">Lighting / Reflection</text>
+<text x="652" y="444" font-family="Arial,sans-serif" font-size="27" font-weight="normal" fill="#424242">Exposure / Post Process</text>
+<text x="652" y="520" font-family="Arial,sans-serif" font-size="27" font-weight="normal" fill="#424242">Shadow / Visibility</text>
+<text x="652" y="596" font-family="Arial,sans-serif" font-size="27" font-weight="normal" fill="#424242">Resolution / AA</text>
+<text x="652" y="690" font-family="Arial,sans-serif" font-size="25" font-weight="bold" fill="#2F6BFF">Combined Character Image</text>
+<rect x="1160" y="236" width="416" height="142" rx="12" fill="#EAF7EC" stroke="#43A047" stroke-width="2"/>
+<text x="1184" y="281" font-family="Arial,sans-serif" font-size="29" font-weight="bold" fill="#424242">Visual Observation</text>
+<text x="1184" y="322" font-family="Arial,sans-serif" font-size="24" font-weight="normal" fill="#424242">Existing Character captures</text>
+<text x="1184" y="356" font-family="Arial,sans-serif" font-size="24" font-weight="normal" fill="#424242">Final matched pair: TODO</text>
+<rect x="1160" y="414" width="416" height="142" rx="12" fill="#F5F6F8" stroke="#9E9E9E" stroke-width="2"/>
+<text x="1184" y="459" font-family="Arial,sans-serif" font-size="29" font-weight="bold" fill="#424242">Rendering Debug</text>
+<text x="1184" y="500" font-family="Arial,sans-serif" font-size="24" font-weight="normal" fill="#424242">Historical views / isolation</text>
+<text x="1184" y="534" font-family="Arial,sans-serif" font-size="24" font-weight="normal" fill="#424242">Latest Character: TODO</text>
+<rect x="1160" y="592" width="416" height="142" rx="12" fill="#FFF4E6" stroke="#FB8C00" stroke-width="2"/>
+<text x="1184" y="637" font-family="Arial,sans-serif" font-size="29" font-weight="bold" fill="#424242">GPU Timing</text>
+<text x="1184" y="678" font-family="Arial,sans-serif" font-size="24" font-weight="normal" fill="#424242">Isolated Hair PDO: measured</text>
+<text x="1184" y="712" font-family="Arial,sans-serif" font-size="24" font-weight="normal" fill="#424242">Whole Character: deferred</text>
+<polyline points="494,307 624,307" fill="none" stroke="#9E9E9E" stroke-width="3"/>
+<polygon points="624,307 612,300 612,314" fill="#9E9E9E"/>
+<polyline points="1004,307 1160,307" fill="none" stroke="#9E9E9E" stroke-width="3"/>
+<polygon points="1160,307 1148,300 1148,314" fill="#9E9E9E"/>
+<polyline points="494,485 624,485" fill="none" stroke="#9E9E9E" stroke-width="3"/>
+<polygon points="624,485 612,478 612,492" fill="#9E9E9E"/>
+<polyline points="1004,485 1160,485" fill="none" stroke="#9E9E9E" stroke-width="3"/>
+<polygon points="1160,485 1148,478 1148,492" fill="#9E9E9E"/>
+<polyline points="494,663 624,663" fill="none" stroke="#9E9E9E" stroke-width="3"/>
+<polygon points="624,663 612,656 612,670" fill="#9E9E9E"/>
+<polyline points="1004,663 1160,663" fill="none" stroke="#9E9E9E" stroke-width="3"/>
+<polygon points="1160,663 1148,656 1148,670" fill="#9E9E9E"/>
+<rect x="64" y="798" width="1512" height="126" rx="12" fill="#FFF8ED" stroke="#FB8C00" stroke-width="2"/>
+<text x="90" y="848" font-family="Arial,sans-serif" font-size="30" font-weight="bold" fill="#424242">Evidence scope controls the conclusion.</text>
+<text x="90" y="891" font-family="Arial,sans-serif" font-size="25" font-weight="normal" fill="#424242">Concept diagram only. Surface co-visibility does not verify all assignments or whole-Character GPU cost.</text>
+</svg>

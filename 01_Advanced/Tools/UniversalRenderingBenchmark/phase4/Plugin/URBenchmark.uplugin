@@ -1,0 +1,19 @@
+{
+  "FileVersion": 3,
+  "Version": 10000,
+  "VersionName": "1.0.0-V1",
+  "FriendlyName": "RTR Universal Rendering Benchmark",
+  "Description": "RTR V1 generic rendering benchmarks with verified native captures, restoration and offline analysis.",
+  "Category": "Rendering",
+  "CreatedBy": "RTR",
+  "EnabledByDefault": true,
+  "CanContainContent": true,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "URBenchmark",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ]
+}

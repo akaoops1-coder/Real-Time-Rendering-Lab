@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1060" viewBox="0 0 1800 1060">
+<rect width="100%" height="100%" fill="white"/>
+<text x="70" y="84.12" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#263238" text-anchor="start">Figure 4-7  |  Radial UV Remapping</text>
+<text x="70" y="129.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#7B858A" text-anchor="start">Concept example: P = .055, I = .160, Pupil Scale = 1.2, Iris Scale = 1.0</text>
+<circle cx="470" cy="430" r="192.0" fill="#F1F6FF" stroke="#2F6BFF" stroke-width="4"/>
+<circle cx="470" cy="430" r="79.2" fill="#E8F5E9" stroke="#43A047" stroke-width="4"/>
+<polyline points="243.0,430 697.0,430" fill="none" stroke="#7B858A" stroke-width="2" stroke-linejoin="round" stroke-dasharray="10 8"/>
+<polyline points="470,203.0 470,622.0" fill="none" stroke="#7B858A" stroke-width="2" stroke-linejoin="round" stroke-dasharray="10 8"/>
+<circle cx="470" cy="430" r="5" fill="#263238" stroke="#263238" stroke-width="1"/>
+<text x="470" y="661.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="middle">Center = (.5, .5)</text>
+<text x="470" y="200.8" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#2F6BFF" text-anchor="middle">DESTINATION / IMAGE</text>
+<text x="470" y="714.08" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#43A047" text-anchor="middle">NewPupilRadius = .066</text>
+<text x="470" y="757.36" font-family="Arial, sans-serif" font-size="26" font-weight="400" fill="#2F6BFF" text-anchor="middle">NewIrisRadius = .160</text>
+<polyline points="470,430 567.0820393249937,359.4657697249032" fill="none" stroke="#FB8C00" stroke-width="4" stroke-linejoin="round"/>
+<polygon points="567.0820393249937,359.4657697249032 560.3706640254946,370.59938735751814 554.4194107023833,362.4081898794436" fill="#FB8C00"/>
+<circle cx="567.0820393249937" cy="359.4657697249032" r="7" fill="#FB8C00" stroke="#FB8C00" stroke-width="1"/>
+<text x="530" y="341.5" font-family="Arial, sans-serif" font-size="25" font-weight="700" fill="#FB8C00" text-anchor="start">r = .100</text>
+<circle cx="1330" cy="430" r="192.0" fill="#F1F6FF" stroke="#2F6BFF" stroke-width="4"/>
+<circle cx="1330" cy="430" r="66.0" fill="#E8F5E9" stroke="#43A047" stroke-width="4"/>
+<polyline points="1103.0,430 1557.0,430" fill="none" stroke="#7B858A" stroke-width="2" stroke-linejoin="round" stroke-dasharray="10 8"/>
+<polyline points="1330,203.0 1330,622.0" fill="none" stroke="#7B858A" stroke-width="2" stroke-linejoin="round" stroke-dasharray="10 8"/>
+<circle cx="1330" cy="430" r="5" fill="#263238" stroke="#263238" stroke-width="1"/>
+<text x="1330" y="661.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="middle">Center = (.5, .5)</text>
+<text x="1330" y="200.8" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#2F6BFF" text-anchor="middle">SOURCE / LOOKUP UV</text>
+<text x="1330" y="714.08" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#43A047" text-anchor="middle">PupilRadius = .055</text>
+<text x="1330" y="757.36" font-family="Arial, sans-serif" font-size="26" font-weight="400" fill="#2F6BFF" text-anchor="middle">IrisRadius = .160</text>
+<polyline points="1330,430 1420.2656408191963,364.41817312719724" fill="none" stroke="#FB8C00" stroke-width="4" stroke-linejoin="round"/>
+<polygon points="1420.2656408191963,364.41817312719724 1413.554265519697,375.55179075981215 1407.6030121965857,367.36059328173764" fill="#FB8C00"/>
+<circle cx="1420.2656408191963" cy="364.41817312719724" r="7" fill="#FB8C00" stroke="#FB8C00" stroke-width="1"/>
+<text x="1390" y="341.5" font-family="Arial, sans-serif" font-size="25" font-weight="700" fill="#FB8C00" text-anchor="start">SourceRadius = .09298</text>
+<polyline points="735,413 1065,413" fill="none" stroke="#2F6BFF" stroke-width="4" stroke-linejoin="round"/>
+<polygon points="1065,413 1053.0262070779625,418.06243845001245 1053.0262070779625,407.93756154998755" fill="#2F6BFF"/>
+<text x="900" y="357.94" font-family="Arial, sans-serif" font-size="29" font-weight="700" fill="#2F6BFF" text-anchor="middle">Inverse sampling</text>
+<text x="900" y="471.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="middle">Keep direction</text>
+<text x="900" y="510.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="middle">Change radius</text>
+<rect x="70" y="800" width="1660" height="190" rx="12" fill="#EEF3F7" stroke="#EEF3F7" stroke-width="2"/>
+<text x="105" y="849.94" font-family="Arial, sans-serif" font-size="29" font-weight="700" fill="#263238" text-anchor="start">UV - Center  =  Delta (float2)</text>
+<text x="105" y="898.22" font-family="Arial, sans-serif" font-size="27" font-weight="400" fill="#263238" text-anchor="start">Length(Delta)  =  r (float1)          Delta / Max(r, .0001)  =  Direction (float2)</text>
+<text x="105" y="949.94" font-family="Arial, sans-serif" font-size="29" font-weight="700" fill="#2F6BFF" text-anchor="start">Direction x SourceRadius + Center  =  Scaled UV (float2)</text>
+</svg>

@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; font-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'"><title>URB Phase 4 Scalar · RTR Performance Report V1.1</title><style>
+:root{color-scheme:dark;--bg:#10151c;--card:#19212c;--line:#303c4c;--fg:#e9eef5;--muted:#a8b7c9;--green:#6fdec2;--yellow:#f2cd73;--red:#ff8c92;--blue:#94b9ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 8%,#1d2b37 0,transparent 35%),var(--bg);font:14px/1.65 "Segoe UI","Malgun Gothic",sans-serif;color:var(--fg)}a{color:#add0ff;text-decoration:underline;text-underline-offset:3px}a:focus-visible,summary:focus-visible{outline:2px solid var(--yellow);outline-offset:4px}.banner{background:#18352f;border-bottom:1px solid #386b5f;padding:9px 32px;color:#b9eddf;font-size:12px;display:flex;justify-content:space-between;gap:12px}.wrap{max-width:1280px;margin:auto;padding:30px 32px 36px}.brand{font-size:12px;letter-spacing:.17em;color:var(--green);font-weight:700}.header{display:flex;justify-content:space-between;align-items:center;gap:24px;margin:6px 0 23px}h1{font-size:32px;letter-spacing:-.025em;margin:3px 0 7px;line-height:1.3;overflow-wrap:anywhere}h2{font-size:17px;margin:0 0 5px}h3{font-size:14px;margin:18px 0 8px}.sub,.caption,.muted{color:var(--muted);font-size:12px}.caption{margin:4px 0 17px}.badge{border-radius:5px;display:inline-block;padding:5px 9px;font-size:12px;font-weight:700;white-space:nowrap}.green{background:#1d3e37;color:var(--green);border:1px solid #3b7869}.yellow{background:#493c22;color:var(--yellow);border:1px solid #836a34}.red{background:#45292f;color:var(--red);border:1px solid #82454f}.gray{background:#2a3340;color:#c5d0dd;border:1px solid #536173}.blue{background:#243751;color:var(--blue);border:1px solid #496994}.statusbar{display:flex;gap:12px;flex-wrap:wrap;padding:14px 17px;background:#17202a;border:1px solid var(--line);border-radius:7px;margin-bottom:18px;font-size:12px;align-items:center}.statusbar strong{margin-right:5px}.run-id{overflow-wrap:anywhere;font-size:12px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:18px}.card,.panel{background:linear-gradient(145deg,#1d2733,#17202a);border:1px solid var(--line);border-radius:8px}.card{padding:19px 21px;min-width:0}.label{color:var(--muted);font-size:12px}.value{font-size:36px;letter-spacing:-.035em;font-weight:650;margin:7px 0;line-height:1.25;overflow-wrap:anywhere}.value.unavailable{font-size:21px;color:#b8c5d5}.unit{font-size:16px;font-weight:400;letter-spacing:0;color:#b9c7d8;margin-left:5px}.card p{margin:7px 0 0;font-size:12px;color:#b6c4d3}.two-col,.foot-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}.panel{padding:21px 22px;min-width:0;margin-bottom:18px}.two-col>.panel,.foot-grid>.panel{margin-bottom:0}.measure-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.chart-row{display:grid;grid-template-columns:65px 1fr 99px;align-items:center;gap:10px;margin:18px 0;font-size:12px}.chart-row strong{text-align:right;font-size:12px}.bar-track{height:27px;background:#101821;border-radius:4px;position:relative}.bar-fill{height:100%;border-radius:4px;background:#6f9ac1;box-shadow:inset 0 1px #ffffff30}.bar-fill.b{background:#d4af64}.axis{margin:0 109px 0 75px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}.impact-number{font-size:29px;font-weight:650;margin:12px 0 14px;line-height:1.35}.impact-number small{font-size:12px;color:#bbc9da;font-weight:400;display:block;margin-top:4px}.formula{font-size:12px;line-height:1.9;color:#b5c4d6;background:#121b25;border-radius:4px;padding:11px 12px;overflow-wrap:anywhere}.thresholds{font-size:12px;color:#b5c4d6;margin:15px 0}.budget-row{margin:16px 0 19px}.budget-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;margin-bottom:8px;flex-wrap:wrap}.budget-track{height:12px;position:relative;background:#101821;border-radius:3px}.budget-fill{height:100%;border:0;border-radius:3px}.budget-tick{position:absolute;top:-4px;height:20px;border-left:1px dashed #cfdeea88}.ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}.table-scroll{overflow-x:auto;max-width:100%}table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}caption{text-align:left;color:var(--muted);font-size:12px;padding:11px 0 8px}th,td{border-top:1px solid var(--line);padding:8px 7px;vertical-align:top}thead th{color:#b3c2d3;font-weight:500;white-space:nowrap}td:not(:first-child){font-variant-numeric:tabular-nums}th[scope=row]{font-weight:500}.median-list{overflow-wrap:anywhere}.metadata td{overflow-wrap:anywhere;white-space:pre-wrap}.metadata th{width:34%;overflow-wrap:anywhere}.hash{font:12px/1.8 Consolas,monospace;overflow-wrap:anywhere;word-break:break-all;min-width:180px}.summary-box{border-left:3px solid #7794b4;background:#1c2937;padding:17px 20px;margin-bottom:18px;border-radius:4px}.summary-box p{margin:0;font-size:13px;line-height:1.9}.warning-box{border-left:3px solid var(--yellow)}.error-box{border-left:3px solid var(--red)}ul{padding-left:21px;margin:8px 0}li{font-size:12px;line-height:1.85;margin:4px 0;overflow-wrap:anywhere}details>summary{cursor:pointer;font-size:14px;font-weight:650}details[open]>summary{margin-bottom:16px}.metric-reasons{margin-top:18px}.policy-text{font-size:12px;line-height:1.9;color:#b9c6d6}.source-table td:first-child{max-width:340px;overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.8 Consolas,"Malgun Gothic",monospace;margin:12px 0 0}.definition{font-size:12px;line-height:1.9;color:#b5c4d5}footer{margin-top:24px;font-size:12px;color:#9dadc0;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}code{font:12px/1.8 Consolas,monospace;overflow-wrap:anywhere}.sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:900px){.two-col,.foot-grid{grid-template-columns:1fr}.wrap{padding:24px 18px}.banner{padding:9px 18px}.header{display:block}.header>.badge{margin-top:13px}h1{font-size:27px}.cards{gap:9px}.card{padding:16px 13px}.value{font-size:29px}}
+@media(max-width:600px){.cards{grid-template-columns:1fr}.panel{padding:18px 14px}.banner{display:block}.banner span{display:block}.header{margin-bottom:18px}.chart-row{grid-template-columns:48px 1fr 93px;gap:7px}.axis{margin-left:55px;margin-right:100px}.metadata th{width:38%}.statusbar{gap:8px}.value.unavailable{font-size:22px}}
+@media print{body{background:white;color:#111}.wrap{max-width:none;padding:12px}.card,.panel,.statusbar,.summary-box{background:white;border-color:#aaa;color:#111;break-inside:avoid}.sub,.caption,.muted,.label,.policy-text,.definition,footer{color:#444}.banner{background:white;color:#111}.two-col,.foot-grid{grid-template-columns:1fr}.table-scroll{overflow:visible}th,td{border-color:#ccc}.badge{color:#111;background:#eee;border-color:#888}details{display:block}.bar-track,.budget-track{border:1px solid #888}a{color:#111}.hash{min-width:0}}
+
+body{font-size:16px;line-height:1.75}.wrap{max-width:1320px}.banner,.brand,.sub,.caption,.muted,.badge,.statusbar,.run-id,.label,.card p,.chart-row,.chart-row strong,.axis,.impact-number small,.formula,.thresholds,.budget-top,.ticks,table,caption,.hash,.policy-text,pre,.definition,footer,code,li{font-size:14px}h2{font-size:21px}h3,details>summary{font-size:16px}.simple-summary{padding:28px;background:#1c2c3b;border:1px solid #577894;border-radius:12px;margin:18px 0 22px}.eyebrow{font-size:14px;color:#add0ff;font-weight:700;letter-spacing:.04em}.simple-summary h2{font-size:29px;line-height:1.5;max-width:1000px;margin:10px 0 16px;word-break:keep-all;overflow-wrap:anywhere}.summary-reason{margin:0 0 18px;color:#d5e2ef}.next-action{padding:16px 20px;border-left:3px solid #94b9ff;background:#142331;border-radius:4px}.next-action p{margin:5px 0 0}.decision-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:23px 0 14px}.decision-grid>div{padding:15px;background:#13202c;border:1px solid #3e5469;border-radius:6px;min-width:0}.decision-grid>div>span:first-child{display:block;font-size:14px;color:#b8c9da}.decision-grid strong{display:block;font-size:18px;margin:5px 0 9px;overflow-wrap:anywhere}.decision-grid p{margin:0}.simple-summary>.caption{margin-bottom:0}.action-summary h2{font-size:20px}.action-summary>p{margin:8px 0}.setting-transition{color:#d5eaff;font-weight:700;overflow-wrap:anywhere}.setting-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:15px 0}.setting-grid>div{min-width:0;padding:14px 17px;border:1px solid #445a70;border-radius:6px;background:#111e2a}.setting-grid strong{display:block;font-size:22px;overflow-wrap:anywhere;white-space:pre-wrap}.metric-help{border:1px solid #465c74;border-radius:6px;background:#14212e;min-width:0;padding:10px 13px}.metric-help summary{font-size:14px;font-weight:650;cursor:pointer;color:#cae2ff;min-height:24px}.metric-help p{font-size:14px;margin:10px 0 0;color:#d8e5f1}.help-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:15px 0 22px}.section-kicker{font-size:14px;color:#add0ff;margin:0 0 10px}.detail-group{margin-top:24px}.detail-group>summary{font-size:20px}.cpu-caution{border-left:3px solid #f2cd73;padding:12px 16px;background:#302b20;margin:14px 0 18px;font-size:15px}.chart-row{grid-template-columns:68px minmax(0,1fr) 115px}.axis{margin-left:78px;margin-right:125px}.help-intro{margin:0 0 10px;color:#bdcfdf;font-size:14px}.source-links{font-size:16px;margin-top:16px}.summary-box p{font-size:14px}.hash{min-width:0}.source-table{table-layout:fixed}.source-table td:first-child{width:46%}.panel>summary:focus-visible,.metric-help summary:focus-visible{outline:3px solid #f2cd73;outline-offset:5px}.brand{letter-spacing:.12em}
+@media(max-width:900px){.decision-grid{grid-template-columns:1fr}.decision-grid>div{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;align-items:center}.decision-grid strong{margin:0}.decision-grid .badge,.decision-grid p{justify-self:start}.help-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.simple-summary{padding:22px}.simple-summary h2{font-size:25px}}
+@media(max-width:600px){body{font-size:16px}.wrap{padding:18px 14px}.banner{padding:10px 14px}.simple-summary{padding:20px 16px}.simple-summary h2{font-size:23px}.next-action{padding:13px 14px}.decision-grid>div{display:block}.decision-grid strong{margin:4px 0 8px}.setting-grid{grid-template-columns:1fr}.help-grid{grid-template-columns:1fr 1fr}.metric-help{padding:9px 10px}.chart-row{grid-template-columns:38px minmax(0,1fr) 110px;gap:6px}.axis{margin-left:44px;margin-right:116px}.budget-top strong{display:block}.statusbar{display:block}.statusbar>span{display:block;margin:6px 0}.source-table{table-layout:auto}.source-table td:first-child{width:auto}.header h1{font-size:26px}.cards .value{font-size:34px}h2{font-size:20px}}
+@media print{.simple-summary,.next-action,.decision-grid>div,.setting-grid>div,.metric-help,.cpu-caution{background:#fff;color:#111;border-color:#555}.simple-summary h2,.summary-reason,.eyebrow,.section-kicker,.help-intro,.metric-help summary,.metric-help p,.setting-transition{color:#111}.decision-grid>div>span:first-child{color:#333}.simple-summary{break-inside:avoid}}
+</style></head>
+<body><div class="banner"><span>Report V1.1 · 실측 CSV 분석 · 오프라인 리포트</span><span>GPU와 CPU를 구분한 실제 CSV 분석</span></div><main class="wrap">
+<div class="brand">RTR / UNIVERSAL RENDERING BENCHMARK</div>
+<header class="header"><div><h1>URB Phase 4 Scalar</h1><div class="sub">GeneralValidation · Target 60 FPS · NVIDIA GeForce RTX 5080 · [1920, 1080] · D3D12 / SM6</div></div><span class="badge gray">IMPACT · INCONCLUSIVE</span></header>
+<section class="simple-summary" aria-label="이번 측정의 결론"><div class="eyebrow">01 · Simple Summary</div><h2>측정은 완료됐지만, A/B 성능의 우열은 판단 보류입니다.</h2><p class="summary-reason"><strong>근거</strong> · 관측 차이 -0.0027 ms의 절댓값이 Noise Floor 0.0509 ms 이하입니다. B가 더 빠르거나 비용이 없다고 확정할 수 없습니다.</p><div class="next-action"><strong>추천 다음 행동</strong><p>현재 결과만으로 최적화 효과를 확정하지 마세요. 차이를 구분해야 한다면 조건과 변동 원인을 먼저 확인한 뒤 같은 조건으로 재측정하세요. 반복 증가나 Stress Scene 사용 시에도 원래 장면의 효과를 자동으로 보장하지 않습니다.</p></div><div class="decision-grid"><div><span>Measurement Status</span><strong>측정 성공</strong><span class="badge green">PASS</span></div><div><span>Performance Impact</span><strong>우열 판단 보류</strong><span class="badge gray">INCONCLUSIVE</span></div><div><span>GPU Budget</span><strong>A/B 모두 GPU 예산 GREEN</strong><p>A <span class="badge green">GREEN</span> · B <span class="badge green">GREEN</span></p></div></div><p class="caption">측정 성공은 데이터 수집·검증 상태, Impact는 A/B 차이, GPU Budget은 절대 GPU 부하입니다. 서로 다른 질문에 대한 평가입니다.</p></section>
+<section class="panel action-summary"><h2>02 · A/B Settings</h2><p>ScalarParameter · <strong>URB_Blend</strong></p><p class="setting-transition">URB_Blend: 0 → 1</p><div class="setting-grid"><div><span class="label">Variant A · 기준 설정</span><strong>0</strong></div><div><span class="label">Variant B · 비교 설정</span><strong>1</strong></div></div><p class="caption">Manifest에 기록된 비교 설정입니다. 0과 1을 기능 OFF/ON으로 단정하지 않습니다. 적용·복원 상세는 아래 Action 기록에서 확인합니다.</p></section>
+<p class="section-kicker">03 · GPU Results</p><p class="help-intro">Metric의 ⓘ를 선택하면 설명이 펼쳐집니다. Mouse Hover·Keyboard Focus에서도 도움말을 확인할 수 있습니다.</p><div class="help-grid"><details class="metric-help"><summary title="GPU가 프레임을 처리한 시간입니다. 대표값은 각 Run Median의 중앙값이며 낮을수록 빠릅니다. 장면 전체의 GPU 시간이고 특정 Material의 단독 비용이 아닙니다.">GPU Time <span aria-hidden="true">ⓘ</span></summary><p>GPU가 프레임을 처리한 시간입니다. 대표값은 각 Run Median의 중앙값이며 낮을수록 빠릅니다. 장면 전체의 GPU 시간이고 특정 Material의 단독 비용이 아닙니다.</p></details><details class="metric-help"><summary title="B − A입니다. 음수는 B의 관측 시간이 짧고 양수는 길다는 뜻입니다. 성능 개선·증가는 Confidence와 Impact 판정을 함께 확인합니다.">Delta <span aria-hidden="true">ⓘ</span></summary><p>B − A입니다. 음수는 B의 관측 시간이 짧고 양수는 길다는 뜻입니다. 성능 개선·증가는 Confidence와 Impact 판정을 함께 확인합니다.</p></details><details class="metric-help"><summary title="최소 정책값과 AA·A·B Run Median Range 중 최댓값입니다. |Delta|가 이 값보다 커야 비교 확정의 한 조건을 만족합니다. 장비의 공식 오차나 신뢰구간이 아닙니다.">Noise Floor <span aria-hidden="true">ⓘ</span></summary><p>최소 정책값과 AA·A·B Run Median Range 중 최댓값입니다. |Delta|가 이 값보다 커야 비교 확정의 한 조건을 만족합니다. 장비의 공식 오차나 신뢰구간이 아닙니다.</p></details><details class="metric-help"><summary title="A/A 연결·조건 일치, 반복 수, 반복 안정성, Delta와 Noise Floor를 검사한 RTR 정책 결과입니다. RELIABLE은 통계적 유의성이나 신뢰구간을 의미하지 않습니다.">Confidence <span aria-hidden="true">ⓘ</span></summary><p>A/A 연결·조건 일치, 반복 수, 반복 안정성, Delta와 Noise Floor를 검사한 RTR 정책 결과입니다. RELIABLE은 통계적 유의성이나 신뢰구간을 의미하지 않습니다.</p></details><details class="metric-help"><summary title="A/B로 달라진 GPU 시간의 목표 프레임 예산 대비 비율입니다. Confidence가 충분할 때만 GREEN·YELLOW·RED·IMPROVED로 확정합니다. Budget 등급과 별개입니다.">Impact <span aria-hidden="true">ⓘ</span></summary><p>A/B로 달라진 GPU 시간의 목표 프레임 예산 대비 비율입니다. Confidence가 충분할 때만 GREEN·YELLOW·RED·IMPROVED로 확정합니다. Budget 등급과 별개입니다.</p></details><details class="metric-help"><summary title="각 상태의 절대 GPU 시간 / 목표 프레임 예산입니다. 안정적인 GPU 값에서 평가하며 A/B 차이가 불확실해도 GREEN일 수 있습니다. 전체 시스템의 목표 FPS 달성을 보장하지 않습니다.">GPU Budget <span aria-hidden="true">ⓘ</span></summary><p>각 상태의 절대 GPU 시간 / 목표 프레임 예산입니다. 안정적인 GPU 값에서 평가하며 A/B 차이가 불확실해도 GREEN일 수 있습니다. 전체 시스템의 목표 FPS 달성을 보장하지 않습니다.</p></details><details class="metric-help"><summary title="유효 프레임의 95%가 이 값 이하인 nearest-rank 백분위입니다. Pooled P95와 각 Run P95의 중앙값은 서로 다른 통계입니다. 대표 GPU 값이나 최소 FPS로 해석하지 않습니다.">P95 <span aria-hidden="true">ⓘ</span></summary><p>유효 프레임의 95%가 이 값 이하인 nearest-rank 백분위입니다. Pooled P95와 각 Run P95의 중앙값은 서로 다른 통계입니다. 대표 GPU 값이나 최소 FPS로 해석하지 않습니다.</p></details></div>
+<section class="cards" aria-label="GPU 핵심 결과"><div class="card"><div class="label">VARIANT A · BASELINE GPU</div><div class="value">2.9288<span class="unit">ms</span></div><p>각 Run Median의 중앙값</p></div><div class="card"><div class="label">VARIANT B · CANDIDATE GPU</div><div class="value">2.9261<span class="unit">ms</span></div><p>각 Run Median의 중앙값</p></div><div class="card"><div class="label">GPU DELTA · B − A</div><div class="value">-0.0027<span class="unit">ms</span></div><p>A 대비 -0.09% · 예산 대비 -0.02%</p></div></section>
+<div class="two-col"><section class="panel"><h2>GPU Frame Time Comparison</h2><p class="caption">낮을수록 빠름 · 같은 Metric의 A/B를 비교합니다.</p><div class="chart-row"><span>A</span><div class="bar-track" role="img" aria-label="A 2.9288 ms"><div class="bar-fill " style="width:80.000000%"></div></div><strong>2.9288 ms</strong></div><div class="chart-row"><span>B</span><div class="bar-track" role="img" aria-label="B 2.9261 ms"><div class="bar-fill b" style="width:79.927615%"></div></div><strong>2.9261 ms</strong></div><div class="axis"><span>0</span><span>1.83</span><span>3.66 ms</span></div><div class="table-scroll"><table><caption>GPU Run Median · 단위 ms</caption><thead><tr><th>상태</th><th>유효 Run</th><th>각 Run Median</th><th>Range</th></tr></thead><tbody><tr><th scope="row">Variant A</th><td>3</td><td class="median-list">2.9206 · 2.9417 · 2.9288</td><td>0.0211</td></tr><tr><th scope="row">Variant B</th><td>3</td><td class="median-list">2.9261 · 2.9309 · 2.8988</td><td>0.0321</td></tr></tbody></table></div><p class="caption">Benchmark Capture 순서: A → B → B → A → A → B<br>대표값은 Run Median들의 중앙값입니다. 유효 Run·Sample 수는 아래 통계에서 확인합니다.</p></section>
+<section class="panel"><div class="measure-head"><h2>Performance Impact</h2><span class="badge gray">INCONCLUSIVE</span></div><p class="caption">기능 변화에 따른 추가 GPU 시간 / 목표 프레임 예산</p><div class="impact-number">-0.02%<small>-0.0027 ms / 16.6667 ms</small></div><div class="formula">FrameBudgetMs = 1000 / TargetFPS<br>ImpactPercentBudget = 100 × DeltaMs / FrameBudgetMs<br>DeltaPercentBaseline = 100 × DeltaMs / A_MedianOfRunMedians</div><p class="thresholds">GREEN ≤ 2.00% · YELLOW ≤ 5.00% · RED &gt; 5.00%<br>비교 Confidence가 충분할 때만 등급을 확정합니다. 반올림 전 원값으로 판정합니다.</p></section></div>
+<div class="two-col"><section class="panel"><h2>GPU Frame Budget</h2><p class="caption">Target 60 FPS · GPU 시간 예산 16.6667 ms</p><div class="budget-row"><div class="budget-top"><span>Variant A <span class="badge green">GREEN</span></span><strong>17.57% · 2.9288 ms</strong></div><div class="budget-track" role="img" aria-label="Variant A GPU 예산 사용률 17.57%"><div class="budget-fill green" style="width:14.644000%"></div><span class="budget-tick" style="left:58.333333%"></span><span class="budget-tick" style="left:83.333333%"></span></div></div><div class="budget-row"><div class="budget-top"><span>Variant B <span class="badge green">GREEN</span></span><strong>17.56% · 2.9261 ms</strong></div><div class="budget-track" role="img" aria-label="Variant B GPU 예산 사용률 17.56%"><div class="budget-fill green" style="width:14.630750%"></div><span class="budget-tick" style="left:58.333333%"></span><span class="budget-tick" style="left:83.333333%"></span></div></div><div class="ticks"><span>0%</span><span>표시 축 상한 120.0%</span></div><p class="definition">GREEN ≤ 70.00% · YELLOW ≤ 100.00% · RED &gt; 100.00%<br>안정적인 절대 GPU 시간의 예산 사용률입니다. GPU Budget만으로 전체 시스템의 목표 FPS 달성을 보장하지 않습니다.</p></section>
+<section class="panel"><div class="measure-head"><h2>Measurement Confidence</h2><span class="badge gray">INCONCLUSIVE</span></div><p class="caption">A/A와 A/B의 반복 변동 및 조건 일치</p><table><caption class="sr-only">GPU Confidence 판정 근거</caption><tbody><tr><th scope="row">A/A Baseline Variation</th><td>0.0509 ms · 1.73%</td></tr><tr><th scope="row">A/B Run-to-Run Variation</th><td>A 0.0211 ms · B 0.0321 ms</td></tr><tr><th scope="row">Estimated Noise Floor</th><td>0.0509 ms</td></tr><tr><th scope="row">Actual A/B Delta</th><td>-0.0027 ms</td></tr></tbody></table><h3>Confidence Evaluation Reason</h3><ul><li>A/B 차이가 Noise Floor 이하이므로 차이 판정을 보류합니다.</li></ul><p class="definition">Range는 Run Median의 최대−최소입니다. Noise Floor는 AA·A·B Range와 최소 정책값의 최댓값입니다. 3회 반복을 통계적 유의성이나 신뢰구간으로 해석하지 않습니다.</p></section></div>
+<details class="panel"><summary>04 · CPU / Frame Timing Comparison · 보조 지표 펼치기</summary><div class="cpu-caution">GPU와 CPU는 서로 다른 시간을 측정합니다. GPU Budget이 GREEN이어도 Frame Time·Game/Render Thread가 크면 전체 성능을 별도로 조사해야 합니다. CPU와 GPU 시간을 합산하거나 이 표만으로 CPU 병목을 확정하지 마세요.</div><p class="caption">각 Run Median의 중앙값 · 단위 ms · Frame Time은 전체 프레임 지표입니다.</p><div class="table-scroll"><table><caption class="sr-only">CPU와 Frame 시간 비교</caption><thead><tr><th>Metric</th><th>Variant A</th><th>Variant B</th><th>Delta · B − A</th><th>Confidence</th></tr></thead><tbody><tr><td>Frame Time</td><td>6.5796 ms</td><td>6.4207 ms</td><td>-0.1590 ms</td><td>INCONCLUSIVE</td></tr><tr><td>Game Thread Time</td><td>1.5075 ms</td><td>1.5233 ms</td><td>+0.0158 ms</td><td>INCONCLUSIVE</td></tr><tr><td>Render Thread Time</td><td>6.5603 ms</td><td>6.3929 ms</td><td>-0.1674 ms</td><td>INCONCLUSIVE</td></tr></tbody></table></div><p class="definition">CPU와 GPU는 파이프라인으로 겹쳐 실행되므로 시간을 합산하지 않습니다. Frame Time은 전체 프레임 지표이고 Game/Render Thread 시간과 구분합니다. 이 표만으로 병목을 확정하지 않습니다. Thread 지표와 Frame Time의 큰 차이는 Unreal Insights 등 별도 Profiling과 실제 목표 FPS로 확인하세요.</p></details>
+<details class="panel detail-group"><summary>05 · Technical Details · 경고·통계·환경·증거 펼치기</summary>
+<div class="statusbar"><span><strong>Measurement Status</strong><span class="badge green">PASS</span></span><span><strong>Confidence</strong><span class="badge gray">INCONCLUSIVE</span></span><span><strong>GPU Budget A / B</strong><span class="badge green">GREEN</span> <span class="badge green">GREEN</span></span><span class="run-id">Test ID: URB4_Scalar<br>Run ID: 20261103T114935_URB4_Scalar_30CCDBF0</span></div>
+<section class="panel warning-box"><h2>확인할 사항</h2><ul><li>Noise Floor와 변동 상한은 RTR V1 후보 정책이며 통계적 유의성·신뢰구간을 증명하지 않습니다.</li></ul></section><section class="summary-box"><h2>Detailed Interpretation</h2><p>관측 GPU 차이는 -0.0027 ms입니다. 0.0509 ms의 Noise Floor와 Calibration·반복 안정성·조건 일치 근거를 함께 확인해야 합니다. 현재 비교 판정은 INCONCLUSIVE이며 비용이 없다는 의미가 아닙니다.</p></section>
+<details class="panel"><summary>전체 통계와 Metric별 판정 근거</summary><p class="caption">P95는 nearest-rank 방식입니다. Pooled P95는 모든 유효 프레임을 합친 값이며 각 Run P95의 중앙값과 구별합니다. 화면의 반올림은 판정에 사용하지 않습니다.</p><div class="table-scroll"><table><caption>Metric별 집계 통계 · 단위 ms, Relative Spread만 %</caption><thead><tr><th>Metric</th><th>그룹</th><th>Run</th><th>Sample</th><th>Median of Run Medians</th><th>Run Median Range</th><th>Relative Spread %</th><th>Pooled Mean</th><th>Pooled Median</th><th>Pooled P95</th><th>Median of Run P95</th><th>Pooled Min</th><th>Pooled Max</th></tr></thead><tbody><tr><td>GPU Frame Time</td><td>A</td><td>3</td><td>900</td><td>2.9288</td><td>0.0211</td><td>0.72</td><td>3.0341</td><td>2.9308</td><td>3.7675</td><td>3.6696</td><td>2.6844</td><td>6.3908</td></tr><tr><td>GPU Frame Time</td><td>B</td><td>3</td><td>900</td><td>2.9261</td><td>0.0321</td><td>1.10</td><td>3.0373</td><td>2.9217</td><td>3.8618</td><td>3.8604</td><td>2.6396</td><td>6.1617</td></tr><tr><td>GPU Frame Time</td><td>A/A</td><td>6</td><td>1800</td><td>2.9385</td><td>0.0509</td><td>1.73</td><td>3.0628</td><td>2.9346</td><td>3.9439</td><td>3.9527</td><td>2.6426</td><td>6.4050</td></tr><tr><td>Frame Time</td><td>A</td><td>3</td><td>900</td><td>6.5796</td><td>0.5518</td><td>8.39</td><td>6.7115</td><td>6.7465</td><td>8.4200</td><td>8.2577</td><td>2.5897</td><td>12.9111</td></tr><tr><td>Frame Time</td><td>B</td><td>3</td><td>900</td><td>6.4207</td><td>0.1480</td><td>2.31</td><td>6.4906</td><td>6.4638</td><td>8.1837</td><td>8.1681</td><td>1.5389</td><td>14.2828</td></tr><tr><td>Frame Time</td><td>A/A</td><td>6</td><td>1800</td><td>6.5305</td><td>0.3577</td><td>5.48</td><td>6.6076</td><td>6.5746</td><td>8.2686</td><td>8.2588</td><td>1.8405</td><td>16.1913</td></tr><tr><td>Game Thread Time</td><td>A</td><td>3</td><td>900</td><td>1.5075</td><td>0.3342</td><td>22.17</td><td>1.6992</td><td>1.5867</td><td>2.4075</td><td>2.1144</td><td>1.1661</td><td>6.7189</td></tr><tr><td>Game Thread Time</td><td>B</td><td>3</td><td>900</td><td>1.5233</td><td>0.0328</td><td>2.15</td><td>1.5940</td><td>1.5156</td><td>2.0810</td><td>2.0375</td><td>1.1942</td><td>6.5087</td></tr><tr><td>Game Thread Time</td><td>A/A</td><td>6</td><td>1800</td><td>1.5457</td><td>0.1943</td><td>12.57</td><td>1.6645</td><td>1.5584</td><td>2.2874</td><td>2.2030</td><td>1.0901</td><td>7.9567</td></tr><tr><td>Render Thread Time</td><td>A</td><td>3</td><td>900</td><td>6.5603</td><td>0.5515</td><td>8.41</td><td>6.7002</td><td>6.7081</td><td>8.3705</td><td>8.1597</td><td>4.1859</td><td>11.4325</td></tr><tr><td>Render Thread Time</td><td>B</td><td>3</td><td>900</td><td>6.3929</td><td>0.1595</td><td>2.49</td><td>6.4729</td><td>6.4417</td><td>8.1193</td><td>8.0509</td><td>4.1253</td><td>11.9791</td></tr><tr><td>Render Thread Time</td><td>A/A</td><td>6</td><td>1800</td><td>6.5113</td><td>0.3628</td><td>5.57</td><td>6.5911</td><td>6.5561</td><td>8.2029</td><td>8.1859</td><td>3.8832</td><td>10.6584</td></tr></tbody></table></div><div class="table-scroll"><table><caption>각 Capture 통계 · 단위 ms</caption><thead><tr><th>Metric</th><th>그룹</th><th>Capture Index</th><th>Mode</th><th>Sample</th><th>Mean</th><th>Median</th><th>P95</th><th>Min</th><th>Max</th><th>원본 CSV</th></tr></thead><tbody><tr><td>GPU Frame Time</td><td>A</td><td>6</td><td>Benchmark</td><td>300</td><td>2.9838</td><td>2.9206</td><td>3.5785</td><td>2.6989</td><td>6.3339</td><td>AB_006_A.csv</td></tr><tr><td>GPU Frame Time</td><td>A</td><td>9</td><td>Benchmark</td><td>300</td><td>3.0364</td><td>2.9417</td><td>3.6696</td><td>2.6860</td><td>6.1361</td><td>AB_009_A.csv</td></tr><tr><td>GPU Frame Time</td><td>A</td><td>10</td><td>Benchmark</td><td>300</td><td>3.0822</td><td>2.9288</td><td>4.6619</td><td>2.6844</td><td>6.3908</td><td>AB_010_A.csv</td></tr><tr><td>GPU Frame Time</td><td>B</td><td>7</td><td>Benchmark</td><td>300</td><td>3.0137</td><td>2.9261</td><td>3.7242</td><td>2.6664</td><td>5.7668</td><td>AB_007_B.csv</td></tr><tr><td>GPU Frame Time</td><td>B</td><td>8</td><td>Benchmark</td><td>300</td><td>3.0626</td><td>2.9309</td><td>3.8604</td><td>2.6396</td><td>5.7430</td><td>AB_008_B.csv</td></tr><tr><td>GPU Frame Time</td><td>B</td><td>11</td><td>Benchmark</td><td>300</td><td>3.0357</td><td>2.8988</td><td>3.9641</td><td>2.6616</td><td>6.1617</td><td>AB_011_B.csv</td></tr><tr><td>GPU Frame Time</td><td>A/A</td><td>0</td><td>Calibration</td><td>300</td><td>3.0653</td><td>2.9238</td><td>4.1653</td><td>2.6907</td><td>6.0415</td><td>AA_000_A.csv</td></tr><tr><td>GPU Frame Time</td><td>A/A</td><td>1</td><td>Calibration</td><td>300</td><td>3.0368</td><td>2.9021</td><td>3.8786</td><td>2.6663</td><td>6.4050</td><td>AA_001_B.csv</td></tr><tr><td>GPU Frame Time</td><td>A/A</td><td>2</td><td>Calibration</td><td>300</td><td>3.0431</td><td>2.9524</td><td>3.9191</td><td>2.6699</td><td>5.8570</td><td>AA_002_B.csv</td></tr><tr><td>GPU Frame Time</td><td>A/A</td><td>3</td><td>Calibration</td><td>300</td><td>3.0647</td><td>2.9530</td><td>3.9115</td><td>2.6925</td><td>6.1158</td><td>AA_003_A.csv</td></tr><tr><td>GPU Frame Time</td><td>A/A</td><td>4</td><td>Calibration</td><td>300</td><td>3.0788</td><td>2.9322</td><td>4.0494</td><td>2.6872</td><td>6.3035</td><td>AA_004_A.csv</td></tr><tr><td>GPU Frame Time</td><td>A/A</td><td>5</td><td>Calibration</td><td>300</td><td>3.0878</td><td>2.9449</td><td>3.9862</td><td>2.6426</td><td>6.3120</td><td>AA_005_B.csv</td></tr><tr><td>Frame Time</td><td>A</td><td>6</td><td>Benchmark</td><td>300</td><td>7.1232</td><td>7.1001</td><td>8.9295</td><td>2.8143</td><td>12.2785</td><td>AB_006_A.csv</td></tr><tr><td>Frame Time</td><td>A</td><td>9</td><td>Benchmark</td><td>300</td><td>6.5331</td><td>6.5796</td><td>8.2577</td><td>2.5897</td><td>12.9111</td><td>AB_009_A.csv</td></tr><tr><td>Frame Time</td><td>A</td><td>10</td><td>Benchmark</td><td>300</td><td>6.4783</td><td>6.5483</td><td>8.1182</td><td>2.7190</td><td>11.4681</td><td>AB_010_A.csv</td></tr><tr><td>Frame Time</td><td>B</td><td>7</td><td>Benchmark</td><td>300</td><td>6.4755</td><td>6.4207</td><td>8.2421</td><td>1.9180</td><td>12.2919</td><td>AB_007_B.csv</td></tr><tr><td>Frame Time</td><td>B</td><td>8</td><td>Benchmark</td><td>300</td><td>6.5551</td><td>6.5664</td><td>8.1681</td><td>1.8657</td><td>14.2828</td><td>AB_008_B.csv</td></tr><tr><td>Frame Time</td><td>B</td><td>11</td><td>Benchmark</td><td>300</td><td>6.4412</td><td>6.4184</td><td>8.1433</td><td>1.5389</td><td>12.0427</td><td>AB_011_B.csv</td></tr><tr><td>Frame Time</td><td>A/A</td><td>0</td><td>Calibration</td><td>300</td><td>6.4495</td><td>6.4478</td><td>8.3230</td><td>2.0977</td><td>16.1913</td><td>AA_000_A.csv</td></tr><tr><td>Frame Time</td><td>A/A</td><td>1</td><td>Calibration</td><td>300</td><td>6.6693</td><td>6.6612</td><td>8.1072</td><td>2.9407</td><td>12.4604</td><td>AA_001_B.csv</td></tr><tr><td>Frame Time</td><td>A/A</td><td>2</td><td>Calibration</td><td>300</td><td>6.8176</td><td>6.8055</td><td>8.4250</td><td>1.8405</td><td>12.2863</td><td>AA_002_B.csv</td></tr><tr><td>Frame Time</td><td>A/A</td><td>3</td><td>Calibration</td><td>300</td><td>6.5448</td><td>6.4727</td><td>8.2549</td><td>2.1921</td><td>11.5021</td><td>AA_003_A.csv</td></tr><tr><td>Frame Time</td><td>A/A</td><td>4</td><td>Calibration</td><td>300</td><td>6.6043</td><td>6.5617</td><td>8.1440</td><td>2.0051</td><td>12.8976</td><td>AA_004_A.csv</td></tr><tr><td>Frame Time</td><td>A/A</td><td>5</td><td>Calibration</td><td>300</td><td>6.5601</td><td>6.4992</td><td>8.2627</td><td>2.0787</td><td>15.6669</td><td>AA_005_B.csv</td></tr><tr><td>Game Thread Time</td><td>A</td><td>6</td><td>Benchmark</td><td>300</td><td>1.9518</td><td>1.8153</td><td>2.7989</td><td>1.3104</td><td>6.7189</td><td>AB_006_A.csv</td></tr><tr><td>Game Thread Time</td><td>A</td><td>9</td><td>Benchmark</td><td>300</td><td>1.5872</td><td>1.5075</td><td>2.1144</td><td>1.1661</td><td>5.4488</td><td>AB_009_A.csv</td></tr><tr><td>Game Thread Time</td><td>A</td><td>10</td><td>Benchmark</td><td>300</td><td>1.5587</td><td>1.4811</td><td>2.0156</td><td>1.1918</td><td>5.8214</td><td>AB_010_A.csv</td></tr><tr><td>Game Thread Time</td><td>B</td><td>7</td><td>Benchmark</td><td>300</td><td>1.5889</td><td>1.5233</td><td>2.0190</td><td>1.1942</td><td>6.5087</td><td>AB_007_B.csv</td></tr><tr><td>Game Thread Time</td><td>B</td><td>8</td><td>Benchmark</td><td>300</td><td>1.6141</td><td>1.5309</td><td>2.1395</td><td>1.2098</td><td>6.0314</td><td>AB_008_B.csv</td></tr><tr><td>Game Thread Time</td><td>B</td><td>11</td><td>Benchmark</td><td>300</td><td>1.5791</td><td>1.4982</td><td>2.0375</td><td>1.2015</td><td>6.2338</td><td>AB_011_B.csv</td></tr><tr><td>Game Thread Time</td><td>A/A</td><td>0</td><td>Calibration</td><td>300</td><td>1.5605</td><td>1.4875</td><td>2.1126</td><td>1.0901</td><td>5.9891</td><td>AA_000_A.csv</td></tr><tr><td>Game Thread Time</td><td>A/A</td><td>1</td><td>Calibration</td><td>300</td><td>1.7293</td><td>1.6243</td><td>2.3342</td><td>1.2081</td><td>5.9786</td><td>AA_001_B.csv</td></tr><tr><td>Game Thread Time</td><td>A/A</td><td>2</td><td>Calibration</td><td>300</td><td>1.7876</td><td>1.6818</td><td>2.5965</td><td>1.1858</td><td>7.0861</td><td>AA_002_B.csv</td></tr><tr><td>Game Thread Time</td><td>A/A</td><td>3</td><td>Calibration</td><td>300</td><td>1.6175</td><td>1.5097</td><td>2.1022</td><td>1.1392</td><td>7.4693</td><td>AA_003_A.csv</td></tr><tr><td>Game Thread Time</td><td>A/A</td><td>4</td><td>Calibration</td><td>300</td><td>1.6846</td><td>1.5790</td><td>2.2934</td><td>1.2237</td><td>6.9940</td><td>AA_004_A.csv</td></tr><tr><td>Game Thread Time</td><td>A/A</td><td>5</td><td>Calibration</td><td>300</td><td>1.6073</td><td>1.5125</td><td>2.0757</td><td>1.1197</td><td>7.9567</td><td>AA_005_B.csv</td></tr><tr><td>Render Thread Time</td><td>A</td><td>6</td><td>Benchmark</td><td>300</td><td>7.1180</td><td>7.0794</td><td>8.8290</td><td>4.6659</td><td>10.7630</td><td>AB_006_A.csv</td></tr><tr><td>Render Thread Time</td><td>A</td><td>9</td><td>Benchmark</td><td>300</td><td>6.5132</td><td>6.5603</td><td>8.1597</td><td>4.3808</td><td>10.5669</td><td>AB_009_A.csv</td></tr><tr><td>Render Thread Time</td><td>A</td><td>10</td><td>Benchmark</td><td>300</td><td>6.4693</td><td>6.5279</td><td>8.0667</td><td>4.1859</td><td>11.4325</td><td>AB_010_A.csv</td></tr><tr><td>Render Thread Time</td><td>B</td><td>7</td><td>Benchmark</td><td>300</td><td>6.4562</td><td>6.3775</td><td>8.1743</td><td>4.4755</td><td>10.5709</td><td>AB_007_B.csv</td></tr><tr><td>Render Thread Time</td><td>B</td><td>8</td><td>Benchmark</td><td>300</td><td>6.5347</td><td>6.5370</td><td>8.0028</td><td>4.3602</td><td>10.9159</td><td>AB_008_B.csv</td></tr><tr><td>Render Thread Time</td><td>B</td><td>11</td><td>Benchmark</td><td>300</td><td>6.4277</td><td>6.3929</td><td>8.0509</td><td>4.1253</td><td>11.9791</td><td>AB_011_B.csv</td></tr><tr><td>Render Thread Time</td><td>A/A</td><td>0</td><td>Calibration</td><td>300</td><td>6.4300</td><td>6.4345</td><td>8.2946</td><td>4.3504</td><td>10.4984</td><td>AA_000_A.csv</td></tr><tr><td>Render Thread Time</td><td>A/A</td><td>1</td><td>Calibration</td><td>300</td><td>6.6563</td><td>6.6471</td><td>7.9898</td><td>4.0970</td><td>10.3512</td><td>AA_001_B.csv</td></tr><tr><td>Render Thread Time</td><td>A/A</td><td>2</td><td>Calibration</td><td>300</td><td>6.8063</td><td>6.7973</td><td>8.3630</td><td>4.3642</td><td>10.3058</td><td>AA_002_B.csv</td></tr><tr><td>Render Thread Time</td><td>A/A</td><td>3</td><td>Calibration</td><td>300</td><td>6.5337</td><td>6.4455</td><td>8.2671</td><td>3.8832</td><td>10.2828</td><td>AA_003_A.csv</td></tr><tr><td>Render Thread Time</td><td>A/A</td><td>4</td><td>Calibration</td><td>300</td><td>6.5817</td><td>6.5304</td><td>8.0917</td><td>4.4445</td><td>9.7996</td><td>AA_004_A.csv</td></tr><tr><td>Render Thread Time</td><td>A/A</td><td>5</td><td>Calibration</td><td>300</td><td>6.5389</td><td>6.4923</td><td>8.1046</td><td>4.4374</td><td>10.6584</td><td>AA_005_B.csv</td></tr></tbody></table></div><div class="metric-reasons"><h3>GPU Frame Time</h3><ul><li>A/B 차이가 Noise Floor 이하이므로 차이 판정을 보류합니다.</li></ul><h3>Frame Time</h3><ul><li>A 또는 B의 반복 Median 변동이 안정성 조건을 통과하지 못했습니다.</li><li>A/A Median 변동이 안정성 조건을 통과하지 못했습니다.</li><li>A/B 차이가 Noise Floor 이하이므로 차이 판정을 보류합니다.</li><li>CPU·Frame 지표는 보조 통계이며 GPU Impact·Budget 색상 정책을 적용하지 않습니다.</li></ul><h3>Game Thread Time</h3><ul><li>A 또는 B의 반복 Median 변동이 안정성 조건을 통과하지 못했습니다.</li><li>A/A Median 변동이 안정성 조건을 통과하지 못했습니다.</li><li>A/B 차이가 Noise Floor 이하이므로 차이 판정을 보류합니다.</li><li>CPU·Frame 지표는 보조 통계이며 GPU Impact·Budget 색상 정책을 적용하지 않습니다.</li></ul><h3>Render Thread Time</h3><ul><li>A 또는 B의 반복 Median 변동이 안정성 조건을 통과하지 못했습니다.</li><li>A/A Median 변동이 안정성 조건을 통과하지 못했습니다.</li><li>A/B 차이가 Noise Floor 이하이므로 차이 판정을 보류합니다.</li><li>CPU·Frame 지표는 보조 통계이며 GPU Impact·Budget 색상 정책을 적용하지 않습니다.</li></ul></div></details>
+<div class="foot-grid"><section class="panel"><h2>측정 환경과 Action</h2><div class="table-scroll"><table class="metadata"><caption>기록된 실행 조건</caption><tbody><tr><th scope="row">actionA</th><td>{&quot;actionType&quot;:&quot;ScalarParameter&quot;,&quot;cvarName&quot;:&quot;r.Tonemapper.Sharpen&quot;,&quot;cvarValueA&quot;:0,&quot;hiddenInGameA&quot;:false,&quot;materialA&quot;:&quot;/URBenchmark/Materials/MI_URB_Detail_OFF.MI_URB_Detail_OFF&quot;,&quot;materialSlot&quot;:0,&quot;originalMaterial&quot;:&quot;/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original&quot;,&quot;originalScalar&quot;:0.3499999940395355,&quot;parameterName&quot;:&quot;URB_Blend&quot;,&quot;shadowPolicy&quot;:&quot;PreserveOriginal&quot;,&quot;targetActorTag&quot;:&quot;URB4_Target&quot;,&quot;targetComponentTag&quot;:&quot;URB4_Mesh&quot;,&quot;valueA&quot;:0,&quot;visibilityScope&quot;:&quot;Component&quot;,&quot;visibleA&quot;:true}</td></tr><tr><th scope="row">actualResolution</th><td>1920x1080</td></tr><tr><th scope="row">camera</th><td>{&quot;fov&quot;:90,&quot;location&quot;:[-1100,0,180],&quot;rotation&quot;:[0,0,-5.000000000000002]}</td></tr><tr><th scope="row">captureFrames</th><td>300</td></tr><tr><th scope="row">contentSHA256</th><td>7249445c4617d1590613e04331ce08d8e3b33e8c683a3965aada684a43406c7d</td></tr><tr><th scope="row">cpu</th><td>AMD Ryzen 7 5800X 8-Core Processor             </td></tr><tr><th scope="row">driver</th><td>617.42</td></tr><tr><th scope="row">engineVersion</th><td>5.8.3-58210709+++UE5+Release-5.8</td></tr><tr><th scope="row">environmentCVars</th><td>{&quot;csv.AlwaysShowFrameCount&quot;:&quot;false&quot;,&quot;r.DynamicRes.OperationMode&quot;:&quot;0&quot;,&quot;r.GPUCsvStatsEnabled&quot;:&quot;1&quot;,&quot;r.ScreenPercentage&quot;:&quot;100&quot;,&quot;r.VSync&quot;:&quot;0&quot;,&quot;t.MaxFPS&quot;:&quot;0&quot;}</td></tr><tr><th scope="row">featureLevel</th><td>SM6</td></tr><tr><th scope="row">finishedUTC</th><td>2026-11-03T11:50:12.841Z</td></tr><tr><th scope="row">gpu</th><td>NVIDIA GeForce RTX 5080</td></tr><tr><th scope="row">os</th><td>10.0.26200.1.256.64bit</td></tr><tr><th scope="row">repeatCount</th><td>3</td></tr><tr><th scope="row">resolution</th><td>[1920,1080]</td></tr><tr><th scope="row">rhi</th><td>D3D12</td></tr><tr><th scope="row">runnerBuildSHA256</th><td>190c110a0b8f9d4f0b8d1bb31c6ae1c503eb2cc11d249359315f5665339d7e87</td></tr><tr><th scope="row">scalability</th><td>{&quot;sg.AntiAliasingQuality&quot;:&quot;3&quot;,&quot;sg.EffectsQuality&quot;:&quot;3&quot;,&quot;sg.FoliageQuality&quot;:&quot;3&quot;,&quot;sg.GlobalIlluminationQuality&quot;:&quot;3&quot;,&quot;sg.PostProcessQuality&quot;:&quot;3&quot;,&quot;sg.ReflectionQuality&quot;:&quot;3&quot;,&quot;sg.ResolutionQuality&quot;:&quot;0&quot;,&quot;sg.ShadingQuality&quot;:&quot;3&quot;,&quot;sg.ShadowQuality&quot;:&quot;3&quot;,&quot;sg.TextureQuality&quot;:&quot;3&quot;,&quot;sg.ViewDistanceQuality&quot;:&quot;3&quot;}</td></tr><tr><th scope="row">sceneStatePolicy</th><td>DeclaredStatic</td></tr><tr><th scope="row">sceneTransformSHA256</th><td>490ea957129a5773f02472e28ada50c6e219a204d566e2e81401e420781a8119</td></tr><tr><th scope="row">sceneType</th><td>GeneralValidation</td></tr><tr><th scope="row">screenPercentage</th><td>100</td></tr><tr><th scope="row">screenPercentageRequested</th><td>100</td></tr><tr><th scope="row">startedUTC</th><td>2026-11-03T11:49:35.849Z</td></tr><tr><th scope="row">targetFPSBudgetOnly</th><td>60</td></tr><tr><th scope="row">warmupFrames</th><td>120</td></tr><tr><th scope="row">worldPackage</th><td>/URBenchmark/Phase4/Maps/L_URB_GenericActions</td></tr></tbody></table></div><details><summary>Action 적용 설정</summary><pre>{
+  &quot;actionType&quot;: &quot;ScalarParameter&quot;,
+  &quot;actor&quot;: &quot;/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.URBTestTarget_0&quot;,
+  &quot;component&quot;: &quot;/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.URBTestTarget_0.PrimaryMesh&quot;,
+  &quot;dynamicMaterial&quot;: &quot;/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.BP_URB_Runner_C_0.URBAction_0.MID_MI_URB4_Original_0&quot;,
+  &quot;dynamicMaterialObjectID&quot;: 64260,
+  &quot;materialSlot&quot;: 0,
+  &quot;original&quot;: {
+    &quot;actorHiddenInGame&quot;: false,
+    &quot;material&quot;: &quot;/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original&quot;,
+    &quot;scalarValue&quot;: 0.3499999940395355
+  },
+  &quot;parameter&quot;: &quot;URB_Blend&quot;,
+  &quot;reusesSingleTransientDMI&quot;: true,
+  &quot;snapshotTaken&quot;: true,
+  &quot;target&quot;: &quot;/URBenchmark/Phase4/Maps/L_URB_GenericActions.L_URB_GenericActions:PersistentLevel.URBTestTarget_0.PrimaryMesh&quot;,
+  &quot;valueA&quot;: 0,
+  &quot;valueB&quot;: 1
+}</pre></details></section><section class="panel"><h2>Calibration과 평가 정책</h2><p class="policy-text">Calibration은 매 A/B 실행 직전 필수가 아닙니다. 연결한 유효 A/A와 환경 Fingerprint가 일치해야 확정 비교를 해석할 수 있습니다.</p><details><summary>Calibration 연결과 상태</summary><pre>{
+  &quot;aa_capture_count&quot;: 6,
+  &quot;environment_match&quot;: true,
+  &quot;fingerprint&quot;: {
+    &quot;canonical_sha256&quot;: &quot;2A84AD4CD59A66658C480E1CF2B7B78959892DA0D8C168A42094237EA7E20A4C&quot;,
+    &quot;payload&quot;: {
+      &quot;actionA&quot;: {
+        &quot;actionType&quot;: &quot;ScalarParameter&quot;,
+        &quot;cvarName&quot;: &quot;r.Tonemapper.Sharpen&quot;,
+        &quot;cvarValueA&quot;: 0,
+        &quot;hiddenInGameA&quot;: false,
+        &quot;materialA&quot;: &quot;/URBenchmark/Materials/MI_URB_Detail_OFF.MI_URB_Detail_OFF&quot;,
+        &quot;materialSlot&quot;: 0,
+        &quot;originalMaterial&quot;: &quot;/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original&quot;,
+        &quot;originalScalar&quot;: 0.3499999940395355,
+        &quot;parameterName&quot;: &quot;URB_Blend&quot;,
+        &quot;shadowPolicy&quot;: &quot;PreserveOriginal&quot;,
+        &quot;targetActorTag&quot;: &quot;URB4_Target&quot;,
+        &quot;targetComponentTag&quot;: &quot;URB4_Mesh&quot;,
+        &quot;valueA&quot;: 0,
+        &quot;visibilityScope&quot;: &quot;Component&quot;,
+        &quot;visibleA&quot;: true
+      },
+      &quot;camera&quot;: {
+        &quot;fov&quot;: 90,
+        &quot;location&quot;: [
+          -1100,
+          0,
+          180
+        ],
+        &quot;rotation&quot;: [
+          0,
+          0,
+          -5.000000000000002
+        ]
+      },
+      &quot;captureFrames&quot;: 300,
+      &quot;contentSHA256&quot;: &quot;7249445c4617d1590613e04331ce08d8e3b33e8c683a3965aada684a43406c7d&quot;,
+      &quot;cpu&quot;: &quot;AMD Ryzen 7 5800X 8-Core Processor             &quot;,
+      &quot;driver&quot;: &quot;617.42&quot;,
+      &quot;engineVersion&quot;: &quot;5.8.3-58210709+++UE5+Release-5.8&quot;,
+      &quot;environmentCVars&quot;: {
+        &quot;csv.AlwaysShowFrameCount&quot;: &quot;false&quot;,
+        &quot;r.DynamicRes.OperationMode&quot;: &quot;0&quot;,
+        &quot;r.GPUCsvStatsEnabled&quot;: &quot;1&quot;,
+        &quot;r.ScreenPercentage&quot;: &quot;100&quot;,
+        &quot;r.VSync&quot;: &quot;0&quot;,
+        &quot;t.MaxFPS&quot;: &quot;0&quot;
+      },
+      &quot;featureLevel&quot;: &quot;SM6&quot;,
+      &quot;gpu&quot;: &quot;NVIDIA GeForce RTX 5080&quot;,
+      &quot;os&quot;: &quot;10.0.26200.1.256.64bit&quot;,
+      &quot;resolution&quot;: [
+        1920,
+        1080
+      ],
+      &quot;rhi&quot;: &quot;D3D12&quot;,
+      &quot;runnerBuildSHA256&quot;: &quot;190c110a0b8f9d4f0b8d1bb31c6ae1c503eb2cc11d249359315f5665339d7e87&quot;,
+      &quot;scalability&quot;: {
+        &quot;sg.AntiAliasingQuality&quot;: &quot;3&quot;,
+        &quot;sg.EffectsQuality&quot;: &quot;3&quot;,
+        &quot;sg.FoliageQuality&quot;: &quot;3&quot;,
+        &quot;sg.GlobalIlluminationQuality&quot;: &quot;3&quot;,
+        &quot;sg.PostProcessQuality&quot;: &quot;3&quot;,
+        &quot;sg.ReflectionQuality&quot;: &quot;3&quot;,
+        &quot;sg.ResolutionQuality&quot;: &quot;0&quot;,
+        &quot;sg.ShadingQuality&quot;: &quot;3&quot;,
+        &quot;sg.ShadowQuality&quot;: &quot;3&quot;,
+        &quot;sg.TextureQuality&quot;: &quot;3&quot;,
+        &quot;sg.ViewDistanceQuality&quot;: &quot;3&quot;
+      },
+      &quot;sceneStatePolicy&quot;: &quot;DeclaredStatic&quot;,
+      &quot;sceneTransformSHA256&quot;: &quot;490ea957129a5773f02472e28ada50c6e219a204d566e2e81401e420781a8119&quot;,
+      &quot;sceneType&quot;: &quot;GeneralValidation&quot;,
+      &quot;screenPercentage&quot;: 100,
+      &quot;targetFPSBudgetOnly&quot;: 60,
+      &quot;warmupFrames&quot;: 120,
+      &quot;worldPackage&quot;: &quot;/URBenchmark/Phase4/Maps/L_URB_GenericActions&quot;
+    },
+    &quot;payload_sha256&quot;: &quot;56C765837FF2D0E336430047B59CFC441B3A17D00AFBFDC57C48C225AAA2C270&quot;,
+    &quot;reason_codes&quot;: [],
+    &quot;reasons&quot;: [],
+    &quot;valid&quot;: true
+  },
+  &quot;metrics&quot;: {
+    &quot;FrameTime&quot;: {
+      &quot;expected_run_count&quot;: 6,
+      &quot;integrity_valid&quot;: true,
+      &quot;invalid_run_count&quot;: 0,
+      &quot;median_of_run_p95_ms&quot;: 8.2588,
+      &quot;minimum_runs_met&quot;: true,
+      &quot;pooled&quot;: {
+        &quot;max_ms&quot;: 16.1913,
+        &quot;mean_ms&quot;: 6.607594833333334,
+        &quot;median_ms&quot;: 6.57455,
+        &quot;min_ms&quot;: 1.8405,
+        &quot;p95_ms&quot;: 8.2686,
+        &quot;sample_count&quot;: 1800
+      },
+      &quot;range_ms&quot;: 0.3577,
+      &quot;relative_spread_percent&quot;: 5.477417329586782,
+      &quot;representative_ms&quot;: 6.53045,
+      &quot;run_count&quot;: 6,
+      &quot;run_medians_ms&quot;: [
+        6.4478,
+        6.66125,
+        6.8055,
+        6.4727,
+        6.56175,
+        6.49915
+      ],
+      &quot;sample_count&quot;: 1800,
+      &quot;stability_valid&quot;: false
+    },
+    &quot;GPUTime&quot;: {
+      &quot;expected_run_count&quot;: 6,
+      &quot;integrity_valid&quot;: true,
+      &quot;invalid_run_count&quot;: 0,
+      &quot;median_of_run_p95_ms&quot;: 3.95265,
+      &quot;minimum_runs_met&quot;: true,
+      &quot;pooled&quot;: {
+        &quot;max_ms&quot;: 6.405,
+        &quot;mean_ms&quot;: 3.062750611111111,
+        &quot;median_ms&quot;: 2.9346,
+        &quot;min_ms&quot;: 2.6426,
+        &quot;p95_ms&quot;: 3.9439,
+        &quot;sample_count&quot;: 1800
+      },
+      &quot;range_ms&quot;: 0.0509,
+      &quot;relative_spread_percent&quot;: 1.7321615436315838,
+      &quot;representative_ms&quot;: 2.938525,
+      &quot;run_count&quot;: 6,
+      &quot;run_medians_ms&quot;: [
+        2.9238,
+        2.9021,
+        2.9524,
+        2.953,
+        2.9322,
+        2.94485
+      ],
+      &quot;sample_count&quot;: 1800,
+      &quot;stability_valid&quot;: true
+    },
+    &quot;GameThreadTime&quot;: {
+      &quot;expected_run_count&quot;: 6,
+      &quot;integrity_valid&quot;: true,
+      &quot;invalid_run_count&quot;: 0,
+      &quot;median_of_run_p95_ms&quot;: 2.203,
+      &quot;minimum_runs_met&quot;: true,
+      &quot;pooled&quot;: {
+        &quot;max_ms&quot;: 7.9567,
+        &quot;mean_ms&quot;: 1.664466,
+        &quot;median_ms&quot;: 1.5584,
+        &quot;min_ms&quot;: 1.0901,
+        &quot;p95_ms&quot;: 2.2874,
+        &quot;sample_count&quot;: 1800
+      },
+      &quot;range_ms&quot;: 0.1943,
+      &quot;relative_spread_percent&quot;: 12.56994986252628,
+      &quot;representative_ms&quot;: 1.54575,
+      &quot;run_count&quot;: 6,
+      &quot;run_medians_ms&quot;: [
+        1.4875,
+        1.62435,
+        1.6818,
+        1.5097,
+        1.579,
+        1.5125
+      ],
+      &quot;sample_count&quot;: 1800,
+      &quot;stability_valid&quot;: false
+    },
+    &quot;RenderThreadTime&quot;: {
+      &quot;expected_run_count&quot;: 6,
+      &quot;integrity_valid&quot;: true,
+      &quot;invalid_run_count&quot;: 0,
+      &quot;median_of_run_p95_ms&quot;: 8.18585,
+      &quot;minimum_runs_met&quot;: true,
+      &quot;pooled&quot;: {
+        &quot;max_ms&quot;: 10.6584,
+        &quot;mean_ms&quot;: 6.591147444444444,
+        &quot;median_ms&quot;: 6.55615,
+        &quot;min_ms&quot;: 3.8832,
+        &quot;p95_ms&quot;: 8.2029,
+        &quot;sample_count&quot;: 1800
+      },
+      &quot;range_ms&quot;: 0.3628,
+      &quot;relative_spread_percent&quot;: 5.571852011119131,
+      &quot;representative_ms&quot;: 6.5113,
+      &quot;run_count&quot;: 6,
+      &quot;run_medians_ms&quot;: [
+        6.43455,
+        6.64715,
+        6.79735,
+        6.44555,
+        6.53035,
+        6.49225
+      ],
+      &quot;sample_count&quot;: 1800,
+      &quot;stability_valid&quot;: false
+    }
+  },
+  &quot;reason_codes&quot;: [],
+  &quot;reasons&quot;: [],
+  &quot;reference_fingerprint&quot;: {
+    &quot;canonical_sha256&quot;: &quot;2A84AD4CD59A66658C480E1CF2B7B78959892DA0D8C168A42094237EA7E20A4C&quot;,
+    &quot;payload&quot;: {
+      &quot;actionA&quot;: {
+        &quot;actionType&quot;: &quot;ScalarParameter&quot;,
+        &quot;cvarName&quot;: &quot;r.Tonemapper.Sharpen&quot;,
+        &quot;cvarValueA&quot;: 0,
+        &quot;hiddenInGameA&quot;: false,
+        &quot;materialA&quot;: &quot;/URBenchmark/Materials/MI_URB_Detail_OFF.MI_URB_Detail_OFF&quot;,
+        &quot;materialSlot&quot;: 0,
+        &quot;originalMaterial&quot;: &quot;/URBenchmark/Phase4/Materials/MI_URB4_Original.MI_URB4_Original&quot;,
+        &quot;originalScalar&quot;: 0.3499999940395355,
+        &quot;parameterName&quot;: &quot;URB_Blend&quot;,
+        &quot;shadowPolicy&quot;: &quot;PreserveOriginal&quot;,
+        &quot;targetActorTag&quot;: &quot;URB4_Target&quot;,
+        &quot;targetComponentTag&quot;: &quot;URB4_Mesh&quot;,
+        &quot;valueA&quot;: 0,
+        &quot;visibilityScope&quot;: &quot;Component&quot;,
+        &quot;visibleA&quot;: true
+      },
+      &quot;camera&quot;: {
+        &quot;fov&quot;: 90,
+        &quot;location&quot;: [
+          -1100,
+          0,
+          180
+        ],
+        &quot;rotation&quot;: [
+          0,
+          0,
+          -5.000000000000002
+        ]
+      },
+      &quot;captureFrames&quot;: 300,
+      &quot;contentSHA256&quot;: &quot;7249445c4617d1590613e04331ce08d8e3b33e8c683a3965aada684a43406c7d&quot;,
+      &quot;cpu&quot;: &quot;AMD Ryzen 7 5800X 8-Core Processor             &quot;,
+      &quot;driver&quot;: &quot;617.42&quot;,
+      &quot;engineVersion&quot;: &quot;5.8.3-58210709+++UE5+Release-5.8&quot;,
+      &quot;environmentCVars&quot;: {
+        &quot;csv.AlwaysShowFrameCount&quot;: &quot;false&quot;,
+        &quot;r.DynamicRes.OperationMode&quot;: &quot;0&quot;,
+        &quot;r.GPUCsvStatsEnabled&quot;: &quot;1&quot;,
+        &quot;r.ScreenPercentage&quot;: &quot;100&quot;,
+        &quot;r.VSync&quot;: &quot;0&quot;,
+        &quot;t.MaxFPS&quot;: &quot;0&quot;
+      },
+      &quot;featureLevel&quot;: &quot;SM6&quot;,
+      &quot;gpu&quot;: &quot;NVIDIA GeForce RTX 5080&quot;,
+      &quot;os&quot;: &quot;10.0.26200.1.256.64bit&quot;,
+      &quot;resolution&quot;: [
+        1920,
+        1080
+      ],
+      &quot;rhi&quot;: &quot;D3D12&quot;,
+      &quot;runnerBuildSHA256&quot;: &quot;190c110a0b8f9d4f0b8d1bb31c6ae1c503eb2cc11d249359315f5665339d7e87&quot;,
+      &quot;scalability&quot;: {
+        &quot;sg.AntiAliasingQuality&quot;: &quot;3&quot;,
+        &quot;sg.EffectsQuality&quot;: &quot;3&quot;,
+        &quot;sg.FoliageQuality&quot;: &quot;3&quot;,
+        &quot;sg.GlobalIlluminationQuality&quot;: &quot;3&quot;,
+        &quot;sg.PostProcessQuality&quot;: &quot;3&quot;,
+        &quot;sg.ReflectionQuality&quot;: &quot;3&quot;,
+        &quot;sg.ResolutionQuality&quot;: &quot;0&quot;,
+        &quot;sg.ShadingQuality&quot;: &quot;3&quot;,
+        &quot;sg.ShadowQuality&quot;: &quot;3&quot;,
+        &quot;sg.TextureQuality&quot;: &quot;3&quot;,
+        &quot;sg.ViewDistanceQuality&quot;: &quot;3&quot;
+      },
+      &quot;sceneStatePolicy&quot;: &quot;DeclaredStatic&quot;,
+      &quot;sceneTransformSHA256&quot;: &quot;490ea957129a5773f02472e28ada50c6e219a204d566e2e81401e420781a8119&quot;,
+      &quot;sceneType&quot;: &quot;GeneralValidation&quot;,
+      &quot;screenPercentage&quot;: 100,
+      &quot;targetFPSBudgetOnly&quot;: 60,
+      &quot;warmupFrames&quot;: 120,
+      &quot;worldPackage&quot;: &quot;/URBenchmark/Phase4/Maps/L_URB_GenericActions&quot;
+    },
+    &quot;payload_sha256&quot;: &quot;56C765837FF2D0E336430047B59CFC441B3A17D00AFBFDC57C48C225AAA2C270&quot;,
+    &quot;reason_codes&quot;: [],
+    &quot;reasons&quot;: [],
+    &quot;valid&quot;: true
+  },
+  &quot;reference_run_id&quot;: &quot;20261103T114935_URB4_Scalar_30CCDBF0&quot;,
+  &quot;source&quot;: &quot;inline&quot;,
+  &quot;status&quot;: &quot;VALID&quot;
+}</pre></details><details><summary>적용한 정책 원값</summary><pre>{
+  &quot;budget_green_max_percent&quot;: 70.0,
+  &quot;budget_yellow_max_percent&quot;: 100.0,
+  &quot;impact_green_max_percent&quot;: 2.0,
+  &quot;impact_yellow_max_percent&quot;: 5.0,
+  &quot;maximum_relative_spread_percent&quot;: 5.0,
+  &quot;minimum_calibration_runs&quot;: 6,
+  &quot;minimum_noise_floor_ms&quot;: 0.05,
+  &quot;minimum_variant_runs&quot;: 3,
+  &quot;version&quot;: &quot;RTR-V1-Phase3-Candidate-1&quot;
+}</pre></details><p class="policy-text">RTR 정책이며 Unreal 공식 등급이 아닙니다. 최소 Noise Floor와 변동 상한은 조정 가능한 초기 정책값이며 장비의 공식 오차나 통계 검정 결과가 아닙니다.</p></section></div>
+<section class="panel"><h2>원본과 분석 산출물</h2><p class="caption">원본 CSV·Manifest는 수정하지 않습니다. 링크가 있는 파일은 이 리포트와 함께 보관된 복사본입니다. SHA-256으로 원본 동일성을 확인할 수 있습니다.</p><div class="table-scroll"><table class="source-table"><caption class="sr-only">원본 파일과 SHA-256</caption><thead><tr><th>파일</th><th>SHA-256</th></tr></thead><tbody><tr><td><a href="Sources/Benchmark/Completion.json">Benchmark/Completion.json</a></td><td class="hash">6164394C126B969C0C5F43A3D8F88191736B637A5C71994CDC6D1886D2B55AA6</td></tr><tr><td>Benchmark/Execution.log</td><td class="hash">4AEF892018FFC609BB5EFB4ECF0CB5CFB0664F212975C1BF4C99A6532392CA39</td></tr><tr><td><a href="Sources/Benchmark/Manifest.json">Benchmark/Manifest.json</a></td><td class="hash">6164394C126B969C0C5F43A3D8F88191736B637A5C71994CDC6D1886D2B55AA6</td></tr><tr><td>Benchmark/Raw/AA_000_A.csv</td><td class="hash">0208DBFA744704FA8A34458C59ADDC7F04CFB534DDB4EB33093F73271E8F83A2</td></tr><tr><td>Benchmark/Raw/AA_001_B.csv</td><td class="hash">3EF24DB730C1F83396C89343FEC8C78BDF284300B1199866138032BC54A15C28</td></tr><tr><td>Benchmark/Raw/AA_002_B.csv</td><td class="hash">4DBE2B648F4E32B999612E817963D78DBED6C515112E09073D75C7BE6DB11966</td></tr><tr><td>Benchmark/Raw/AA_003_A.csv</td><td class="hash">9AA6C568C64B9220C14E5C6C0029BBF314D1B7E778A271278F8F86D3123F6418</td></tr><tr><td>Benchmark/Raw/AA_004_A.csv</td><td class="hash">60DFA4BE86B9D6D0DDB89D2BAB23E26D48FE5CDD03ACDA1EB38E0F078BF33631</td></tr><tr><td>Benchmark/Raw/AA_005_B.csv</td><td class="hash">45311C02DEA3AF8A6AFC0A05A1D28783B7E6AADAA724A3A8E1D42B2F5C007488</td></tr><tr><td>Benchmark/Raw/AB_006_A.csv</td><td class="hash">732867875734D1A5FAD24C9BC4C8DCB5F72F85836CD77C0C3BA9BE953FAA2500</td></tr><tr><td>Benchmark/Raw/AB_007_B.csv</td><td class="hash">4BEE9FD3BB441323FE69164BF3A0D9BF861FBC37C58697429F2C2F67EF3D0454</td></tr><tr><td>Benchmark/Raw/AB_008_B.csv</td><td class="hash">9831A7039AAD498F29E7065AA2D9DD4726BAD4BB60FFA8D3AB2A84512BE8C684</td></tr><tr><td>Benchmark/Raw/AB_009_A.csv</td><td class="hash">2E5CB4D974FE9EDE7A83BC5999E6FF1B750ADCB23F2529139787B8CD802379AC</td></tr><tr><td>Benchmark/Raw/AB_010_A.csv</td><td class="hash">C0C1967A424778EC194CF69FAF06831D4F6F12BA22D53F2059572939FFDF1F90</td></tr><tr><td>Benchmark/Raw/AB_011_B.csv</td><td class="hash">A7CE6D9359032A6CEDFFB5EA1938B348533C76F90EF64D876BE9180A8560A4DB</td></tr><tr><td>Benchmark/SourceContentIndex.json</td><td class="hash">18E9F140486D299D26B0B8F1E152446BF53A411E74430A71E3C4C536156825F9</td></tr></tbody></table></div><div class="source-links"><a href="Summary.csv">Summary.csv</a> · <a href="Analysis.json">Analysis.json</a></div></section>
+</details><footer><span>RTR Universal Rendering Benchmark Tool V1.1 · Offline Performance Report</span><span>Analyzer 0.4.0 · Schema 1 · Policy RTR-V1-Phase3-Candidate-1</span></footer></main></body></html>

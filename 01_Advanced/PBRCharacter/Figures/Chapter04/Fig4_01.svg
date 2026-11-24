@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120">
+<rect width="100%" height="100%" fill="white"/>
+<text x="70" y="84.12" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#263238" text-anchor="start">Figure 4-1  |  Eye Structure and Material Responsibilities</text>
+<text x="70" y="129.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#7B858A" text-anchor="start">Concept schematic: surface reflection, iris appearance and eyelid contact shading have different jobs</text>
+<circle cx="450" cy="490" r="250" fill="#F7F9FB" stroke="#424242" stroke-width="5"/>
+<polyline points="630.0,285.0 634.7111778910883,285.1580475706518 639.4150914873414,285.63194658470877 644.1044876949405,286.4209663242401 648.7721358048277,287.52389017799675 653.4108386419354,288.9390175173378 658.0134436627087,290.6641663184763 662.572853983809,292.6966765270023 667.0820393249937,295.03341415949353 671.5340468492991,297.6707761358907 675.9220118838108,300.60469583518625 680.2391685044913,303.83064936585833 684.4788599687456,307.3436625413846 688.6345489796346,311.13831855007663 692.6998277659138,315.2087663074111 696.6684279623523,319.5487294779782 700.5342302750968,324.15151615313573 704.2912739171801,329.0100291694473 707.933765799622,334.11677705199367 711.456089463953,339.46388556568445 714.8528137423857,345.0431098567577 718.1187011322822,350.84584716574693 721.2487158720037,356.86315009231237 724.2380317056894,363.085740391484 727.0820393249937,369.504023280043 729.7763534763054,376.10810223098156 732.3168197224911,382.88779423323047 734.6995208487357,389.83264549312423 736.9207829026042,396.9319475533929 738.9771808590098,404.1747538048272 740.8655439013544,411.5498963651566 742.5829603106981,419.046003299114 744.1267819554184,426.6515161531358 745.4946283744376,434.35470777765977 746.6843904477212,442.1437004095394 747.6942336483877,450.0064839866937 748.5226008714166,457.93093466675265 749.1682148345911,465.9048335211433 749.6300800479753,473.9158853757918 749.9074843488868,481.95173776939095 750.0,490.0 749.9074843488868,498.048262230609 749.6300800479753,506.0841146242082 749.1682148345911,514.0951664788568 748.5226008714166,522.0690653332473 747.6942336483877,529.9935160133062 746.6843904477212,537.8562995904606 745.4946283744376,545.6452922223402 744.1267819554184,553.3484838468643 742.5829603106981,560.953996700886 740.8655439013544,568.4501036348433 738.9771808590098,575.8252461951727 736.9207829026042,583.0680524466071 734.6995208487357,590.1673545068758 732.3168197224911,597.1122057667695 729.7763534763054,603.8918977690184 727.0820393249937,610.495976719957 724.2380317056894,616.914259608516 721.2487158720037,623.1368499076876 718.1187011322822,629.154152834253 714.8528137423857,634.9568901432423 711.456089463953,640.5361144343156 707.933765799622,645.8832229480063 704.2912739171801,650.9899708305527 700.5342302750968,655.8484838468643 696.6684279623523,660.4512705220218 692.6998277659138,664.7912336925889 688.6345489796346,668.8616814499234 684.4788599687456,672.6563374586153 680.2391685044913,676.1693506341417 675.9220118838108,679.3953041648138 671.5340468492991,682.3292238641093 667.0820393249937,684.9665858405065 662.572853983809,687.3033234729977 658.0134436627087,689.3358336815237 653.4108386419355,691.0609824826622 648.7721358048277,692.4761098220033 644.1044876949405,693.5790336757599 639.4150914873414,694.3680534152912 634.7111778910883,694.8419524293482 630.0,695.0" fill="none" stroke="#2F6BFF" stroke-width="5" stroke-linejoin="round"/>
+<polyline points="630,318 630,435" fill="none" stroke="#43A047" stroke-width="13" stroke-linejoin="round"/>
+<polyline points="630,545 630,662" fill="none" stroke="#43A047" stroke-width="13" stroke-linejoin="round"/>
+<polyline points="630,435 630,545" fill="none" stroke="#7B858A" stroke-width="2" stroke-linejoin="round" stroke-dasharray="10 8"/>
+<text x="215" y="800.8" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#263238" text-anchor="start">Sclera</text>
+<polyline points="295,765 285,687" fill="none" stroke="#263238" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="285,687 291.5439790638493,698.2328241334004 281.5012993095133,699.520347178828" fill="#263238"/>
+<text x="430" y="230.8" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#43A047" text-anchor="start">Iris</text>
+<polyline points="487,243 621,337" fill="none" stroke="#43A047" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="621,337 608.2902971045376,334.26806802627266 614.1048327601987,325.9792618788408" fill="#43A047"/>
+<text x="280" y="486.08" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#263238" text-anchor="start">Pupil opening</text>
+<polyline points="470,485 612,485" fill="none" stroke="#263238" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="612,485 600.0262070779625,490.06243845001245 600.0262070779625,479.93756154998755" fill="#263238"/>
+<text x="710" y="260.8" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#2F6BFF" text-anchor="start">Cornea</text>
+<polyline points="763,274 747,375" fill="none" stroke="#2F6BFF" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="747,375 743.8733889923338,362.3815887051206 753.8735633332974,363.96577473933263" fill="#2F6BFF"/>
+<polyline points="752,438 930,438" fill="none" stroke="#42A5F5" stroke-width="4" stroke-linejoin="round"/>
+<polygon points="930,438 918.0262070779625,443.06243845001245 918.0262070779625,432.93756154998755" fill="#42A5F5"/>
+<text x="765" y="412.36" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#42A5F5" text-anchor="start">CorneaNormal</text>
+<polyline points="640,599 905,599" fill="none" stroke="#42A5F5" stroke-width="4" stroke-linejoin="round"/>
+<polygon points="905,599 893.0262070779625,604.0624384500125 893.0262070779625,593.9375615499875" fill="#42A5F5"/>
+<text x="690" y="657.36" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#42A5F5" text-anchor="start">IrisPlaneNormal</text>
+<text x="165" y="875.64" font-family="Arial, sans-serif" font-size="24" font-weight="400" fill="#7B858A" text-anchor="start">Layer separation is conceptual.</text>
+<text x="165" y="913.64" font-family="Arial, sans-serif" font-size="24" font-weight="400" fill="#7B858A" text-anchor="start">Normals are directional inputs, not UV coordinates.</text>
+<rect x="1010" y="190" width="715" height="210" rx="12" fill="white" stroke="#2F6BFF" stroke-width="3"/>
+<text x="1040" y="234.07999999999998" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#2F6BFF" text-anchor="start">EYE BODY  |  M_Eye_Master</text>
+<text x="1040" y="285.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="start">Eye BSDF</text>
+<text x="1040" y="325.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="start">Sclera / Iris / Pupil color and masks</text>
+<text x="1040" y="365.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="start">Cornea response + iris-plane shading</text>
+<rect x="1010" y="430" width="715" height="210" rx="12" fill="white" stroke="#42A5F5" stroke-width="3"/>
+<text x="1040" y="474.08" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#42A5F5" text-anchor="start">EYE WETNESS  |  separate surface</text>
+<text x="1040" y="525.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="start">Slab BSDF / translucent workflow</text>
+<text x="1040" y="565.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="start">Small wet reflection near eyelid contact</text>
+<text x="1040" y="605.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="start">Coverage / F0 / Roughness are separate controls</text>
+<rect x="1010" y="670" width="715" height="210" rx="12" fill="white" stroke="#FB8C00" stroke-width="3"/>
+<text x="1040" y="714.08" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#FB8C00" text-anchor="start">EYE OCCLUSION  |  separate surface</text>
+<text x="1040" y="765.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="start">Unlit BSDF / Transmittance Color</text>
+<text x="1040" y="805.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="start">Upper + Lower UV falloff</text>
+<text x="1040" y="845.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" fill="#263238" text-anchor="start">MaxStrength limits the strongest darkening</text>
+<rect x="70" y="980" width="1655" height="85" rx="12" fill="#EEF3F7" stroke="#EEF3F7" stroke-width="2"/>
+<text x="100" y="1018.5" font-family="Arial, sans-serif" font-size="25" font-weight="700" fill="#263238" text-anchor="start">Optical / anatomical schematic only. BumpOffset shifts texture lookup UV; it does not trace refraction rays.</text>
+<text x="100" y="1052.64" font-family="Arial, sans-serif" font-size="24" font-weight="400" fill="#263238" text-anchor="start">The three material roles should be diagnosed separately before judging the combined eye appearance.</text>
+</svg>
